@@ -1,12 +1,25 @@
 'use client';
 /* eslint-disable @next/next/no-img-element -- originals are intentionally served without transformation */
 
-import { useEffect, useMemo, useState } from 'react';
+import { type FormEvent, useEffect, useMemo, useState } from 'react';
 import archive from '../data/postcards.json';
 import friendArchive from '../data/friends.json';
+import {
+  distanceKilometers,
+  postcardCoordinates,
+  sortPostcards,
+} from '../lib/postcard-sort.mjs';
 
 type Status = 'keep' | 'representative' | 'candidate' | 'delete' | 'unreviewed';
 type AcquisitionType = 'self_found' | 'received' | 'unknown';
+type SortField = 'rating' | 'date' | 'distance';
+type SortDirection = 'asc' | 'desc';
+type DistanceOrigin = {
+  latitude: number;
+  longitude: number;
+  source: 'device' | 'manual';
+  accuracy?: number;
+};
 type MapTarget = {
   query: string;
   label: string;
@@ -117,10 +130,8 @@ function senderLine(postcard: Postcard) {
 }
 
 function coordinateQuery(postcard: Postcard) {
-  const { latitude, longitude, raw } = postcard.location;
-  if (latitude != null && longitude != null) return `${latitude},${longitude}`;
-  const visibleCoordinates = raw.match(/^\(?\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\)?$/);
-  return visibleCoordinates ? `${visibleCoordinates[1]},${visibleCoordinates[2]}` : null;
+  const coordinates = postcardCoordinates(postcard);
+  return coordinates ? `${coordinates.latitude},${coordinates.longitude}` : null;
 }
 
 function mapTargetFor(postcard: Postcard): MapTarget | null {
@@ -152,7 +163,13 @@ export default function Home() {
   const [senderFilter, setSenderFilter] = useState('all');
   const [country, setCountry] = useState('all');
   const [status, setStatus] = useState<'all' | Status>('all');
-  const [sort, setSort] = useState<'rating' | 'date'>('rating');
+  const [sortField, setSortField] = useState<SortField>('rating');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [distanceOrigin, setDistanceOrigin] = useState<DistanceOrigin | null>(null);
+  const [locationFeedback, setLocationFeedback] = useState('尚未取得距離基準。');
+  const [locating, setLocating] = useState(false);
+  const [manualLatitude, setManualLatitude] = useState('');
+  const [manualLongitude, setManualLongitude] = useState('');
   const [active, setActive] = useState<Postcard | null>(null);
   const [mapLoadedFor, setMapLoadedFor] = useState<string | null>(null);
 
@@ -166,6 +183,61 @@ export default function Home() {
     setActive(null);
   }
 
+  function requestDeviceLocation() {
+    if (typeof window === 'undefined' || !window.isSecureContext) {
+      setLocationFeedback('目前是非安全的 LAN HTTP 連線，瀏覽器不允許讀取裝置位置；請改用 localhost／HTTPS，或輸入參考座標。');
+      return;
+    }
+    if (!navigator.geolocation) {
+      setLocationFeedback('這個瀏覽器不支援裝置定位；請輸入參考座標。');
+      return;
+    }
+    setLocating(true);
+    setLocationFeedback('正在取得裝置位置…');
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setDistanceOrigin({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+          source: 'device',
+        });
+        setLocationFeedback(`已使用裝置位置，定位精度約 ±${Math.round(position.coords.accuracy)} 公尺；位置只保存在目前頁面記憶體。`);
+        setLocating(false);
+      },
+      (error) => {
+        setLocationFeedback(error.code === error.PERMISSION_DENIED
+          ? '定位權限未允許；可重新授權或輸入參考座標。'
+          : '目前無法取得裝置位置；請稍後重試或輸入參考座標。');
+        setLocating(false);
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 },
+    );
+  }
+
+  function applyManualOrigin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!manualLatitude.trim() || !manualLongitude.trim()) {
+      setLocationFeedback('請同時輸入參考緯度與經度。');
+      return;
+    }
+    const latitude = Number(manualLatitude);
+    const longitude = Number(manualLongitude);
+    if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90
+      || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+      setLocationFeedback('參考座標格式不正確；緯度需介於 -90～90，經度需介於 -180～180。');
+      return;
+    }
+    setDistanceOrigin({ latitude, longitude, source: 'manual' });
+    setLocationFeedback(`已使用手動參考座標 ${latitude}, ${longitude}；資料只保存在目前頁面記憶體。`);
+  }
+
+  function changeSortField(nextField: SortField) {
+    setSortField(nextField);
+    setSortDirection(nextField === 'distance' ? 'asc' : 'desc');
+    if (nextField === 'distance' && !distanceOrigin) requestDeviceLocation();
+  }
+
   const senders = useMemo(
     () => [...new Set(postcards.map((postcard) => postcard.sender).filter(Boolean))] as string[],
     [],
@@ -177,7 +249,7 @@ export default function Home() {
 
   const filtered = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase('zh-Hant');
-    return postcards
+    const matches = postcards
       .filter((postcard) => {
         if (senderFilter === 'all') return true;
         if (senderFilter === 'self-found') return postcard.acquisition.type === 'self_found';
@@ -203,13 +275,13 @@ export default function Home() {
           .join(' ')
           .toLocaleLowerCase('zh-Hant')
           .includes(normalizedQuery);
-      })
-      .sort((a, b) =>
-        sort === 'rating'
-          ? (b.curation.rating ?? -1) - (a.curation.rating ?? -1) || (b.found_date ?? '').localeCompare(a.found_date ?? '')
-          : (b.found_date ?? '').localeCompare(a.found_date ?? '') || (b.curation.rating ?? -1) - (a.curation.rating ?? -1),
-      );
-  }, [country, query, senderFilter, sort, status]);
+      });
+    return sortPostcards(matches, {
+      field: sortField,
+      direction: sortDirection,
+      origin: distanceOrigin,
+    });
+  }, [country, distanceOrigin, query, senderFilter, sortDirection, sortField, status]);
 
   const friendGroups = useMemo(() => {
     return friendProfiles.map((profile) => ({
@@ -225,6 +297,7 @@ export default function Home() {
   }, []);
   const activeMapTarget = active ? mapTargetFor(active) : null;
   const activeMapIsLoaded = !!active && mapLoadedFor === active.id && !!googleMapsEmbedApiKey;
+  const filteredCoordinateCount = filtered.filter((postcard) => postcardCoordinates(postcard)).length;
 
   useEffect(() => {
     if (!active) return;
@@ -326,35 +399,79 @@ export default function Home() {
               </select>
             </label>
             <label>
-              <span>排序</span>
-              <select value={sort} onChange={(event) => setSort(event.target.value as 'rating' | 'date')}>
+              <span>排序依據</span>
+              <select value={sortField} onChange={(event) => changeSortField(event.target.value as SortField)}>
                 <option value="rating">評分優先</option>
                 <option value="date">日期優先</option>
+                <option value="distance">距離優先</option>
+              </select>
+            </label>
+            <label>
+              <span>排序方向</span>
+              <select value={sortDirection} onChange={(event) => setSortDirection(event.target.value as SortDirection)}>
+                <option value="asc">
+                  {sortField === 'rating' ? '低 → 高' : sortField === 'date' ? '舊 → 新' : '近 → 遠'}
+                </option>
+                <option value="desc">
+                  {sortField === 'rating' ? '高 → 低' : sortField === 'date' ? '新 → 舊' : '遠 → 近'}
+                </option>
               </select>
             </label>
           </div>
 
+          {sortField === 'distance' && (
+            <section className="distance-sort-tools">
+              <div className="distance-sort-copy">
+                <strong>距離基準</strong>
+                <span role="status" aria-live="polite">{locationFeedback}</span>
+                <small>目前篩選結果有 {filteredCoordinateCount} / {filtered.length} 張具可計算座標；其餘固定排在最後。</small>
+              </div>
+              <button type="button" onClick={requestDeviceLocation} disabled={locating}>
+                {locating ? '定位中…' : distanceOrigin?.source === 'device' ? '更新目前位置' : '使用目前位置'}
+              </button>
+              <form onSubmit={applyManualOrigin}>
+                <label>
+                  <span>緯度</span>
+                  <input inputMode="decimal" value={manualLatitude} onChange={(event) => setManualLatitude(event.target.value)} placeholder="25.033" aria-label="參考緯度" />
+                </label>
+                <label>
+                  <span>經度</span>
+                  <input inputMode="decimal" value={manualLongitude} onChange={(event) => setManualLongitude(event.target.value)} placeholder="121.565" aria-label="參考經度" />
+                </label>
+                <button type="submit">套用座標</button>
+              </form>
+            </section>
+          )}
+
           {filtered.length ? (
             <div className="postcard-grid">
-              {filtered.map((postcard) => (
-                <article className="postcard-card" key={postcard.id}>
-                  <button className="image-button" onClick={() => openPostcard(postcard)} aria-label={`查看 ${postcard.poi_name}`}>
-                    <img src={postcard.asset.path} alt={`${postcard.poi_name} 原始遊戲截圖`} loading="lazy" decoding="async" />
-                    <span className="rating">{postcard.curation.rating == null ? '未評分' : <>{postcard.curation.rating.toFixed(1)} <b>★</b></>}</span>
-                    <span className="open-hint">查看檔案 ↗</span>
-                  </button>
-                  <div className="card-body">
-                    <div className="card-kicker">
-                      <span className={`status status-${postcard.curation.status}`}>{statusLabels[postcard.curation.status]}</span>
-                      <time dateTime={postcard.found_date ?? undefined}>{compactDate(postcard.found_date)}</time>
+              {filtered.map((postcard) => {
+                const distance = distanceOrigin ? distanceKilometers(postcard, distanceOrigin) : null;
+                return (
+                  <article className="postcard-card" key={postcard.id}>
+                    <button className="image-button" onClick={() => openPostcard(postcard)} aria-label={`查看 ${postcard.poi_name}`}>
+                      <img src={postcard.asset.path} alt={`${postcard.poi_name} 原始遊戲截圖`} loading="lazy" decoding="async" />
+                      <span className="rating">{postcard.curation.rating == null ? '未評分' : <>{postcard.curation.rating.toFixed(1)} <b>★</b></>}</span>
+                      <span className="open-hint">查看檔案 ↗</span>
+                    </button>
+                    <div className="card-body">
+                      <div className="card-kicker">
+                        <span className={`status status-${postcard.curation.status}`}>{statusLabels[postcard.curation.status]}</span>
+                        <time dateTime={postcard.found_date ?? undefined}>{compactDate(postcard.found_date)}</time>
+                      </div>
+                      <h3><button onClick={() => openPostcard(postcard)}>{postcard.poi_name}</button></h3>
+                      <p className="place">{postcard.location.display}</p>
+                      <p className="sender">{senderLine(postcard)}</p>
+                      {sortField === 'distance' && (
+                        <p className={`distance ${distance == null ? 'distance-missing' : ''}`}>
+                          {distance == null ? '尚無可計算座標' : `距離 ${distance < 10 ? distance.toFixed(1) : Math.round(distance)} km`}
+                        </p>
+                      )}
+                      <p className="summary">{postcard.research.summary}</p>
                     </div>
-                    <h3><button onClick={() => openPostcard(postcard)}>{postcard.poi_name}</button></h3>
-                    <p className="place">{postcard.location.display}</p>
-                    <p className="sender">{senderLine(postcard)}</p>
-                    <p className="summary">{postcard.research.summary}</p>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                );
+              })}
             </div>
           ) : (
             <div className="empty-state">
