@@ -75,3 +75,33 @@ test("merged archive has the expected preservation totals", () => {
   assert.equal(friends.length, 29);
   assert.equal(postcards.filter((record) => record.provenance.length > 1).length, 2);
 });
+
+test("research detail preserves available material and names unrecovered gaps", async () => {
+  const byStatus = Object.fromEntries(
+    ["raw_preserved", "structured_preserved", "not_recovered"].map((status) => [
+      status,
+      postcards.filter((record) => record.research.detail.status === status).length,
+    ]),
+  );
+  assert.deepEqual(byStatus, {
+    raw_preserved: 20,
+    structured_preserved: 21,
+    not_recovered: 107,
+  });
+
+  for (const record of postcards) {
+    const detail = record.research.detail;
+    await readFile(path.join(root, detail.source_path), "utf8");
+    if (detail.status === "not_recovered") {
+      assert.equal(detail.body, null, `${record.id} must not invent missing research`);
+      assert.ok(detail.preservation_note, `${record.id} must explain the preservation gap`);
+    } else {
+      assert.ok(detail.body?.trim(), `${record.id} is missing preserved research detail`);
+      assert.equal(detail.preservation_note, null);
+    }
+  }
+
+  assert.equal(postcards.find((record) => record.id === "pc-0020").research.detail.status, "raw_preserved");
+  assert.equal(postcards.find((record) => record.id === "pc-0130").research.detail.status, "structured_preserved");
+  assert.equal(postcards.find((record) => record.id === "pc-0021").research.detail.status, "not_recovered");
+});

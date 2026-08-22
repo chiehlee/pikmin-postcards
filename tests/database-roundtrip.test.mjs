@@ -19,6 +19,18 @@ test("SQLite migration preserves every snapshot field exactly", async () => {
     assert.equal(database.prepare("PRAGMA integrity_check").get().integrity_check, "ok");
     assert.deepEqual(database.prepare("PRAGMA foreign_key_check").all(), []);
     assert.equal(database.prepare("SELECT count(*) AS count FROM postcards").get().count, 148);
+    assert.equal(database.prepare("SELECT count(*) AS count FROM research_details").get().count, 148);
+    assert.deepEqual(
+      database
+        .prepare("SELECT status, count(*) AS count FROM research_details GROUP BY status ORDER BY status")
+        .all()
+        .map((row) => ({ ...row })),
+      [
+        { status: "not_recovered", count: 107 },
+        { status: "raw_preserved", count: 20 },
+        { status: "structured_preserved", count: 21 },
+      ],
+    );
     const assets = database.prepare("SELECT local_path FROM assets").all();
     assert.equal(assets.length, 149);
     assert.ok(assets.every((asset) => asset.local_path.startsWith("public/images/")));

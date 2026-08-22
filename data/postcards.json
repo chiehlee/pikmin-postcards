@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "archive_name": "Pikmin Postcard Archive",
   "source_principles": {
     "found_date_is_sent_date": false,
@@ -56,7 +56,13 @@
         "sources": [
           "https://hac.gov.taipei/cp.aspx?n=82E1749D4E2EE795",
           "https://ssl.thcp.org.tw/news/796"
-        ]
+        ],
+        "detail": {
+          "status": "raw_preserved",
+          "body": "位於臺北市客家文化主題公園。官方曾在 2016 年針對 AR 遊戲中的錯誤地標名稱進行正名；遊戲中的「麻花燈籠」實為象徵客家人團結的「結晶體」景觀設施。這張的價值在於 Niantic 舊 POI 錯名一路保存至 Pikmin Bloom，具有很強的數位地標考古感。",
+          "source_path": "research/raw/current-session.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -127,7 +133,13 @@
         "summary": "找不到正式作品名稱、作者或官方介紹；很像早期 Wayspot 由玩家依物件外觀直接命名的在地小 POI。唯一加分是怪趣味與 Niantic 老 POI 味道，但地方代表性與作品故事都很弱。",
         "sources": [
           "https://li.taipei/"
-        ]
+        ],
+        "detail": {
+          "status": "raw_preserved",
+          "body": "找不到正式作品名稱、作者或官方介紹；很像早期 Wayspot 由玩家依物件外觀直接命名的在地小 POI。唯一加分是怪趣味與 Niantic 老 POI 味道，但地方代表性與作品故事都很弱。",
+          "source_path": "research/raw/current-session.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -201,7 +213,13 @@
           "https://www.uniten.edu.my/college-of-computing-informatics/",
           "https://malaysiaeducation.com.my/uniten_uc/uniten/",
           "https://commons.wikimedia.org/wiki/File:COIT_in_UNITEN.JPG"
-        ]
+        ],
+        "detail": {
+          "status": "raw_preserved",
+          "body": "位於馬來西亞 UNITEN（Universiti Tenaga Nasional）Kajang/Putrajaya Campus 一帶。「COIT」很可能指舊稱 College of Information Technology，現已改為 College of Computing & Informatics。照片中的螺旋景觀裝置本身找不到正式作者或作品名；收藏價值主要是舊學院名稱與早期 Wayspot 的時間膠囊感。",
+          "source_path": "research/raw/current-session.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -271,7 +289,13 @@
           "https://www.ibaraki-shokusai.net/brand/ebi",
           "https://www.nakaminato-osakanaichiba.jp/",
           "https://arku.jp/events/3762/"
-        ]
+        ],
+        "detail": {
+          "status": "raw_preserved",
+          "body": "位置對應茨城縣ひたちなか市那珂湊おさかな市場一帶。POI 本身較像市場周邊海產主題立體壁飾，未找到正式作品資料；但伊勢海老、螃蟹、カジキ都與當地漁港/市場及近年旗魚活動高度相符。物件普通、所在地非常有代表性。",
+          "source_path": "research/raw/current-session.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -339,7 +363,13 @@
           "https://monkeyforestubud.com/about-us/",
           "https://monkeyforestubud.com/sacredplaces/",
           "https://balicarving.com/product-category/stone-carving/sculpture/"
-        ]
+        ],
+        "detail": {
+          "status": "raw_preserved",
+          "body": "Ubud/Gianyar 一帶的猴子親子雕塑。未找到可確認的正式作者與公共藝術登錄，較像雕刻店/藝廊或街頭展示作品；但猴子與雕刻工藝都非常具有 Ubud/Gianyar 地方辨識度，照片本身也漂亮。作品身份弱、地方感強。",
+          "source_path": "research/raw/current-session.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -409,7 +439,13 @@
           "https://prtimes.jp/main/html/rd/p/000000001.000090343.html",
           "https://kitakan-navi.jp/archives/53388",
           "https://www.ajigauramuralproject.com/"
-        ]
+        ],
+        "detail": {
+          "status": "raw_preserved",
+          "body": "阿字ヶ浦海水浴場 AJIGAURA MURAL PROJECT 的正式壁畫，由 TWOONE（釣博泰/Hiroyasu Tsuri）創作，畫在救護室等建築上。作品有正式計畫、作者、地方素材與歷史脈絡，並以藍色、海產與昔日阿字ヶ浦景觀回應當地。是目前典型「有完整作品身分＋site-specific」五星案例。",
+          "source_path": "research/raw/current-session.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -479,7 +515,13 @@
           "https://tppct.org.tw/",
           "https://nghr.gov.taipei/",
           "https://www.pct.org.tw/"
-        ]
+        ],
+        "detail": {
+          "status": "raw_preserved",
+          "body": "正式文化資產為「長老教會北投教堂」，教會設教可追溯至 1876 年馬偕時期，現存教堂 1912 年建成，為吳威廉設計，1998 年公告市定古蹟。與北投社/凱達格蘭族、日治時期、二戰及北投地方史相連。2025 起進入修復及再利用工程，原規劃 2026 年左右完成。此 POI 最大魅力是看似普通的日常建築實為百年古蹟。",
+          "source_path": "research/raw/current-session.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -550,7 +592,13 @@
           "https://tacps.tw/",
           "https://lab.howie.tw/2013/12/what-ingress-teach-us-discover-taiwan-from-nearb.html",
           "https://pkl.gov.taipei/"
-        ]
+        ],
+        "detail": {
+          "status": "raw_preserved",
+          "body": "其實是中華電信交接箱，不是一般牆面。中華電信自 2000 年代即配合地方政府進行交接箱彩繪美化，山水電信箱後來成為很典型的臺灣街景與早期 Ingress/Wayspot 類型。圖樣未能證明為特定北投景觀，因此個體不可替代性不高，但作為一類街景的代表很有時代感。",
+          "source_path": "research/raw/current-session.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -620,7 +668,13 @@
           "https://cfe.ddm.org.tw/page10.htm",
           "https://chan.ddm.org.tw/",
           "https://www.ddm.org.tw/"
-        ]
+        ],
+        "detail": {
+          "status": "raw_preserved",
+          "body": "位於法鼓山農禪寺禪修公園，為「法鼓八式動禪」系列石童之一，對應第四式「擎天觸地」。農禪寺本身是法鼓山重要發源地且有歷史建築身分。這尊不是古蹟，但屬於有明確教學/禪修脈絡的系列景觀；若能湊齊八式，系列收藏價值很高。",
+          "source_path": "research/raw/current-session.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -690,7 +744,13 @@
           "https://pwd.gov.taipei/",
           "https://www.geo.gov.taipei/",
           "https://btdo.gov.taipei/"
-        ]
+        ],
+        "detail": {
+          "status": "raw_preserved",
+          "body": "長安公園/磺港溪加蓋段的環境教育解說牌，核心價值不是牌子，而是說明北投如何從河流聚落逐步將磺港溪整治、加蓋，再於近年推動「還地於河」與水環境再造。作為地方史資訊牌，比一般公園導覽圖更有收藏意義。",
+          "source_path": "research/raw/current-session.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -759,7 +819,13 @@
           "https://www.cht.com.tw/",
           "https://www.tcma.gov.taipei/",
           "https://www.gov.taipei/"
-        ]
+        ],
+        "detail": {
+          "status": "raw_preserved",
+          "body": "名稱技術上錯誤：照片明確是中華電信交接箱，不是台電變電箱。價值在於北投市場舊街區與 2000 年代公共設施彩繪文化；市場本身正處於中繼/改建的都市轉型，因此有時間膠囊感。若同類太多只需代表性保留。",
+          "source_path": "research/raw/current-session.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -830,7 +896,13 @@
           "https://www.matsu.idv.tw/",
           "https://www.kmdn.gov.tw/",
           "https://gb.crntt.com/"
-        ]
+        ],
+        "detail": {
+          "status": "raw_preserved",
+          "body": "位於北投雕塑家魏立之工作室前。魏立之長期製作大型政治人物雕塑，照片中的蔣經國坐像與東引經國亭作品有直接造型/作者脈絡；工作室本身亦留下臺灣政治雕塑產業由盛轉衰的時代痕跡。此張的核心不是蔣經國本身，而是「魏立之工作室＋原作者作品＋時代遺址」。",
+          "source_path": "research/raw/current-session.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -897,7 +969,13 @@
         "sources": [
           "https://pwd.gov.taipei/",
           "https://heo.gov.taipei/"
-        ]
+        ],
+        "detail": {
+          "status": "raw_preserved",
+          "body": "屬長安公園/磺港溪整體改善後的公園平面導覽圖。地方故事很好，但 POI 本身只是功能性地圖；而同一收藏中已有「北投與磺港溪環境紋理變遷」能更完整代表同一故事，因此替代性高，建議淘汰。",
+          "source_path": "research/raw/current-session.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -965,7 +1043,13 @@
         "sources": [
           "https://publicart.tyccc.gov.tw/",
           "https://maps.apple.com/"
-        ]
+        ],
+        "detail": {
+          "status": "raw_preserved",
+          "body": "位置推定在桃園國際機場第一航廈一帶（埔心里行政範圍）。壁畫本身很漂亮、辨識度高，但尚未找到可確認的作者、年份或正式公共藝術登錄；李小龍與大園/桃園的地方連結也弱。主要收藏價值是視覺完成度與機場展示空間的 legacy/time-capsule 可能性。",
+          "source_path": "research/raw/current-session.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -1035,7 +1119,13 @@
           "https://trainworld.site/",
           "https://tip.railway.gov.tw/",
           "https://www.travel.taipei/"
-        ]
+        ],
+        "detail": {
+          "status": "raw_preserved",
+          "body": "新北投車站的 CK124 蒸汽火車造型郵筒，且可實際寄信。真正加分的是 CK124 本尊退役後曾長期展示於新北投，之後移走修復並在 2001 年復駛；新北投車站本身也曾被拆遷後再回到北投。郵筒因此具有「本尊離開、地方留下記憶」的鐵道史連結。",
+          "source_path": "research/raw/current-session.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -1105,7 +1195,13 @@
           "https://zh.wikisource.org/wiki/塑建總統蔣公銅像注意事項",
           "https://gazette2.nat.gov.tw/",
           "https://culture.gov.taipei/"
-        ]
+        ],
+        "detail": {
+          "status": "raw_preserved",
+          "body": "高度懷疑位於現今新北投71園區、舊義方國小校址，但尚未找到官方資料直接將這尊像與該園區對應，因此定位需保留。若判定成立，它是威權時期校園政治景觀留在後來表演藝術園區中的城市遺物；作品作者與設置年份尚未查明。",
+          "source_path": "research/raw/current-session.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -1175,7 +1271,13 @@
           "https://www-ws.gov.taipei/",
           "https://pwd.gov.taipei/",
           "https://gd-park.org.tw/"
-        ]
+        ],
+        "detail": {
+          "status": "raw_preserved",
+          "body": "舊貴子坑溪是 1980 年代河道改道後留下的舊河段；近年完成下游環境與排水改善，包含步道、觀稻平台、環教解說等。地方故事本身很強，但此 POI 只是全區導覽圖；目前若是唯一代表該水系的 postcard 可先留，之後遇到更具體的歷史解說/景觀 POI 可替換。",
+          "source_path": "research/raw/current-session.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -1244,7 +1346,13 @@
           "https://www.songshanculturalpark.org/",
           "https://reading.udn.com/",
           "https://www.artmap.com.hk/"
-        ]
+        ],
+        "detail": {
+          "status": "raw_preserved",
+          "body": "正式作品《菸縷時光》（Time in Wisps of Smoke），由陳協建與李俊誠創作，屬 2025 原創基地節的現地創作，位於松山文創園區倉庫間。作品把菸盒、菸草花、工廠掛鐘、屋簷、製菸機具、物流等松山菸廠元素抽象化，與所在地歷史高度綁定。site-specific 程度高。",
+          "source_path": "research/raw/current-session.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -1315,7 +1423,13 @@
           "https://www.cts.com.tw/about/milestones",
           "https://oranges.idv.tw/2007/11/15/1480.html",
           "https://angitrend.pixnet.net/"
-        ]
+        ],
+        "detail": {
+          "status": "raw_preserved",
+          "body": "位於光復南路 102 號 1F、華視光復大樓，2021 年開幕的中型展演場館。這個空間以前就是 DOZO 創作和食居酒屋，同址且同樣帶表演性質，形成由餐飲＋太鼓秀到專業展演館的空間延續；大樓本身又有華視媒體園區歷史。個人物件不算古老，但地址的空間記憶很有意思。",
+          "source_path": "research/raw/current-session.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -1382,7 +1496,13 @@
         "sources": [
           "https://www.aire.com.tw/",
           "https://hypercore.com.tw/"
-        ]
+        ],
+        "detail": {
+          "status": "raw_preserved",
+          "body": "可定位到信義區松仁路 89 號「壹號交易廣場」前庭的白色金字塔造型。找不到作者、正式作品名或公共藝術登錄；外觀更像 1990 年代商辦的景觀/採光設施。壹號交易廣場 1999 年完工，物件有年代感，但 POI 本身故事弱、替代性高。",
+          "source_path": "research/raw/current-session.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -1453,7 +1573,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -1528,7 +1654,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -1603,7 +1735,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -1678,7 +1816,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -1753,7 +1897,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -1828,7 +1978,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -1903,7 +2059,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -1978,7 +2140,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -2053,7 +2221,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -2128,7 +2302,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -2203,7 +2383,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -2278,7 +2464,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -2353,7 +2545,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -2428,7 +2626,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -2503,7 +2707,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -2578,7 +2788,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -2653,7 +2869,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -2728,7 +2950,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -2803,7 +3031,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -2878,7 +3112,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -2953,7 +3193,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -3028,7 +3274,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -3103,7 +3355,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -3178,7 +3436,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -3253,7 +3517,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -3329,7 +3599,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -3404,7 +3680,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -3479,7 +3761,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -3554,7 +3842,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -3629,7 +3923,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -3704,7 +4004,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -3779,7 +4085,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -3854,7 +4166,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -3929,7 +4247,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -4004,7 +4328,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -4079,7 +4409,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -4155,7 +4491,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -4230,7 +4572,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -4305,7 +4653,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -4380,7 +4734,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -4455,7 +4815,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -4535,7 +4901,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -4610,7 +4982,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -4685,7 +5063,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -4760,7 +5144,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -4835,7 +5225,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -4910,7 +5306,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -4985,7 +5387,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -5060,7 +5468,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -5135,7 +5549,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -5210,7 +5630,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -5285,7 +5711,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -5360,7 +5792,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -5435,7 +5873,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -5510,7 +5954,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -5585,7 +6035,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -5665,7 +6121,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -5757,7 +6219,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -5832,7 +6300,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -5907,7 +6381,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -5987,7 +6467,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -6067,7 +6553,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -6142,7 +6634,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -6219,7 +6717,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -6294,7 +6798,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -6369,7 +6879,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -6444,7 +6960,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -6519,7 +7041,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -6594,7 +7122,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -6669,7 +7203,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -6744,7 +7284,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -6819,7 +7365,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -6899,7 +7451,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -6979,7 +7537,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -7054,7 +7618,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -7129,7 +7699,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -7209,7 +7785,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -7289,7 +7871,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -7364,7 +7952,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -7439,7 +8033,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -7514,7 +8114,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -7589,7 +8195,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -7689,7 +8301,13 @@
           "https://www.zensyukyo.or.jp/?utm_source=chatgpt.com",
           "https://www.jsnews.co.jp/shuhan/backno/2012.html?utm_source=chatgpt.com",
           "https://osaka-shuhan.jimdofree.com/app/download/12307215091/2026%E5%B9%B47%E6%9C%88%E5%8F%B7.pdf?t=1784260859&utm_source=chatgpt.com"
-        ]
+        ],
+        "detail": {
+          "status": "structured_preserved",
+          "body": "照片中的 POI 是東京中目黑一帶全国小売酒販会館基地的平面導覽圖；Wayspot 名稱字面正確，但照片主體只是案內圖。會館是全国小売酒販組合中央会等酒販相關組織長期使用的全國性據點，中央會依酒類業組合法設立，負責酒販業政策、法規、研修等。相關組織亦在同址經營組合員福利住宿設施。2012 年中央會曾進入民事再生程序並處理會館權益；之後仍持續在此運作。收藏價值主要來自日本酒販業的制度與產業史，而非案內圖本身。",
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -7769,7 +8387,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -7844,7 +8468,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -7924,7 +8554,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -8004,7 +8640,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -8084,7 +8726,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -8164,7 +8812,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -8244,7 +8898,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -8324,7 +8984,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -8404,7 +9070,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -8484,7 +9156,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -8559,7 +9237,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -8634,7 +9318,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -8709,7 +9399,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -8784,7 +9480,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -8859,7 +9561,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -8934,7 +9642,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -9009,7 +9723,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -9084,7 +9804,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -9164,7 +9890,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -9244,7 +9976,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -9324,7 +10062,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -9404,7 +10148,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -9484,7 +10234,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -9579,7 +10335,13 @@
           "https://www.zensyukyo.or.jp/?utm_source=chatgpt.com",
           "https://www.jsnews.co.jp/shuhan/backno/2012.html?utm_source=chatgpt.com",
           "https://osaka-shuhan.jimdofree.com/app/download/12307215091/2026%E5%B9%B47%E6%9C%88%E5%8F%B7.pdf?t=1784260859&utm_source=chatgpt.com"
-        ]
+        ],
+        "detail": {
+          "status": "structured_preserved",
+          "body": "照片中的 POI 是東京中目黑一帶全国小売酒販会館基地的平面導覽圖；Wayspot 名稱字面正確，但照片主體只是案內圖。會館是全国小売酒販組合中央会等酒販相關組織長期使用的全國性據點，中央會依酒類業組合法設立，負責酒販業政策、法規、研修等。相關組織亦在同址經營組合員福利住宿設施。2012 年中央會曾進入民事再生程序並處理會館權益；之後仍持續在此運作。收藏價值主要來自日本酒販業的制度與產業史，而非案內圖本身。",
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -9670,7 +10432,13 @@
           "https://www.wooderfullife.com/Newsdetail/NewsDetail/252?utm_source=chatgpt.com",
           "https://www.jeancard.com/UploadFiles/news/new_230727134216895.jpg",
           "https://www.everrich-group.com/events/brands/34220?utm_source=chatgpt.com"
-        ]
+        ],
+        "detail": {
+          "status": "structured_preserved",
+          "body": "高度可能位於桃園機場內、接近第一航廈／原住民族工藝展示脈絡的室內動物剪影或展示造景。『野獸巨人』看起來是 Wayspot 提交者的趣味命名，並非查得到的正式作品名，也看不出與《進擊的巨人》獸之巨人有關。曾比對桃機的木育森林、編織之森、野獸國等現有設施，外觀並不吻合；因此可能是較早期或已改裝消失的機場造景。若能確認為舊版候機區設計，其舊景觀紀錄價值會上升。",
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -9758,7 +10526,13 @@
           "https://ganzam.mn/news/uner-n-xurtel-saixan-dursamz",
           "https://ganzam.mn/news/ulaanbaatar-tomor-zamyn-tuux",
           "https://ikon.mn/n/1ce8?utm_source=chatgpt.com"
-        ]
+        ],
+        "detail": {
+          "status": "structured_preserved",
+          "body": "Wayspot 英文名很可能誤導。以地點與 Ulaanbaatar Railway（УБТЗ）官方史料交叉比對，胸像指向蒙古鐵路重要人物 Navaanjambyn Tserennorov（Н. Цэрэнноров）。他不是 UBTZ 第一任總經理，而是蒙古最早一代本國鐵路工程人才之一，曾任烏蘭巴托機車段第一位蒙古籍主任，並長期擔任第一副總經理。『1-st Director』很可能把蒙古文第一副主任／第一副總經理簡化誤譯。UBTZ 在重大週年會向其紀念像獻花，因此它具有正式產業紀念地性質，能連結蒙古鐵路本土化與俄蒙中交通史。",
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -9847,7 +10621,13 @@
           "https://www.jstage.jst.go.jp/article/nujlp/302/0/302_302.1/_pdf/-char/en?utm_source=chatgpt.com",
           "https://dl.ndl.go.jp/view/download/digidepo_3050793_po_geppo1105.pdf?contentNo=1&utm_source=chatgpt.com",
           "https://www.jacar.go.jp/exhibition/universalsuffrage/chapter4/?utm_source=chatgpt.com"
-        ]
+        ],
+        "detail": {
+          "status": "structured_preserved",
+          "body": "紀念的是 1905 年 8 月 20 日中國同盟會在東京虎之門一帶成立的歷史現場。孫文、黃興等革命派整合興中會、華興會等力量，形成辛亥革命前最重要的革命組織之一；其組織史後來亦接到國民黨。現址在 The Okura Tokyo 附近，碑為近代新設紀念物，但地點與大倉喜八郎邸／坂本金弥邸相關的成立現場範圍相連。研究中也特別區分：同盟會是辛亥革命的重要組織母體，但武昌起義不是由孫文在同盟會中央直接下令發動。",
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -9955,7 +10735,13 @@
           "https://megumi-k2.wixsite.com/mysite-2/post/%E8%B2%9D%E4%BD%9C-%E8%B5%A4%E5%9D%82?utm_source=chatgpt.com",
           "https://tabelog.com/tokyo/A1308/A130801/13015201/dtlrvwlst/B111253682/?utm_source=chatgpt.com",
           "https://tabelog.com/tokyo/A1308/A130801/13015201/dtlrvwlst/B500410084/?type=0&utm_source=chatgpt.com"
-        ]
+        ],
+        "detail": {
+          "status": "structured_preserved",
+          "body": "赤坂的老牌高級貝料理割烹。店家 1975 年在赤坂開業，其淵源可追至 1931 年靜岡的貝類批發業；料理定位並非後來包裝，而是承接貝類流通背景。店面是一軒家、入口極低調，傳統接待動線與私人包廂文化本身就是赤坂料亭／接待型飲食文化的一部分。網路另有《島耕作》相關說法，但在對話中未找到講談社／作者一手資料，因此只保留為未證實傳聞。",
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -10042,7 +10828,13 @@
         "sources": [
           "https://www.city.meguro.tokyo.jp/bunka/bunkasports/kouryu/hekiga2023.html?utm_source=chatgpt.com",
           "https://hotpepper.jp/strJ000134436/?utm_source=chatgpt.com"
-        ]
+        ],
+        "detail": {
+          "status": "structured_preserved",
+          "body": "目黑區南三丁目一扇棕色鐵捲門上的簡單白色雪人。查不到正式作品名、作者、店家、公共藝術計畫或地方文化資產紀錄；『雪だるま』幾乎可視為玩家描述性命名。它的價值主要是容易消失的私人街景／城市微型紀錄，而非可考證的單件作品史。若日後能查到固定店家傳統或作者，才可能翻案。",
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -10136,7 +10928,13 @@
           "https://www.facebook.com/BlackPhotographyCollect/videos/1165171425612954/?utm_source=chatgpt.com",
           "https://tcmb.culture.tw/zh-tw/detail?id=620158&indexCode=Culture_Place&utm_source=chatgpt.com",
           "https://www.instagram.com/p/CyLAaetCI5B/?utm_source=chatgpt.com"
-        ]
+        ],
+        "detail": {
+          "status": "structured_preserved",
+          "body": "新竹在地私人壇，對外多以『三澤會』名義交陪。2026 年正逢約十五週年，舉辦祈安巡城遶境；可見新豐、花蓮等分會／交陪網絡。信仰核心至少包括關聖帝君與李府千歲，且有徒步謁祖至雲林四湖參天宮、水林豐德宮的紀錄。這張的價值不在古老，而在記錄一個約 2011 年前後形成、仍在擴張中的 21 世紀台灣民間信仰網絡。",
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -10218,7 +11016,13 @@
         "sources": [
           "https://www.city.hirosaki.aomori.jp/gaiyou/rekishi/koto.html",
           "https://www.city.hirosaki.aomori.jp/gaiyou/rekishi/koto2.html"
-        ]
+        ],
+        "detail": {
+          "status": "structured_preserved",
+          "body": "弘前市官方設置的『古町名標柱』之一，用來保存江戶城下町的歷史地名。元寺町原為寺町；1649 年火災後，寺院在翌年前後集中移往新寺町，舊寺町轉成商人街，名稱後來成為元寺町。弘前市共設多處古町名標柱，讓現代街道直接承載舊城下的職業與空間分區歷史。",
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -10308,7 +11112,13 @@
           "https://www.lib.pref.ibaraki.jp/licsxp-opac/WOpacMsgNewListToTifTilDetailAction.do?tilcod=1001000392722&utm_source=chatgpt.com",
           "https://www.bakumatsu-meiji.com/bm_collection.html?utm_source=chatgpt.com",
           "https://online.bunka.go.jp/heritages/detail/117394"
-        ]
+        ],
+        "detail": {
+          "status": "structured_preserved",
+          "body": "這塊碑原本更精確應理解為『常陽明治記念館創立五十周年記念碑』：1929-04-14 由幕末志士、後任宮內大臣的田中光顕創立常陽明治記念館；1979-04-14 正好五十年時舉行紀念典禮並揭碑。博物館 1997 年改名為幕末と明治の博物館，後來移交大洗町。館本身保存幕末維新人物文物，原始性格也帶有明治天皇與維新功臣顯彰意味；1932 年別館後來也成為登錄有形文化財。這張碑因揭幕日期、機構沿革與創辦人背景都能精確考證，收藏價值高。",
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -10393,7 +11203,13 @@
           "https://www.taoyuan-airport.com/services_facilities/E6932FDB-1B95-EC11-80F5-000C29A1B907?utm_source=chatgpt.com",
           "https://www.hty.com.tw/series.php?act=view&no=102",
           "https://publicart.tyccc.gov.tw/directory/listing/181?utm_source=chatgpt.com"
-        ]
+        ],
+        "detail": {
+          "status": "structured_preserved",
+          "body": "地點高度吻合桃園機場第一航廈 3F 非管制區的原住民精藝品／工藝展售脈絡。照片中的白色人物不像日本武士，更像泛化的原住民族勇士展示造景；目前找不到正式作品名稱、作者或公共藝術登錄，『純白武士』很可能是 Wayspot 玩家自取名。機場以原住民族文化作為國門展示的脈絡是真實的，但這一件單獨物件的身分不足。",
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -10481,7 +11297,13 @@
           "https://www.threads.com/%4011.11_hung/post/DXqziaoEkKX/%E4%B8%8D%E6%98%AF%E5%95%8A-%E5%85%AC%E5%9C%92%E6%83%85%E8%B6%A3%E6%A4%85%E7%9A%AE%E5%85%8B%E6%95%8F%E6%80%8E%E9%BA%BC%E8%AE%8A%E6%88%90%E5%85%92%E7%AB%A5%E4%B8%8D%E5%AE%9C%E5%AE%98%E6%96%B9%E6%9C%89%E6%B2%92%E6%9C%89%E8%80%83%E6%85%AE%E6%94%B9%E5%80%8B%E5%90%8D%E7%A8%B1?utm_source=chatgpt.com",
           "https://babybuild.tw/en/outdoor-fitness-equipment-guide/?utm_source=chatgpt.com",
           "https://interlocution.weebly.com/36328300282639921002-interlocution/066"
-        ]
+        ],
+        "detail": {
+          "status": "structured_preserved",
+          "body": "本體只是社子里附近公園的一組成人體健設施，『公園情趣椅2』不是正式器材名稱，而是 Wayspot 提交者惡搞式命名。真正加分的是它已在 Pikmin Bloom 玩家社群中被當成荒謬 Wayspot 名稱的迷因，其他玩家也公開吐槽過同一張卡。若純看器材本身價值很低，但作為 Niantic 玩家文化與野生 POI 命名案例有收藏趣味。",
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -10567,7 +11389,13 @@
           "https://www.tpedoit.gov.taipei/News_Content.aspx?n=603755835E928BED&s=C9DF00F250EA6E90",
           "https://findbiz.nat.gov.tw/fts/business/25580005/40100000000001161680?utm_source=chatgpt.com",
           "https://findbiz.nat.gov.tw/fts/business/31854410/20100000000008557061?utm_source=chatgpt.com"
-        ]
+        ],
+        "detail": {
+          "status": "structured_preserved",
+          "body": "這張不是一般無名塗鴉。照片上的 e-Life 線索可對應 2012 年臺北市『北投觀光亮點彩繪造街－店舖門面妝點方案』，當年由復興高中美術班學生／校友與地方團體合作，為光明路 119 號 e-Life／想家生活寢飾館量身彩繪鐵捲門。2018 年『北投風情－彩繪鬥市』被官方稱為延續前期彩繪計畫。後續商工資料顯示相關寢飾店已歇業，因此這張成為已消失店家與社區藝術街景的記錄。Wayspot 名『Graffiti On The Wall』過度籠統。",
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -10657,7 +11485,13 @@
           "https://www.destination-biarritz.fr/en/decouvrir/le-rocher-de-la-vierge/?utm_source=chatgpt.com",
           "https://www.biarritz.fr/fileadmin/user_upload/biarritz/Ville/telechargements/AVAP/AVAP2/01-_BIARRITZ_-_AVAP_-_Rapport_de_PrCsentation_-_CM_2017-04-11.pdf?utm_source=chatgpt.com",
           "https://pop.culture.gouv.fr/notice/memoire/IVN00_20070001206?utm_source=chatgpt.com"
-        ]
+        ],
+        "detail": {
+          "status": "structured_preserved",
+          "body": "法國 Biarritz 的代表性地標『聖母岩』。19 世紀拿破崙三世為建 Port du Refuge 避風港工程開鑿岩礁與交通通道，港工最後失敗；1865 年青銅聖母像安置岩頂後，岩礁逐漸以現名聞名。現有金屬橋常被誤傳為 Gustave Eiffel 設計，官方資料則指向 Schryvers 工場。1931 年景觀受保護，且早在 20 世紀初就已是經典明信片主題。這張同時兼具帝國工程、海洋信仰、城市象徵與『明信片文化本身』。",
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -10747,7 +11581,13 @@
           "https://www.mlit.go.jp/river/basic_info/jigyo_keikaku/gaiyou/seibi/pdf/kushida-4.pdf",
           "https://www.city.matsusaka.mie.jp/uploaded/attachment/82613.pdf?utm_source=chatgpt.com",
           "https://www.city.matsusaka.mie.jp/uploaded/attachment/87640.pdf?utm_source=chatgpt.com"
-        ]
+        ],
+        "detail": {
+          "status": "structured_preserved",
+          "body": "松阪市飯南町粥見、櫛田川舊渡口遺址。國土交通省資料直接標示『舟戸の渡し場跡』，舊時以平底渡船與長棹（棹ごし）載人馬過河，並位於通往桜峠、田丸、伊勢／熊野方向的舊交通路線。明治時期曾作為縣管理免費渡船；1915 年左右架起簡易橋後，渡船仍並存一段時間，後來由橋梁完全取代。價值在於現地是消失交通方式的真實歷史節點，不只是解說牌。",
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -10834,7 +11674,13 @@
           "https://www.c-nexco.co.jp/corporate/pressroom/news_old/?id=2719&utm_source=chatgpt.com",
           "https://www.pref.aichi.jp/uploaded/attachment/530786.pdf?utm_source=chatgpt.com",
           "https://sapa.c-nexco.co.jp/sapa/guide?sapainfoid=21&utm_source=chatgpt.com"
-        ]
+        ],
+        "detail": {
+          "status": "structured_preserved",
+          "body": "新城 PA 本身是東名高速早期設施，1969 年隨靜岡 IC～岡崎 IC 路段開通啟用；後來商業設施與廁所等多次更新，2024 年上行廁所棟又使用東三河木材／CLT 等改建。問題是這張 Wayspot 精確拍的只是 PA 內普通綠色東屋（休憩棚），找不到獨立設置年份、設計者或特殊歷史，因此『地方背景有故事、POI 本體太普通』。",
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -10922,7 +11768,13 @@
           "https://zh.wikipedia.org/wiki/%E5%8C%97%E6%8A%95%E7%AB%99?utm_source=chatgpt.com",
           "https://ebook.dorts.gov.taipei/ebook/no7/files/basic-html/page105.html?utm_source=chatgpt.com",
           "https://ebook.dorts.gov.taipei/ebook/no34/files/basic-html/page50.html?utm_source=chatgpt.com"
-        ]
+        ],
+        "detail": {
+          "status": "structured_preserved",
+          "body": "北投站本身可追到 1901 年北淡線交通節點，1997 年改為捷運；但照片中的 2 號出口並非初期就有，而是因人口與運量增加後在既有營運中的高架站南端增建，2018-10-28 啟用。工程受空間與不停駛施工限制，採樓梯與無障礙電梯等配置。北投站又是淡水線少見的四軌、多月台大站，因此這張可視為 2010 年代對既有捷運基礎設施『打補丁』的城市演化紀錄。",
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -11007,7 +11859,13 @@
           "https://li.taipei/News_Content.aspx?n=8CC4391B60340D9C&s=492D887A038F525D&sms=D982815F3A372FF5&utm_source=chatgpt.com",
           "https://magazine.ncfta.gov.tw/News_Content2.aspx?n=3131&s=82570&utm_source=chatgpt.com",
           "https://magazine.ncfta.gov.tw/News_Content2.aspx?n=1932&s=82605&sms=11545&utm_source=chatgpt.com"
-        ]
+        ],
+        "detail": {
+          "status": "structured_preserved",
+          "body": "照片是大安區龍生里一扇裝飾性老式鐵門／鐵花門，『老k』查不到正式作品、建築、作者或地方文化資產對應，可能只是 Wayspot 暱稱。類型本身可放進台灣戰後住宅鐵花窗／黑鐵工藝史：1960～80 年代曾非常盛行客製化鐵件，後來逐漸被大量不鏽鋼製品取代。但目前只能說『這類型有文化史』，無法證明『這一件』的年代、作者或故事。",
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -11092,7 +11950,13 @@
           "https://crgis.rchss.sinica.edu.tw/temples/TaipeiCity/beitou/63012019-QYG?utm_source=chatgpt.com",
           "https://www.gov.taipei/News_Content.aspx?n=F0DDAF49B89E9413&s=F629FE0A13D4C09F&utm_source=chatgpt.com",
           "https://heo.gov.taipei/cp.aspx?n=7B7B4F40764D8947&utm_source=chatgpt.com"
-        ]
+        ],
+        "detail": {
+          "status": "structured_preserved",
+          "body": "位在北投洲美河雙21河濱公園的端午／屈原文化主題兒童遊戲場。官方把對應遊具稱『五彩攀爬架滑梯』，五彩意象來自端午五色絲線；同場還有龍船、粽子、白浪等主題遊具。這個設計和洲美在地屈原宮、龍舟點睛與祭江傳統相連，因此不是一般罐頭遊具。工程約 2022 開工、2023 開放，年代很新，但在地文化設計來源清楚。",
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -11178,7 +12042,13 @@
           "https://www.gov.taipei/News_Content.aspx?n=D07E52F0FF169E83&s=B82E1227BA84594F&sms=4F76BD4E1FD15647&utm_source=chatgpt.com",
           "https://www-ws.gov.taipei/001/Upload/537/relfile/26470/3886797/183011002.pdf?utm_source=chatgpt.com",
           "https://www.ptrip.gov.taipei/News_Content.aspx?n=28AD3965E62FD809&s=C5248912BFA21CC5&sms=87415A8B9CE81B16&utm_source=chatgpt.com"
-        ]
+        ],
+        "detail": {
+          "status": "structured_preserved",
+          "body": "這不是上一張河雙21遊戲場，而是北投垃圾焚化廠體系下的洲美運動公園回饋設施。公園屬典型鄰避設施補償／地方回饋脈絡：焚化廠所在地承受負擔，市府用運動、公園、游泳與公共設施回饋地方。洲美運動公園 2004-07-17 啟用，至今仍屬焚化廠回饋設施的一部分。故事很有城市治理價值，但 postcard 本體只是一塊平面配置圖，因此屬『故事值得保存，載體可替代』。",
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -11271,7 +12141,13 @@
           "https://www.aantut.org/Article_AboutUs_P02.php?utm_source=chatgpt.com",
           "https://news.ntut.edu.tw/p/404-1000-146281.php?utm_source=chatgpt.com",
           "https://me1.ntut.edu.tw/p/412-1062-10465.php?Lang=zh-tw&utm_source=chatgpt.com"
-        ]
+        ],
+        "detail": {
+          "status": "structured_preserved",
+          "body": "Wayspot 名把它簡化成『紀念碑』，實際上是北科大的『建校七十年鐘塔／鐘樓』。其源頭在 1981 前後臺北工專建校七十年與改隸國立時期，由校友號召集資興建，長期位於忠孝東路與建國南路口，成為校園精神地標。北科校史可追到 1912 年工業講習所；鐘樓一路見證臺北工專、臺北技術學院到臺北科技大學。2025 年又完成較大規模重建／整修，保留原意象與舊校徽，因此 postcard 保存了整修前綠磁磚版舊貌，具有時間膠囊價值。",
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": null
+        }
       },
       "provenance": [
         {
@@ -11346,7 +12222,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {
@@ -11426,7 +12308,13 @@
         "unresolved_questions": [
           "Recover/merge the original per-postcard research from the source-session transcript if available."
         ],
-        "sources": []
+        "sources": [],
+        "detail": {
+          "status": "not_recovered",
+          "body": null,
+          "source_path": "research/raw/postcard-session-2026-08-23.md",
+          "preservation_note": "來源 bundle 記錄這張明信片曾有逐張研究，但匯出時原研究回合已不在可用的 compacted transcript 中，因此長版未能復原。此處保留缺漏狀態，避免用後來新寫的內容冒充原始研究。"
+        }
       },
       "provenance": [
         {

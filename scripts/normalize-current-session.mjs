@@ -3,6 +3,7 @@ import { readFile, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { acquisitionFromEvidence } from "../lib/acquisition.mjs";
+import { researchDetailFromSource } from "../lib/research-details.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const sourceManifestPath = path.join(
@@ -162,6 +163,12 @@ const postcards = await Promise.all(
         confidence_label: source.research_confidence,
         summary: source.research_summary,
         sources: source.sources,
+        detail: researchDetailFromSource({
+          researchStatus: "raw-preserved",
+          summary: source.research_summary,
+          detailBody: source.research_summary,
+          sourcePath: "research/raw/current-session.md",
+        }),
       },
       provenance: [
         {
@@ -177,7 +184,7 @@ const postcards = await Promise.all(
 );
 
 const output = {
-  schema_version: 2,
+  schema_version: 3,
   archive_name: "Pikmin Postcard Archive",
   source_principles: {
     found_date_is_sent_date: false,

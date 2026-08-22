@@ -17,6 +17,10 @@ try {
     provenance_occurrences: scalar("postcard_provenance"),
     directed_relations: scalar("postcard_relations"),
     research_sources: scalar("research_sources"),
+    research_details: scalar("research_details"),
+    research_details_by_status: database
+      .prepare("SELECT status, count(*) AS count FROM research_details GROUP BY status ORDER BY status")
+      .all(),
     image_intake: scalar("image_intake"),
     image_intake_sources: scalar("image_intake_sources"),
     image_intake_by_status: database

@@ -17,6 +17,7 @@ import { fileURLToPath } from "node:url";
 import { acquisitionFromEvidence } from "../lib/acquisition.mjs";
 import { metadataKey } from "../lib/dedupe.mjs";
 import { rebuildFriends } from "../lib/friends.mjs";
+import { researchDetailFromSource } from "../lib/research-details.mjs";
 import { backupDatabase, defaultDatabasePath, openDatabase } from "../db/database.mjs";
 import { replaceDatabaseFromSnapshots } from "../db/snapshots.mjs";
 
@@ -198,6 +199,12 @@ try {
         inferences: source.inferences ?? [],
         unresolved_questions: source.unresolved_questions ?? [],
         sources: source.source_urls ?? [],
+        detail: researchDetailFromSource({
+          researchStatus: source.research_status,
+          summary: source.research_summary,
+          detailBody: source.research_detail ?? source.research_detail_body ?? null,
+          sourcePath: `research/raw/${importId}.md`,
+        }),
       },
       provenance: [provenance],
       related_postcards: [],

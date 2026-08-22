@@ -2,7 +2,7 @@
 
 Pikmin Bloom 明信片的本機收藏、研究與朋友活動範圍證據庫。
 
-目前已合併兩個 source-session bundles，共 148 張 canonical 明信片與 1 張情境截圖。原始截圖、來源 manifest、長版研究、SHA-256 與來源 session 都有保留；`見つけた日` 永遠視為 `found_date`，不會當作寄送日期。
+目前已合併兩個 source-session bundles，共 148 張 canonical 明信片與 1 張情境截圖。原始截圖、來源 manifest、可復原的長版研究、SHA-256 與來源 session 都有保留；`見つけた日` 永遠視為 `found_date`，不會當作寄送日期。
 
 ## 啟動網站
 
@@ -77,6 +77,18 @@ npm run check:duplicate -- \
 
 未來的 session manifest 應盡量保存 `send_to_friend_button_visible`、`sender_panel_visible` 與 `sender_area_blank`。匯入器會依這些畫面證據建立來源分類；沒有證據時維持未知，不套用整批猜測。
 
+## 研究筆記保存方式
+
+列表與明信片視窗先顯示適合快速閱讀的 `research.summary`；視窗內的 `RESEARCH NOTE` 可展開 `research.detail`，再顯示保存下來的長版內容、已確認事實、推論、未解問題與來源路徑。
+
+每張明信片的長版狀態會明確保存為：
+
+- `raw_preserved`：有原始研究段落可回溯。
+- `structured_preserved`：有當時保存下來的結構化研究內容。
+- `not_recovered`：來源記錄顯示曾研究過，但匯出時原研究回合已不在可用 transcript；只標示缺漏，不用新寫內容冒充原文。
+
+新 bundle 的 manifest 可在每張 postcard 加上 `research_detail`（或相容欄位 `research_detail_body`）；匯入器會和 condensed `research_summary` 分開保存。
+
 ## 資料結構
 
 - `var/pikmin-postcards.sqlite3`：本機 SQLite operational database（不進 Git）。
@@ -87,7 +99,7 @@ npm run check:duplicate -- \
 - `data/friends.json`：由已確認寄件人觀察形成的保守推論。
 - `data/context.json`：不應混入明信片列表的收藏清單／情境截圖。
 - `data/imports.json`：來源 bundle 與 checksum 紀錄。
-- `research/raw/`：詳細研究、來源與未解問題。
+- `research/raw/`：長版研究、保存狀態、來源與未解問題。
 - `imports/current-session/`：來源 session 的原始 manifest 與說明。
 - `imports/source-bundles/`：原始 ZIP bundle。
 - `scripts/normalize-current-session.mjs`：只用於建立全新 repo 時產生第一包 bootstrap records。

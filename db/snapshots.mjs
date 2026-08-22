@@ -1,6 +1,7 @@
 import { readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { validateAcquisition } from "../lib/acquisition.mjs";
+import { validateResearchDetail } from "../lib/research-details.mjs";
 import { publicPathToLocalPath } from "./asset-paths.mjs";
 import { projectRoot } from "./database.mjs";
 
@@ -30,6 +31,7 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
     "friends",
     "postcard_relations",
     "postcard_provenance",
+    "research_details",
     "research_sources",
     "research_notes",
     "postcard_tags",
@@ -64,6 +66,11 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
   const insertSource = database.prepare(
     "INSERT INTO research_sources (postcard_id, sort_order, url) VALUES (?, ?, ?)",
   );
+  const insertResearchDetail = database.prepare(`
+    INSERT INTO research_details (
+      postcard_id, status, body, source_path, preservation_note, document_json
+    ) VALUES (?, ?, ?, ?, ?, ?)
+  `);
   const insertProvenance = database.prepare(`
     INSERT INTO postcard_provenance (
       postcard_id, sort_order, source_session, source_sequence, source_bundle,
@@ -126,6 +133,7 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
 
     snapshots.postcards.postcards.forEach((record, recordIndex) => {
       const acquisition = validateAcquisition(record);
+      const researchDetail = validateResearchDetail(record);
       insertPostcard.run(
         record.id,
         recordIndex,
@@ -166,6 +174,14 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
         record.research.confidence_label,
         record.research.summary,
         JSON.stringify(record),
+      );
+      insertResearchDetail.run(
+        record.id,
+        researchDetail.status,
+        researchDetail.body,
+        researchDetail.source_path,
+        researchDetail.preservation_note,
+        JSON.stringify(researchDetail),
       );
 
       (record.curation.tags ?? []).forEach((tag, index) =>

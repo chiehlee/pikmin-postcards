@@ -43,6 +43,15 @@ type Postcard = {
     confidence_label: string;
     summary: string;
     sources: string[];
+    confirmed_facts?: string[];
+    inferences?: string[];
+    unresolved_questions?: string[];
+    detail: {
+      status: 'raw_preserved' | 'structured_preserved' | 'not_recovered';
+      body: string | null;
+      source_path: string;
+      preservation_note: string | null;
+    };
   };
   related_postcards?: {
     id: string;
@@ -364,10 +373,61 @@ export default function Home() {
                 <div><span>收藏評分</span><strong>{active.curation.rating == null ? '未評分' : `${active.curation.rating.toFixed(1)} / 5`}</strong></div>
                 <div><span>建議</span><strong>{active.curation.recommendation ?? '尚未整理'}</strong></div>
               </div>
-              <div className="detail-story">
-                <p className="eyebrow">RESEARCH NOTE</p>
-                <p>{active.research.summary}</p>
-              </div>
+              <details className="detail-story">
+                <summary>
+                  <span className="research-summary-head">
+                    <span className="eyebrow">RESEARCH NOTE</span>
+                    <span className="research-note-action">
+                      {active.research.detail.status === 'not_recovered' ? '查看保存狀態' : '展開長版研究'}
+                    </span>
+                  </span>
+                  <span className="research-summary-copy">{active.research.summary}</span>
+                </summary>
+                <div className="research-detail">
+                  {active.research.detail.status === 'not_recovered' ? (
+                    <section className="research-unavailable">
+                      <p className="eyebrow">DETAIL NOT RECOVERED</p>
+                      <h3>原始長版尚未復原</h3>
+                      <p>{active.research.detail.preservation_note}</p>
+                    </section>
+                  ) : (
+                    <>
+                      <div className="research-detail-stats">
+                        <span><small>研究信心</small>{active.research.confidence_label}</span>
+                        <span><small>已確認事實</small>{active.research.confirmed_facts?.length ?? 0}</span>
+                        <span><small>保存來源</small>{active.research.sources.length}</span>
+                      </div>
+                      <section>
+                        <p className="eyebrow">PRESERVED DETAIL</p>
+                        <h3>長版研究原文</h3>
+                        <p>{active.research.detail.body}</p>
+                      </section>
+                      {!!active.research.confirmed_facts?.length && (
+                        <section>
+                          <p className="eyebrow">CONFIRMED FACTS</p>
+                          <h3>已確認事實</h3>
+                          <ul>{active.research.confirmed_facts.map((fact) => <li key={fact}>{fact}</li>)}</ul>
+                        </section>
+                      )}
+                      {!!active.research.inferences?.length && (
+                        <section>
+                          <p className="eyebrow">INTERPRETATION</p>
+                          <h3>推論與收藏解讀</h3>
+                          <ul>{active.research.inferences.map((item) => <li key={item}>{item}</li>)}</ul>
+                        </section>
+                      )}
+                      {!!active.research.unresolved_questions?.length && (
+                        <section>
+                          <p className="eyebrow">OPEN QUESTIONS</p>
+                          <h3>仍待確認</h3>
+                          <ul>{active.research.unresolved_questions.map((question) => <li key={question}>{question}</li>)}</ul>
+                        </section>
+                      )}
+                    </>
+                  )}
+                  <p className="research-provenance">研究保存來源 · {active.research.detail.source_path}</p>
+                </div>
+              </details>
               <div className="tag-list">{active.curation.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
               {!!active.related_postcards?.length && (
                 <div className="related-list">

@@ -43,7 +43,7 @@ const updatedSnapshots = {
   ...snapshots,
   postcards: {
     ...snapshots.postcards,
-    schema_version: 2,
+    schema_version: Math.max(snapshots.postcards.schema_version ?? 1, 2),
     source_principles: {
       ...snapshots.postcards.source_principles,
       null_sender_does_not_imply_unknown: true,
