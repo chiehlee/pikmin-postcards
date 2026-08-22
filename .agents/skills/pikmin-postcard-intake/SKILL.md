@@ -38,6 +38,7 @@ description: "接收新的 Pikmin Bloom 明信片圖片、聊天附件、本機�
 - `sender: null` 本身絕不等於未知寄件人。
 - raw location、正規化 location、座標／地圖查詢與信心分開保存。沒有可靠證據時，不把 Google 的搜尋結果寫成精確座標。
 - condensed `research.summary` 與 `research.detail` 分開。保存不到原長文時明確標示缺漏，不用後寫內容冒充原文。
+- 使用者要求補做 `not_recovered` 研究時，保留原缺漏的歷史 provenance，另用帶日期的新 research status 與新的 `research/raw/` 檔保存「本次重做」；不可覆寫成已復原舊文。批次補做要有 manifest 或等價的確定性輸入，先 dry-run 驗證目標集合完全相符，再以 regression test 鎖定覆蓋數、來源檔與零殘留 `not_recovered`。
 - 事實、推論與未解問題分欄；每項外部事實保存直接支持它的 URL。
 - 不因 metadata 相同刪掉、隱藏或合併不同圖片；不因外觀相似就宣告可移除的 duplicate。duplicate candidate 與 relationship 只供檢查，只有使用者明確提出個案時才能移除或合併 postcard。
 

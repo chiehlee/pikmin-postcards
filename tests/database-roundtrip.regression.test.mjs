@@ -37,9 +37,8 @@ test("SQLite migration preserves every snapshot field exactly", async () => {
         .all()
         .map((row) => ({ ...row })),
       [
-        { status: "not_recovered", count: 107 },
         { status: "raw_preserved", count: 20 },
-        { status: "structured_preserved", count: 21 },
+        { status: "structured_preserved", count: 128 },
       ],
     );
     const assets = database.prepare("SELECT local_path FROM assets").all();

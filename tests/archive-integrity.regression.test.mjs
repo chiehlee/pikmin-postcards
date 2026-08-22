@@ -107,7 +107,7 @@ test("merged archive has the expected preservation totals", () => {
   assert.equal(postcards.filter((record) => record.provenance.length > 1).length, 2);
 });
 
-test("research detail preserves available material and names unrecovered gaps", async () => {
+test("research detail preserves available material and records gap re-research separately", async () => {
   const byStatus = Object.fromEntries(
     ["raw_preserved", "structured_preserved", "not_recovered"].map((status) => [
       status,
@@ -116,8 +116,8 @@ test("research detail preserves available material and names unrecovered gaps", 
   );
   assert.deepEqual(byStatus, {
     raw_preserved: 20,
-    structured_preserved: 21,
-    not_recovered: 107,
+    structured_preserved: 128,
+    not_recovered: 0,
   });
 
   for (const record of postcards) {
@@ -134,5 +134,5 @@ test("research detail preserves available material and names unrecovered gaps", 
 
   assert.equal(postcards.find((record) => record.id === "pc-0020").research.detail.status, "raw_preserved");
   assert.equal(postcards.find((record) => record.id === "pc-0130").research.detail.status, "structured_preserved");
-  assert.equal(postcards.find((record) => record.id === "pc-0021").research.detail.status, "not_recovered");
+  assert.equal(postcards.find((record) => record.id === "pc-0021").research.status, "re-researched_after_compaction_gap_2026-08-23");
 });
