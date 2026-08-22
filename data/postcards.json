@@ -3799,7 +3799,7 @@
       "found_date": "2026-08-09",
       "received_at": null,
       "archived_on": "2026-08-23",
-      "sender": "V",
+      "sender": null,
       "location": {
         "raw": "Chuo, Nihombashi 3-Chōme",
         "display": "Chuo, Nihombashi 3-Chōme",
@@ -3865,11 +3865,11 @@
       ],
       "related_postcards": [],
       "acquisition": {
-        "type": "received",
-        "sender_status": "confirmed",
+        "type": "self_found",
+        "sender_status": "not_applicable",
         "confidence": "high",
         "evidence": [
-          "sender-confirmed"
+          "friend-send-button-visible"
         ]
       }
     },

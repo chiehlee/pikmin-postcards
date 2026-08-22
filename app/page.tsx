@@ -298,6 +298,7 @@ export default function Home() {
   const friendGroups = useMemo(() => {
     return friendProfiles.map((profile) => ({
       name: profile.name,
+      avatar: profile.avatar,
       cards: postcards
         .filter((postcard) => profile.evidence_postcard_ids.includes(postcard.id))
         .sort((a, b) => (a.found_date ?? '').localeCompare(b.found_date ?? '')),
@@ -534,7 +535,11 @@ export default function Home() {
             {friendGroups.map((friend) => (
               <article className="friend-card" key={friend.name}>
                 <div className="friend-topline">
-                  <div className="avatar">{friend.name.slice(0, 1)}</div>
+                  <div className="avatar">
+                    {friend.avatar?.path
+                      ? <img src={friend.avatar.path} alt={`${friend.name} 的 Mii 頭像`} loading="lazy" decoding="async" />
+                      : friend.name.slice(0, 1)}
+                  </div>
                   <div><p>寄件人</p><h3>{friend.name}</h3></div>
                   <span className={`confidence confidence-${friend.confidence}`}>信心 {friend.confidence}</span>
                 </div>

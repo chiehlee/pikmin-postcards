@@ -41,23 +41,37 @@ test("related postcard references are valid and symmetric", () => {
 });
 
 test("friend evidence covers every confirmed sender and references real postcards", () => {
+  const postcardsById = new Map(postcards.map((record) => [record.id, record]));
   const postcardIds = new Set(postcards.map((record) => record.id));
   const confirmedSenders = new Set(postcards.map((record) => record.sender).filter(Boolean));
   assert.deepEqual(new Set(friends.map((profile) => profile.name)), confirmedSenders);
   for (const profile of friends) {
     for (const id of profile.evidence_postcard_ids) {
       assert.ok(postcardIds.has(id), `${profile.name} references missing ${id}`);
-      assert.equal(postcards.find((record) => record.id === id).sender, profile.name);
+      assert.equal(postcardsById.get(id).sender, profile.name);
     }
+    const source = postcardsById.get(profile.avatar.source_postcard_id);
+    assert.ok(profile.evidence_postcard_ids.includes(source.id), `${profile.name} avatar source is not evidence`);
+    assert.equal(profile.avatar.source_asset_sha256, source.asset.sha256);
+  }
+});
+
+test("friend Mii crops are local, traceable derivatives of canonical screenshots", async () => {
+  for (const profile of friends) {
+    assert.equal(profile.avatar.kind, "mii_crop");
+    const bytes = await readFile(path.join(root, "public", profile.avatar.path));
+    const actual = createHash("sha256").update(bytes).digest("hex");
+    assert.equal(actual, profile.avatar.sha256, `${profile.name} avatar checksum mismatch`);
+    assert.ok(profile.avatar.width > 0 && profile.avatar.height > 0);
   }
 });
 
 test("sender absence is separated from self-found and truly unknown senders", () => {
-  assert.equal(postcards.filter((record) => record.acquisition.type === "self_found").length, 67);
-  assert.equal(postcards.filter((record) => record.acquisition.type === "received").length, 81);
+  assert.equal(postcards.filter((record) => record.acquisition.type === "self_found").length, 68);
+  assert.equal(postcards.filter((record) => record.acquisition.type === "received").length, 80);
   assert.equal(postcards.filter((record) => record.acquisition.type === "unknown").length, 0);
-  assert.equal(postcards.filter((record) => record.acquisition.sender_status === "confirmed").length, 78);
-  assert.equal(postcards.filter((record) => record.acquisition.sender_status === "not_applicable").length, 67);
+  assert.equal(postcards.filter((record) => record.acquisition.sender_status === "confirmed").length, 77);
+  assert.equal(postcards.filter((record) => record.acquisition.sender_status === "not_applicable").length, 68);
   assert.deepEqual(
     postcards
       .filter((record) => record.acquisition.sender_status === "unknown")

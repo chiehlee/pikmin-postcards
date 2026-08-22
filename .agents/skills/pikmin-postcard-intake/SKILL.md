@@ -27,12 +27,13 @@ description: "接收新的 Pikmin Bloom 明信片圖片、聊天附件、本機�
 
 ## 不可破壞的不變條件
 
-- 原始圖片必須先落地本機並以 SHA-256 識別；canonical 原圖視為不可變更，不重新壓縮、不覆寫。
+- 原始圖片必須先落地本機並以 SHA-256 識別；已保存的原圖不可變更、不重新壓縮、不覆寫。之後收到同一張明信片的較高畫質截圖時，保留兩份 bytes 與 checksum，將高畫質版本升為網站 preferred asset，舊檔降為可追溯的 alternate，不可刪除。
 - 圖片不以 BLOB 存入 SQLite。DB 保存本機路徑、網站路徑、checksum、欄位、研究、關聯與 provenance。
 - 遠端 URL 的 query string 不可原文寫入 DB；使用現有 image intake 保存安全 locator 與完整來源的 hash。
 - `見つけた日` 是 `found_date`，不是寄送日期。
 - 畫面可見 `フレンドに送る` 代表 `self_found`，此時 `sender: null` 且 `sender_status: not_applicable`。
 - 已確認 `○○ より` 才能把姓名存成 sender。收到但名稱留白可標成 `received + unknown`；UI 證據不足則維持 acquisition `unknown`。
+- 每次都把畫面可見 sender ID 與現有 friends／postcards 重新比對。不同字串預設為不同的 provisional player，即使 Mii、地點或時間看似相同也不自動建立 alias 或合併；只有使用者明確提出個案合併時才改 player identity。名稱改變本身不能證明是同一人。
 - `sender: null` 本身絕不等於未知寄件人。
 - raw location、正規化 location、座標／地圖查詢與信心分開保存。沒有可靠證據時，不把 Google 的搜尋結果寫成精確座標。
 - condensed `research.summary` 與 `research.detail` 分開。保存不到原長文時明確標示缺漏，不用後寫內容冒充原文。
@@ -53,6 +54,14 @@ npm run image:ingest -- --source '/path/or/https-url'
 
 如果格式無法由瀏覽器直接顯示，仍保留原始 bytes；只有在資料模型明確支援 original + derived asset 後才能增加衍生圖，不可用轉檔取代原檔。
 
+同時記錄可客觀比較的品質訊號：pixel dimensions、檔案 bytes、格式，以及肉眼可見的縮放、壓縮或模糊。若 metadata 與畫面確認是同一張明信片但新檔更清晰：
+
+1. 將新檔以不同路徑保存，不覆寫舊檔。
+2. 在 postcard asset／provenance 中同時保留兩個 checksum、來源與品質訊號，明確標出 preferred 與 alternate。
+3. 網站、研究放大圖與其他 derived assets 改指向 preferred；既有歷史 checksum 仍可驗證。
+4. 若目前 schema 還不能表達多版本 asset，先新增 migration、snapshot round-trip 與 integrity tests，再 promotion；不可只換檔案讓 DB checksum 失真。
+5. 重新產生受影響的 Mii crop 或縮圖，並在交付時說明升級前後來源。
+
 ### 2. 擷取畫面證據
 
 逐項辨識並區分「看得到」與「推論得到」：
@@ -62,6 +71,7 @@ npm run image:ingest -- --source '/path/or/https-url'
 - 遊戲顯示 location 原文。
 - `フレンドに送る` 是否可見。
 - sender panel、`○○ より`、空白 sender area。
+- Mii avatar 是否清楚可裁切；只做原圖像素裁切，不用生成式方法重畫人物。記錄來源 postcard ID、來源 checksum 與 crop box，讓未來更清晰來源可以安全取代 derived avatar。
 - star、刪除 toast、其他能支持收藏狀態的 UI。
 
 依 `lib/acquisition.mjs` 建立 acquisition，不要在別處複製另一套規則。OCR 或視覺不清楚的字元保留疑問，不自行補成看似合理的名稱。
@@ -86,6 +96,7 @@ npm run check:duplicate -- \
 2. 相同 `POI + found_date + sender／acquisition identity` 但 bytes 不同：視為 probable duplicate candidate，人工比較；通常保留成不同 canonical screenshot，並建立雙向 `same-metadata-different-image`。
 3. 只有 POI 名稱接近、名稱變體或位置相同：不是 duplicate。需要時建立雙向 `same-poi-name-variant`。
 4. 已確認寄件人不同，或 `self_found` 與 `received unknown` 不同：不可靜默合併。
+5. sender ID 與既有名稱不同：先建立另一個 friend profile；可回報疑似改名線索，但除非使用者明確要求，不把兩個 profile 或其觀察歷史合併。
 
 若 exact duplicate 與使用者所稱「全新」衝突，回報 checksum 證據並只新增 provenance，不複製 canonical record。
 
@@ -118,6 +129,14 @@ npm run check:duplicate -- \
 只把目前 schema 與 UI 支援的關係寫入 `related_postcards`，而且必須雙向。時間群集、朋友據點或主題相似先作研究推論，不塞進不相符的 relationship type。若新的關係類型確有持續價值，先回報設計影響，再一起更新 schema、TypeScript、UI 與 tests。
 
 新增 confirmed sender 證據後重建／更新 `data/friends.json`。單張、單日或旅遊群集不足以宣告生活據點；證據不足時維持 low confidence 或 needs-review。
+
+Friends 頁面的 Mii avatar 使用最高品質、可確認寄件人的證據截圖產生：
+
+```bash
+npm run friends:avatars -- --commit
+```
+
+這是可丟棄後重建的 derived asset，不是身份證明。每次加入同一名稱的新證據，都比較來源像素尺寸與實際清晰度；更好的候選應更新 avatar path／checksum／crop provenance，但保留原始 postcard assets。不同 sender ID 的 Mii 看似相同時仍維持兩個 profile，等待使用者個案合併指示。
 
 ### 6. Canonicalize 並同步網站／DB
 
