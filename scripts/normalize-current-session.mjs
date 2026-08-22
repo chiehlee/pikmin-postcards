@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readFile, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { acquisitionFromEvidence } from "../lib/acquisition.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const sourceManifestPath = path.join(
@@ -133,6 +134,10 @@ const postcards = await Promise.all(
       received_at: null,
       archived_on: "2026-08-23",
       sender: source.sender,
+      acquisition: acquisitionFromEvidence({
+        sender: source.sender,
+        sendToFriendButtonVisible: source.sender == null ? true : null,
+      }),
       location: {
         raw: source.location_raw,
         ...locations[source.seq],
@@ -172,12 +177,14 @@ const postcards = await Promise.all(
 );
 
 const output = {
-  schema_version: 1,
+  schema_version: 2,
   archive_name: "Pikmin Postcard Archive",
   source_principles: {
     found_date_is_sent_date: false,
     preserve_originals: true,
     unknown_sender_must_remain_null: true,
+    null_sender_does_not_imply_unknown: true,
+    send_to_friend_button_confirms_self_found: true,
   },
   postcards,
 };

@@ -6,6 +6,7 @@ import archive from '../data/postcards.json';
 import friendArchive from '../data/friends.json';
 
 type Status = 'keep' | 'representative' | 'candidate' | 'delete' | 'unreviewed';
+type AcquisitionType = 'self_found' | 'received' | 'unknown';
 
 type Postcard = {
   id: string;
@@ -14,6 +15,12 @@ type Postcard = {
   received_at: string | null;
   archived_on: string;
   sender: string | null;
+  acquisition: {
+    type: AcquisitionType;
+    sender_status: 'not_applicable' | 'confirmed' | 'unknown';
+    confidence: 'high' | 'medium' | 'low';
+    evidence: string[];
+  };
   location: {
     raw: string;
     display: string;
@@ -72,10 +79,24 @@ function hostname(url: string) {
   }
 }
 
+function acquisitionLabel(postcard: Postcard) {
+  if (postcard.acquisition.type === 'self_found') return '自己發現';
+  if (postcard.sender) return `朋友寄來・${postcard.sender}`;
+  if (postcard.acquisition.type === 'received') return '朋友寄來・寄件人未知';
+  return '來源待確認';
+}
+
+function senderLine(postcard: Postcard) {
+  if (postcard.acquisition.type === 'self_found') return '來源：自己發現';
+  if (postcard.sender) return `寄件人：${postcard.sender}`;
+  if (postcard.acquisition.type === 'received') return '寄件人：未知';
+  return '來源：待確認';
+}
+
 export default function Home() {
   const [view, setView] = useState<'archive' | 'friends'>('archive');
   const [query, setQuery] = useState('');
-  const [sender, setSender] = useState('all');
+  const [senderFilter, setSenderFilter] = useState('all');
   const [country, setCountry] = useState('all');
   const [status, setStatus] = useState<'all' | Status>('all');
   const [sort, setSort] = useState<'rating' | 'date'>('rating');
@@ -93,7 +114,15 @@ export default function Home() {
   const filtered = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase('zh-Hant');
     return postcards
-      .filter((postcard) => sender === 'all' || (sender === 'unknown' ? !postcard.sender : postcard.sender === sender))
+      .filter((postcard) => {
+        if (senderFilter === 'all') return true;
+        if (senderFilter === 'self-found') return postcard.acquisition.type === 'self_found';
+        if (senderFilter === 'received-unknown') {
+          return postcard.acquisition.type === 'received' && postcard.acquisition.sender_status === 'unknown';
+        }
+        if (senderFilter === 'origin-unknown') return postcard.acquisition.type === 'unknown';
+        return senderFilter.startsWith('sender:') && postcard.sender === senderFilter.slice(7);
+      })
       .filter((postcard) => country === 'all' || (postcard.location.country ?? '未正規化') === country)
       .filter((postcard) => status === 'all' || postcard.curation.status === status)
       .filter((postcard) => {
@@ -104,6 +133,7 @@ export default function Home() {
           postcard.location.raw,
           postcard.location.display,
           postcard.research.summary,
+          acquisitionLabel(postcard),
           ...postcard.curation.tags,
         ]
           .join(' ')
@@ -115,7 +145,7 @@ export default function Home() {
           ? (b.curation.rating ?? -1) - (a.curation.rating ?? -1) || (b.found_date ?? '').localeCompare(a.found_date ?? '')
           : (b.found_date ?? '').localeCompare(a.found_date ?? '') || (b.curation.rating ?? -1) - (a.curation.rating ?? -1),
       );
-  }, [country, query, sender, sort, status]);
+  }, [country, query, senderFilter, sort, status]);
 
   const friendGroups = useMemo(() => {
     return friendProfiles.map((profile) => ({
@@ -182,7 +212,7 @@ export default function Home() {
 
       <aside className="evidence-note">
         <span className="note-symbol">i</span>
-        <p><strong>日期閱讀原則</strong>「見つけた日」是遊戲顯示的地標取得日，不等於寄送或收到日期。</p>
+        <p><strong>判讀原則</strong>「見つけた日」不是寄送日期；畫面有「フレンドに送る」代表自己發現。寄件人空白不再直接視為未知，只有收到明信片但身分無法確認時才標示「寄件人未知」。</p>
       </aside>
 
       {view === 'archive' ? (
@@ -206,11 +236,13 @@ export default function Home() {
               />
             </label>
             <label>
-              <span>寄件人</span>
-              <select value={sender} onChange={(event) => setSender(event.target.value)}>
+              <span>來源／寄件人</span>
+              <select value={senderFilter} onChange={(event) => setSenderFilter(event.target.value)}>
                 <option value="all">全部</option>
-                {senders.map((name) => <option key={name}>{name}</option>)}
-                <option value="unknown">未確認</option>
+                <option value="self-found">自己發現</option>
+                {senders.map((name) => <option key={name} value={`sender:${name}`}>{name}</option>)}
+                <option value="received-unknown">朋友寄來・寄件人未知</option>
+                <option value="origin-unknown">來源待確認</option>
               </select>
             </label>
             <label>
@@ -252,7 +284,7 @@ export default function Home() {
                     </div>
                     <h3><button onClick={() => setActive(postcard)}>{postcard.poi_name}</button></h3>
                     <p className="place">{postcard.location.display}</p>
-                    <p className="sender">寄件人：{postcard.sender ?? '未確認'}</p>
+                    <p className="sender">{senderLine(postcard)}</p>
                     <p className="summary">{postcard.research.summary}</p>
                   </div>
                 </article>
@@ -261,7 +293,7 @@ export default function Home() {
           ) : (
             <div className="empty-state">
               <strong>沒有符合條件的明信片</strong>
-              <button onClick={() => { setQuery(''); setSender('all'); setCountry('all'); setStatus('all'); }}>清除篩選</button>
+              <button onClick={() => { setQuery(''); setSenderFilter('all'); setCountry('all'); setStatus('all'); }}>清除篩選</button>
             </div>
           )}
         </section>
@@ -328,7 +360,7 @@ export default function Home() {
               <p className="detail-location">{active.location.display}<small>遊戲顯示：{active.location.raw}</small></p>
               <div className="detail-facts">
                 <div><span>見つけた日</span><strong>{active.found_date ?? '未確認'}</strong></div>
-                <div><span>寄件人</span><strong>{active.sender ?? '未確認'}</strong></div>
+                <div><span>來源／寄件人</span><strong>{acquisitionLabel(active)}</strong></div>
                 <div><span>收藏評分</span><strong>{active.curation.rating == null ? '未評分' : `${active.curation.rating.toFixed(1)} / 5`}</strong></div>
                 <div><span>建議</span><strong>{active.curation.recommendation ?? '尚未整理'}</strong></div>
               </div>

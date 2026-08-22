@@ -14,7 +14,9 @@ import {
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { acquisitionFromEvidence } from "../lib/acquisition.mjs";
 import { metadataKey } from "../lib/dedupe.mjs";
+import { rebuildFriends } from "../lib/friends.mjs";
 import { backupDatabase, defaultDatabasePath, openDatabase } from "../db/database.mjs";
 import { replaceDatabaseFromSnapshots } from "../db/snapshots.mjs";
 
@@ -149,6 +151,12 @@ try {
       received_at: null,
       archived_on: sourceManifest.generated_on ?? "2026-08-23",
       sender: source.sender,
+      acquisition: acquisitionFromEvidence({
+        sender: source.sender,
+        sendToFriendButtonVisible: source.send_to_friend_button_visible,
+        senderPanelVisible: source.sender_panel_visible,
+        senderAreaBlank: source.sender_area_blank,
+      }),
       location: {
         raw: source.location_displayed,
         display: source.location_displayed,
@@ -455,7 +463,10 @@ function rebuildRelations(postcards) {
       .trim()
       .replace(/^t(?=字管猴$)/i, "丁")
       .toLocaleLowerCase("zh-Hant");
-    const key = [poi, postcard.found_date ?? "", postcard.sender ?? "", postcard.location.raw ?? ""].join("|");
+    const senderIdentity = postcard.sender
+      ? `sender:${postcard.sender}`
+      : `origin:${postcard.acquisition.type}:${postcard.acquisition.sender_status}`;
+    const key = [poi, postcard.found_date ?? "", senderIdentity, postcard.location.raw ?? ""].join("|");
     if (!aliasGroups.has(key)) aliasGroups.set(key, []);
     aliasGroups.get(key).push(postcard);
   }
@@ -466,52 +477,4 @@ function rebuildRelations(postcards) {
     pairKeys.add(group.map((record) => record.id).sort().join("|"));
   }
   return pairKeys.size;
-}
-
-function rebuildFriends(postcards, previousArchive) {
-  const previousByName = new Map(previousArchive.profiles.map((profile) => [profile.name, profile]));
-  const groups = new Map();
-  for (const postcard of postcards) {
-    if (!postcard.sender) continue;
-    if (!groups.has(postcard.sender)) groups.set(postcard.sender, []);
-    groups.get(postcard.sender).push(postcard);
-  }
-
-  const profiles = [...groups.entries()]
-    .map(([name, cards]) => {
-      const evidenceIds = cards.map((card) => card.id).sort();
-      const previous = previousByName.get(name);
-      const previousIds = [...(previous?.evidence_postcard_ids ?? [])].sort();
-      const evidenceUnchanged = previous && JSON.stringify(evidenceIds) === JSON.stringify(previousIds);
-      if (evidenceUnchanged) return previous;
-
-      const dateCount = new Set(cards.map((card) => card.found_date).filter(Boolean)).size;
-      const reason = cards.length === 1
-        ? "目前只有一張觀察，無法區分生活據點與單次旅行。"
-        : `目前有 ${cards.length} 張、分布於 ${dateCount} 個見つけた日；新增資料尚未完成地點正規化與跨日群集審查，暫不推定據點。`;
-      return {
-        name,
-        evidence_postcard_ids: evidenceIds,
-        likely_base: {
-          area: null,
-          status: cards.length === 1 ? "insufficient-evidence" : "needs-review",
-          confidence: "low",
-          confidence_label: "低",
-          reason,
-        },
-        frequent_areas: [],
-        trip_clusters: [],
-        avoid_send: {
-          areas: [],
-          reason: "無；尚未完成足以產生避免寄送建議的保守推論。",
-        },
-      };
-    })
-    .sort((left, right) => right.evidence_postcard_ids.length - left.evidence_postcard_ids.length || left.name.localeCompare(right.name, "zh-Hant"));
-
-  return {
-    schema_version: 1,
-    generated_from: "data/postcards.json",
-    profiles,
-  };
 }

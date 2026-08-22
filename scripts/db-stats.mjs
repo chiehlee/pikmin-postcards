@@ -22,6 +22,12 @@ try {
     image_intake_by_status: database
       .prepare("SELECT status, count(*) AS count FROM image_intake GROUP BY status ORDER BY status")
       .all(),
+    by_acquisition_type: database
+      .prepare("SELECT acquisition_type AS type, count(*) AS count FROM postcards GROUP BY acquisition_type ORDER BY type")
+      .all(),
+    by_sender_status: database
+      .prepare("SELECT sender_status AS status, count(*) AS count FROM postcards GROUP BY sender_status ORDER BY status")
+      .all(),
     by_curation_status: database
       .prepare("SELECT curation_status AS status, count(*) AS count FROM postcards GROUP BY curation_status ORDER BY count DESC")
       .all(),

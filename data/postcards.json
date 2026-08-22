@@ -1,10 +1,12 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "archive_name": "Pikmin Postcard Archive",
   "source_principles": {
     "found_date_is_sent_date": false,
     "preserve_originals": true,
-    "unknown_sender_must_remain_null": true
+    "unknown_sender_must_remain_null": true,
+    "null_sender_does_not_imply_unknown": true,
+    "send_to_friend_button_confirms_self_found": true
   },
   "postcards": [
     {
@@ -70,7 +72,15 @@
           "id": "pc-0147",
           "relationship": "same-metadata-different-image"
         }
-      ]
+      ],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0002",
@@ -133,7 +143,15 @@
           "id": "pc-0148",
           "relationship": "same-poi-name-variant"
         }
-      ]
+      ],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0003",
@@ -194,7 +212,15 @@
           "source_screenshot": "screenshots/003_2026-05-01_Coit.png"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0004",
@@ -256,7 +282,15 @@
           "source_screenshot": "screenshots/004_2026-05-05_伊勢海老_蟹_カジキ.png"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0005",
@@ -316,7 +350,15 @@
           "source_screenshot": "screenshots/005_2026-05-08_Father_and_Son.png"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0006",
@@ -378,7 +420,15 @@
           "source_screenshot": "screenshots/006_2026-05-05_Wallart__LIFESAVER_.png"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0007",
@@ -440,7 +490,15 @@
           "source_screenshot": "screenshots/007_2026-05-09_北投教會.png"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0008",
@@ -503,7 +561,15 @@
           "source_screenshot": "screenshots/008_2026-05-10_大業路旁山水彩繪.png"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0009",
@@ -565,7 +631,15 @@
           "source_screenshot": "screenshots/009_2026-05-10_擎天觸地.png"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0010",
@@ -627,7 +701,15 @@
           "source_screenshot": "screenshots/010_2026-05-10_北投與磺港溪環境紋理變遷_說明牌.png"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0011",
@@ -688,7 +770,15 @@
           "source_screenshot": "screenshots/011_2026-05-11_北投市場變電箱.png"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0012",
@@ -751,7 +841,15 @@
           "source_screenshot": "screenshots/012_2026-05-05_經國先生銅像.jpeg"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0013",
@@ -810,7 +908,15 @@
           "source_screenshot": "screenshots/013_2026-05-12_長安公園全區導覽圖.jpeg"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0014",
@@ -870,7 +976,15 @@
           "source_screenshot": "screenshots/014_2026-05-12_Bruce_Lee_Mural.jpeg"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0015",
@@ -932,7 +1046,15 @@
           "source_screenshot": "screenshots/015_2026-05-14_CK124蒸汽火車特色郵筒.jpeg"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0016",
@@ -994,7 +1116,15 @@
           "source_screenshot": "screenshots/016_2026-05-01_蔣公立像.jpeg"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0017",
@@ -1056,7 +1186,15 @@
           "source_screenshot": "screenshots/017_2026-05-16_舊貴子坑溪導覽圖.png"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0018",
@@ -1117,7 +1255,15 @@
           "source_screenshot": "screenshots/018_2026-05-16_松山文創漆作壁畫《菸縷時光》.png"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0019",
@@ -1180,7 +1326,15 @@
           "source_screenshot": "screenshots/019_2026-05-17_CORNER_MAX_大角落多功能展演館.png"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0020",
@@ -1239,7 +1393,15 @@
           "source_screenshot": "screenshots/020_2026-05-17_金字塔2.png"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0021",
@@ -1306,7 +1468,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0022",
@@ -1373,7 +1543,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0023",
@@ -1440,7 +1618,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0024",
@@ -1507,7 +1693,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0025",
@@ -1574,7 +1768,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0026",
@@ -1641,7 +1843,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0027",
@@ -1708,7 +1918,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0028",
@@ -1775,7 +1993,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0029",
@@ -1842,7 +2068,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0030",
@@ -1909,7 +2143,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0031",
@@ -1976,7 +2218,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0032",
@@ -2043,7 +2293,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0033",
@@ -2110,7 +2368,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0034",
@@ -2177,7 +2443,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0035",
@@ -2244,7 +2518,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0036",
@@ -2311,7 +2593,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0037",
@@ -2378,7 +2668,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0038",
@@ -2445,7 +2743,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0039",
@@ -2512,7 +2818,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0040",
@@ -2579,7 +2893,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0041",
@@ -2646,7 +2968,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0042",
@@ -2713,7 +3043,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0043",
@@ -2780,7 +3118,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0044",
@@ -2847,7 +3193,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0045",
@@ -2914,7 +3268,16 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "unknown",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-absent",
+          "sender-area-blank"
+        ]
+      }
     },
     {
       "id": "pc-0046",
@@ -2981,7 +3344,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0047",
@@ -3048,7 +3419,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0048",
@@ -3115,7 +3494,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0049",
@@ -3182,7 +3569,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0050",
@@ -3249,7 +3644,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0051",
@@ -3316,7 +3719,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0052",
@@ -3383,7 +3794,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0053",
@@ -3450,7 +3869,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0054",
@@ -3517,7 +3944,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0055",
@@ -3584,7 +4019,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0056",
@@ -3651,7 +4094,16 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "unknown",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-absent",
+          "sender-area-blank"
+        ]
+      }
     },
     {
       "id": "pc-0057",
@@ -3718,7 +4170,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0058",
@@ -3785,7 +4245,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0059",
@@ -3852,7 +4320,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0060",
@@ -3919,7 +4395,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0061",
@@ -3991,7 +4475,15 @@
           "id": "pc-0076",
           "relationship": "same-metadata-different-image"
         }
-      ]
+      ],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0062",
@@ -4058,7 +4550,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0063",
@@ -4125,7 +4625,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0064",
@@ -4192,7 +4700,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0065",
@@ -4259,7 +4775,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0066",
@@ -4326,7 +4850,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0067",
@@ -4393,7 +4925,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0068",
@@ -4460,7 +5000,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0069",
@@ -4527,7 +5075,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0070",
@@ -4594,7 +5150,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0071",
@@ -4661,7 +5225,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0072",
@@ -4728,7 +5300,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0073",
@@ -4795,7 +5375,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0074",
@@ -4862,7 +5450,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0075",
@@ -4929,7 +5525,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0076",
@@ -5001,7 +5605,15 @@
           "id": "pc-0061",
           "relationship": "same-metadata-different-image"
         }
-      ]
+      ],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0077",
@@ -5085,7 +5697,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0078",
@@ -5152,7 +5772,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0079",
@@ -5219,7 +5847,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0080",
@@ -5291,7 +5927,15 @@
           "id": "pc-0081",
           "relationship": "same-metadata-different-image"
         }
-      ]
+      ],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0081",
@@ -5363,7 +6007,15 @@
           "id": "pc-0080",
           "relationship": "same-metadata-different-image"
         }
-      ]
+      ],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0082",
@@ -5430,7 +6082,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0083",
@@ -5497,7 +6157,17 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "unknown",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-absent",
+          "sender-panel-visible",
+          "sender-name-unresolved"
+        ]
+      }
     },
     {
       "id": "pc-0084",
@@ -5506,7 +6176,7 @@
       "found_date": null,
       "received_at": null,
       "archived_on": "2026-08-23",
-      "sender": null,
+      "sender": "유니",
       "location": {
         "raw": "Seoul",
         "display": "Seoul",
@@ -5564,7 +6234,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-label-visible"
+        ]
+      }
     },
     {
       "id": "pc-0085",
@@ -5631,7 +6309,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0086",
@@ -5698,7 +6384,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0087",
@@ -5765,7 +6459,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0088",
@@ -5832,7 +6534,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0089",
@@ -5899,7 +6609,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0090",
@@ -5966,7 +6684,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0091",
@@ -6033,7 +6759,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0092",
@@ -6105,7 +6839,15 @@
           "id": "pc-0096",
           "relationship": "same-metadata-different-image"
         }
-      ]
+      ],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0093",
@@ -6177,7 +6919,15 @@
           "id": "pc-0097",
           "relationship": "same-metadata-different-image"
         }
-      ]
+      ],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0094",
@@ -6244,7 +6994,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0095",
@@ -6311,7 +7069,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0096",
@@ -6383,7 +7149,15 @@
           "id": "pc-0092",
           "relationship": "same-metadata-different-image"
         }
-      ]
+      ],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0097",
@@ -6455,7 +7229,15 @@
           "id": "pc-0093",
           "relationship": "same-metadata-different-image"
         }
-      ]
+      ],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0098",
@@ -6522,7 +7304,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0099",
@@ -6589,7 +7379,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0100",
@@ -6656,7 +7454,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0101",
@@ -6723,7 +7529,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0102",
@@ -6795,7 +7609,15 @@
           "id": "pc-0110",
           "relationship": "same-metadata-different-image"
         }
-      ]
+      ],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0103",
@@ -6887,7 +7709,15 @@
           "id": "pc-0127",
           "relationship": "same-metadata-different-image"
         }
-      ]
+      ],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0104",
@@ -6954,7 +7784,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0105",
@@ -7026,7 +7864,15 @@
           "id": "pc-0125",
           "relationship": "same-metadata-different-image"
         }
-      ]
+      ],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0106",
@@ -7098,7 +7944,15 @@
           "id": "pc-0124",
           "relationship": "same-metadata-different-image"
         }
-      ]
+      ],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0107",
@@ -7170,7 +8024,15 @@
           "id": "pc-0123",
           "relationship": "same-metadata-different-image"
         }
-      ]
+      ],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0108",
@@ -7242,7 +8104,15 @@
           "id": "pc-0122",
           "relationship": "same-metadata-different-image"
         }
-      ]
+      ],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0109",
@@ -7314,7 +8184,15 @@
           "id": "pc-0121",
           "relationship": "same-metadata-different-image"
         }
-      ]
+      ],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0110",
@@ -7386,7 +8264,15 @@
           "id": "pc-0102",
           "relationship": "same-metadata-different-image"
         }
-      ]
+      ],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0111",
@@ -7458,7 +8344,15 @@
           "id": "pc-0112",
           "relationship": "same-metadata-different-image"
         }
-      ]
+      ],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0112",
@@ -7530,7 +8424,15 @@
           "id": "pc-0111",
           "relationship": "same-metadata-different-image"
         }
-      ]
+      ],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0113",
@@ -7597,7 +8499,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0114",
@@ -7664,7 +8574,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0115",
@@ -7731,7 +8649,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0116",
@@ -7798,7 +8724,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0117",
@@ -7865,7 +8799,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0118",
@@ -7932,7 +8874,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0119",
@@ -7999,7 +8949,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0120",
@@ -8066,7 +9024,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0121",
@@ -8138,7 +9104,15 @@
           "id": "pc-0109",
           "relationship": "same-metadata-different-image"
         }
-      ]
+      ],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0122",
@@ -8210,7 +9184,15 @@
           "id": "pc-0108",
           "relationship": "same-metadata-different-image"
         }
-      ]
+      ],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0123",
@@ -8282,7 +9264,15 @@
           "id": "pc-0107",
           "relationship": "same-metadata-different-image"
         }
-      ]
+      ],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0124",
@@ -8354,7 +9344,15 @@
           "id": "pc-0106",
           "relationship": "same-metadata-different-image"
         }
-      ]
+      ],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0125",
@@ -8426,7 +9424,15 @@
           "id": "pc-0105",
           "relationship": "same-metadata-different-image"
         }
-      ]
+      ],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0126",
@@ -8435,7 +9441,7 @@
       "found_date": "2026-03-25",
       "received_at": null,
       "archived_on": "2026-08-23",
-      "sender": null,
+      "sender": "柳柳",
       "location": {
         "raw": "Inakadate, Takahi Omagari",
         "display": "Inakadate, Takahi Omagari",
@@ -8493,7 +9499,15 @@
           "research_status": "prior_research_not_recovered_from_compacted_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-label-visible"
+        ]
+      }
     },
     {
       "id": "pc-0127",
@@ -8585,7 +9599,15 @@
           "id": "pc-0103",
           "relationship": "same-metadata-different-image"
         }
-      ]
+      ],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0128",
@@ -8663,7 +9685,15 @@
           "research_status": "preserved_detail_from_visible_session_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0129",
@@ -8743,7 +9773,15 @@
           "research_status": "preserved_detail_from_visible_session_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0130",
@@ -8841,7 +9879,15 @@
           "research_status": "preserved_detail_from_visible_session_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0131",
@@ -8924,7 +9970,15 @@
           "research_status": "preserved_detail_from_visible_session_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0132",
@@ -9003,7 +10057,15 @@
           "research_status": "preserved_detail_from_visible_session_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0133",
@@ -9012,7 +10074,7 @@
       "found_date": null,
       "received_at": null,
       "archived_on": "2026-08-23",
-      "sender": null,
+      "sender": "柳柳",
       "location": {
         "raw": "Qianxi, East District",
         "display": "Qianxi, East District",
@@ -9089,7 +10151,15 @@
           "research_status": "preserved_detail_from_visible_session_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-label-visible"
+        ]
+      }
     },
     {
       "id": "pc-0134",
@@ -9163,7 +10233,15 @@
           "research_status": "preserved_detail_from_visible_session_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0135",
@@ -9245,7 +10323,15 @@
           "research_status": "preserved_detail_from_visible_session_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0136",
@@ -9322,7 +10408,15 @@
           "research_status": "preserved_detail_from_visible_session_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0137",
@@ -9402,7 +10496,15 @@
           "research_status": "preserved_detail_from_visible_session_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0138",
@@ -9480,7 +10582,15 @@
           "research_status": "preserved_detail_from_visible_session_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0139",
@@ -9562,7 +10672,15 @@
           "research_status": "preserved_detail_from_visible_session_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0140",
@@ -9644,7 +10762,15 @@
           "research_status": "preserved_detail_from_visible_session_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0141",
@@ -9723,7 +10849,15 @@
           "research_status": "preserved_detail_from_visible_session_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "received",
+        "sender_status": "confirmed",
+        "confidence": "high",
+        "evidence": [
+          "sender-confirmed"
+        ]
+      }
     },
     {
       "id": "pc-0142",
@@ -9803,7 +10937,15 @@
           "research_status": "preserved_detail_from_visible_session_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0143",
@@ -9880,7 +11022,15 @@
           "research_status": "preserved_detail_from_visible_session_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0144",
@@ -9957,7 +11107,15 @@
           "research_status": "preserved_detail_from_visible_session_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0145",
@@ -10035,7 +11193,15 @@
           "research_status": "preserved_detail_from_visible_session_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0146",
@@ -10120,7 +11286,15 @@
           "research_status": "preserved_detail_from_visible_session_context"
         }
       ],
-      "related_postcards": []
+      "related_postcards": [],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0147",
@@ -10192,7 +11366,15 @@
           "id": "pc-0001",
           "relationship": "same-metadata-different-image"
         }
-      ]
+      ],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     },
     {
       "id": "pc-0148",
@@ -10264,7 +11446,15 @@
           "id": "pc-0002",
           "relationship": "same-poi-name-variant"
         }
-      ]
+      ],
+      "acquisition": {
+        "type": "self_found",
+        "sender_status": "not_applicable",
+        "confidence": "high",
+        "evidence": [
+          "send-to-friend-button-visible"
+        ]
+      }
     }
   ]
 }

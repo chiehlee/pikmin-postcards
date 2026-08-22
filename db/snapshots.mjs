@@ -1,5 +1,6 @@
 import { readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { validateAcquisition } from "../lib/acquisition.mjs";
 import { publicPathToLocalPath } from "./asset-paths.mjs";
 import { projectRoot } from "./database.mjs";
 
@@ -45,13 +46,14 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
   const insertPostcard = database.prepare(`
     INSERT INTO postcards (
       id, sort_order, record_type, poi_name, found_date, received_at, archived_on, sender,
+      acquisition_type, sender_status, acquisition_confidence, acquisition_evidence_json,
       location_raw, location_display, location_city, location_district, location_locality,
       location_region, location_county, location_country, location_country_code, latitude,
       longitude, location_confidence, asset_sha256, rating, rating_raw, rating_min, rating_max,
       recommendation, curation_status, personal_relevance, star_visible,
       deletion_toast_visible, research_status, research_confidence,
       research_confidence_label, research_summary, document_json
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const insertTag = database.prepare(
     "INSERT INTO postcard_tags (postcard_id, tag, sort_order) VALUES (?, ?, ?)",
@@ -123,6 +125,7 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
     }
 
     snapshots.postcards.postcards.forEach((record, recordIndex) => {
+      const acquisition = validateAcquisition(record);
       insertPostcard.run(
         record.id,
         recordIndex,
@@ -132,6 +135,10 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
         record.received_at,
         record.archived_on,
         record.sender,
+        acquisition.type,
+        acquisition.sender_status,
+        acquisition.confidence,
+        JSON.stringify(acquisition.evidence),
         record.location.raw,
         record.location.display,
         record.location.city ?? null,

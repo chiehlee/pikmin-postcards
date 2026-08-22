@@ -7,6 +7,7 @@ const goldenPyramid = {
   poi_name: "金字塔2",
   found_date: "2026-05-17",
   sender: null,
+  acquisition: { type: "self_found", sender_status: "not_applicable" },
   asset: { sha256: "original-screenshot-hash" },
 };
 
@@ -22,11 +23,17 @@ test("identical screenshot hash is an exact duplicate", () => {
 
 test("the supplied 金字塔2 test case is caught when screenshot bytes differ", () => {
   const match = findDuplicate(
-    { poi_name: "金字塔2", found_date: "2026-05-17", sender: null, sha256: "different-status-bar-hash" },
+    {
+      poi_name: "金字塔2",
+      found_date: "2026-05-17",
+      sender: null,
+      acquisition: { type: "self_found", sender_status: "not_applicable" },
+      sha256: "different-status-bar-hash",
+    },
     [goldenPyramid],
   );
   assert.equal(match.duplicate, true);
-  assert.equal(match.match_type, "poi_found_date_sender");
+  assert.equal(match.match_type, "poi_found_date_sender_origin");
   assert.equal(match.confidence, "probable");
   assert.equal(match.record.id, "pc-0020");
 });
@@ -34,6 +41,20 @@ test("the supplied 金字塔2 test case is caught when screenshot bytes differ",
 test("a different confirmed sender is not silently merged", () => {
   const match = findDuplicate(
     { poi_name: "金字塔2", found_date: "2026-05-17", sender: "菎娜", sha256: "new-hash" },
+    [goldenPyramid],
+  );
+  assert.equal(match.duplicate, false);
+});
+
+test("self-found and received-with-unknown-sender are not silently merged", () => {
+  const match = findDuplicate(
+    {
+      poi_name: "金字塔2",
+      found_date: "2026-05-17",
+      sender: null,
+      acquisition: { type: "received", sender_status: "unknown" },
+      sha256: "new-received-hash",
+    },
     [goldenPyramid],
   );
   assert.equal(match.duplicate, false);

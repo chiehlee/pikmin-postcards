@@ -52,8 +52,26 @@ test("friend evidence covers every confirmed sender and references real postcard
   }
 });
 
+test("sender absence is separated from self-found and truly unknown senders", () => {
+  assert.equal(postcards.filter((record) => record.acquisition.type === "self_found").length, 67);
+  assert.equal(postcards.filter((record) => record.acquisition.type === "received").length, 81);
+  assert.equal(postcards.filter((record) => record.acquisition.type === "unknown").length, 0);
+  assert.equal(postcards.filter((record) => record.acquisition.sender_status === "confirmed").length, 78);
+  assert.equal(postcards.filter((record) => record.acquisition.sender_status === "not_applicable").length, 67);
+  assert.deepEqual(
+    postcards
+      .filter((record) => record.acquisition.sender_status === "unknown")
+      .map((record) => record.id)
+      .sort(),
+    ["pc-0045", "pc-0056", "pc-0083"],
+  );
+  assert.equal(postcards.find((record) => record.id === "pc-0020").acquisition.type, "self_found");
+  assert.equal(postcards.find((record) => record.id === "pc-0126").sender, "柳柳");
+});
+
 test("merged archive has the expected preservation totals", () => {
   assert.equal(postcards.length, 148);
   assert.equal(contexts.length, 1);
+  assert.equal(friends.length, 29);
   assert.equal(postcards.filter((record) => record.provenance.length > 1).length, 2);
 });

@@ -13,6 +13,7 @@
     "start:lan": "vinext start --host 0.0.0.0",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "normalize:bootstrap": "node scripts/normalize-current-session.mjs",
+    "backfill:acquisition": "node --disable-warning=ExperimentalWarning scripts/backfill-acquisition.mjs",
     "merge:bundle": "node --disable-warning=ExperimentalWarning scripts/merge-session-bundle.mjs",
     "check:duplicate": "node --disable-warning=ExperimentalWarning scripts/check-duplicate.mjs",
     "image:ingest": "node --disable-warning=ExperimentalWarning scripts/ingest-image.mjs",

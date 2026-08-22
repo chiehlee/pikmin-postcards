@@ -30,6 +30,12 @@ test("SQLite migration preserves every snapshot field exactly", async () => {
       .map((row) => row.detail)
       .join(" | ");
     assert.match(senderPlan, /idx_postcards_sender_found_date/);
+    const acquisitionPlan = database
+      .prepare("EXPLAIN QUERY PLAN SELECT id FROM postcards WHERE acquisition_type = ?")
+      .all("self_found")
+      .map((row) => row.detail)
+      .join(" | ");
+    assert.match(acquisitionPlan, /idx_postcards_acquisition_type/);
   } finally {
     database.close();
     await rm(temporaryDirectory, { recursive: true, force: true });

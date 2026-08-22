@@ -34,9 +34,15 @@ try {
     .all("public/images/postcards/example.png")
     .map((row) => row.detail)
     .join(" | ");
+  const acquisitionPlan = database
+    .prepare("EXPLAIN QUERY PLAN SELECT id FROM postcards WHERE acquisition_type = ?")
+    .all("self_found")
+    .map((row) => row.detail)
+    .join(" | ");
   assert.match(senderPlan, /idx_postcards_sender_found_date/);
   assert.match(curationPlan, /idx_postcards_curation_status_rating/);
   assert.match(localPathPlan, /idx_assets_local_path/);
+  assert.match(acquisitionPlan, /idx_postcards_acquisition_type/);
 
   console.log(
     JSON.stringify(
@@ -49,6 +55,7 @@ try {
           sender_timeline: senderPlan,
           curation_filter: curationPlan,
           local_asset_lookup: localPathPlan,
+          acquisition_filter: acquisitionPlan,
         },
       },
       null,

@@ -3,6 +3,31 @@
   "generated_from": "data/postcards.json",
   "profiles": [
     {
+      "name": "柳柳",
+      "evidence_postcard_ids": [
+        "pc-0003",
+        "pc-0104",
+        "pc-0126",
+        "pc-0129",
+        "pc-0133",
+        "pc-0134",
+        "pc-0141"
+      ],
+      "likely_base": {
+        "area": null,
+        "status": "needs-review",
+        "confidence": "low",
+        "confidence_label": "低",
+        "reason": "目前有 7 張、分布於 5 個見つけた日；新增資料尚未完成地點正規化與跨日群集審查，暫不推定據點。"
+      },
+      "frequent_areas": [],
+      "trip_clusters": [],
+      "avoid_send": {
+        "areas": [],
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
+      }
+    },
+    {
       "name": "V",
       "evidence_postcard_ids": [
         "pc-0024",
@@ -59,29 +84,6 @@
         "pc-0047",
         "pc-0064",
         "pc-0098"
-      ],
-      "likely_base": {
-        "area": null,
-        "status": "needs-review",
-        "confidence": "low",
-        "confidence_label": "低",
-        "reason": "目前有 5 張、分布於 5 個見つけた日；新增資料尚未完成地點正規化與跨日群集審查，暫不推定據點。"
-      },
-      "frequent_areas": [],
-      "trip_clusters": [],
-      "avoid_send": {
-        "areas": [],
-        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
-      }
-    },
-    {
-      "name": "柳柳",
-      "evidence_postcard_ids": [
-        "pc-0003",
-        "pc-0104",
-        "pc-0129",
-        "pc-0134",
-        "pc-0141"
       ],
       "likely_base": {
         "area": null,
@@ -528,6 +530,25 @@
       "name": "Zana",
       "evidence_postcard_ids": [
         "pc-0082"
+      ],
+      "likely_base": {
+        "area": null,
+        "status": "insufficient-evidence",
+        "confidence": "low",
+        "confidence_label": "低",
+        "reason": "目前只有一張觀察，無法區分生活據點與單次旅行。"
+      },
+      "frequent_areas": [],
+      "trip_clusters": [],
+      "avoid_send": {
+        "areas": [],
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
+      }
+    },
+    {
+      "name": "유니",
+      "evidence_postcard_ids": [
+        "pc-0084"
       ],
       "likely_base": {
         "area": null,

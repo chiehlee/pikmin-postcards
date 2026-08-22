@@ -56,14 +56,26 @@ npm run db:verify
 npm run check:duplicate -- \
   --image /path/to/postcard.png \
   --poi '金字塔2' \
-  --found-date 2026-05-17
+  --found-date 2026-05-17 \
+  --origin self_found
 ```
 
 去重順序：
 
 1. 圖片 SHA-256 完全相同：確定重複。
-2. `POI + found_date + sender` 完全相同：可能重複，交由人工確認。
+2. `POI + found_date + sender／來源狀態` 完全相同：可能重複，交由人工確認。
 3. 已確認寄件人不同：不自動合併。
+
+## 來源與寄件人判讀
+
+`sender: null` 不等於「未知寄件人」。每張明信片另有 `acquisition`，把來源和寄件人狀態分開：
+
+- 畫面可見 `フレンドに送る`：`self_found`，代表自己發現；寄件人欄位不適用。
+- 畫面有已確認的 `○○ より`：`received`，並保存實際寄件人。
+- 收到的明信片沒有可確認名稱，例如好友已移除後畫面留白：`received`，但 `sender_status` 為 `unknown`。
+- UI 證據不足時才使用 `acquisition.type: unknown`，不以 `sender: null` 自動猜測。
+
+未來的 session manifest 應盡量保存 `send_to_friend_button_visible`、`sender_panel_visible` 與 `sender_area_blank`。匯入器會依這些畫面證據建立來源分類；沒有證據時維持未知，不套用整批猜測。
 
 ## 資料結構
 
