@@ -1,10 +1,9 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { findDuplicate } from "../lib/dedupe.mjs";
+import { openDatabase } from "../db/database.mjs";
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const args = new Map();
 for (let index = 2; index < process.argv.length; index += 2) {
   args.set(process.argv[index], process.argv[index + 1]);
@@ -17,9 +16,12 @@ if (!["--image", "--poi", "--found-date"].some((key) => args.has(key))) {
   process.exit(1);
 }
 
-const archive = JSON.parse(
-  await readFile(path.join(root, "data/postcards.json"), "utf8"),
-);
+const database = await openDatabase();
+const existingRecords = database
+  .prepare("SELECT document_json FROM postcards ORDER BY sort_order")
+  .all()
+  .map((row) => JSON.parse(row.document_json));
+database.close();
 const imagePath = args.get("--image");
 const imageHash = imagePath
   ? createHash("sha256").update(await readFile(path.resolve(imagePath))).digest("hex")
@@ -32,7 +34,7 @@ const result = findDuplicate(
     sender: args.get("--sender") ?? null,
     sha256: imageHash,
   },
-  archive.postcards,
+  existingRecords,
 );
 
 console.log(

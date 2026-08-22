@@ -15,6 +15,8 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { metadataKey } from "../lib/dedupe.mjs";
+import { backupDatabase, defaultDatabasePath, openDatabase } from "../db/database.mjs";
+import { replaceDatabaseFromSnapshots } from "../db/snapshots.mjs";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const args = parseArgs(process.argv.slice(2));
@@ -256,13 +258,27 @@ try {
     path.join(projectRoot, "research/raw", `${importId}.md`),
   );
 
-  await writeJsonAtomic(postcardsPath, { ...postcardArchive, postcards });
-  await writeJsonAtomic(contextsPath, { schema_version: 1, records: contexts });
-  await writeJsonAtomic(friendsPath, friends);
-  await writeJsonAtomic(importsPath, {
-    ...importArchive,
-    imports: [...importArchive.imports, newImport],
-  });
+  const mergedSnapshots = {
+    postcards: { ...postcardArchive, postcards },
+    context: { schema_version: 1, records: contexts },
+    friends,
+    imports: {
+      ...importArchive,
+      imports: [...importArchive.imports, newImport],
+    },
+  };
+  await backupDatabase(defaultDatabasePath);
+  const database = await openDatabase(defaultDatabasePath);
+  try {
+    replaceDatabaseFromSnapshots(database, mergedSnapshots);
+  } finally {
+    database.close();
+  }
+
+  await writeJsonAtomic(postcardsPath, mergedSnapshots.postcards);
+  await writeJsonAtomic(contextsPath, mergedSnapshots.context);
+  await writeJsonAtomic(friendsPath, mergedSnapshots.friends);
+  await writeJsonAtomic(importsPath, mergedSnapshots.imports);
 
   console.log(JSON.stringify(report, null, 2));
 } finally {
