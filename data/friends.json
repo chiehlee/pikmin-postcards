@@ -3,8 +3,339 @@
   "generated_from": "data/postcards.json",
   "profiles": [
     {
+      "name": "V",
+      "evidence_postcard_ids": [
+        "pc-0024",
+        "pc-0028",
+        "pc-0049",
+        "pc-0054",
+        "pc-0060",
+        "pc-0086",
+        "pc-0095"
+      ],
+      "likely_base": {
+        "area": null,
+        "status": "needs-review",
+        "confidence": "low",
+        "confidence_label": "低",
+        "reason": "目前有 7 張、分布於 6 個見つけた日；新增資料尚未完成地點正規化與跨日群集審查，暫不推定據點。"
+      },
+      "frequent_areas": [],
+      "trip_clusters": [],
+      "avoid_send": {
+        "areas": [],
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
+      }
+    },
+    {
+      "name": "Yumi",
+      "evidence_postcard_ids": [
+        "pc-0021",
+        "pc-0037",
+        "pc-0048",
+        "pc-0069",
+        "pc-0093",
+        "pc-0097"
+      ],
+      "likely_base": {
+        "area": null,
+        "status": "needs-review",
+        "confidence": "low",
+        "confidence_label": "低",
+        "reason": "目前有 6 張、分布於 5 個見つけた日；新增資料尚未完成地點正規化與跨日群集審查，暫不推定據點。"
+      },
+      "frequent_areas": [],
+      "trip_clusters": [],
+      "avoid_send": {
+        "areas": [],
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
+      }
+    },
+    {
+      "name": "花花",
+      "evidence_postcard_ids": [
+        "pc-0029",
+        "pc-0035",
+        "pc-0047",
+        "pc-0064",
+        "pc-0098"
+      ],
+      "likely_base": {
+        "area": null,
+        "status": "needs-review",
+        "confidence": "low",
+        "confidence_label": "低",
+        "reason": "目前有 5 張、分布於 5 個見つけた日；新增資料尚未完成地點正規化與跨日群集審查，暫不推定據點。"
+      },
+      "frequent_areas": [],
+      "trip_clusters": [],
+      "avoid_send": {
+        "areas": [],
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
+      }
+    },
+    {
+      "name": "柳柳",
+      "evidence_postcard_ids": [
+        "pc-0003",
+        "pc-0104",
+        "pc-0129",
+        "pc-0134",
+        "pc-0141"
+      ],
+      "likely_base": {
+        "area": null,
+        "status": "needs-review",
+        "confidence": "low",
+        "confidence_label": "低",
+        "reason": "目前有 5 張、分布於 5 個見つけた日；新增資料尚未完成地點正規化與跨日群集審查，暫不推定據點。"
+      },
+      "frequent_areas": [],
+      "trip_clusters": [],
+      "avoid_send": {
+        "areas": [],
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
+      }
+    },
+    {
+      "name": "Ushas",
+      "evidence_postcard_ids": [
+        "pc-0046",
+        "pc-0053",
+        "pc-0068",
+        "pc-0102",
+        "pc-0110"
+      ],
+      "likely_base": {
+        "area": null,
+        "status": "needs-review",
+        "confidence": "low",
+        "confidence_label": "低",
+        "reason": "目前有 5 張、分布於 4 個見つけた日；新增資料尚未完成地點正規化與跨日群集審查，暫不推定據點。"
+      },
+      "frequent_areas": [],
+      "trip_clusters": [],
+      "avoid_send": {
+        "areas": [],
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
+      }
+    },
+    {
+      "name": "JessieJc",
+      "evidence_postcard_ids": [
+        "pc-0041",
+        "pc-0065",
+        "pc-0092",
+        "pc-0096"
+      ],
+      "likely_base": {
+        "area": null,
+        "status": "needs-review",
+        "confidence": "low",
+        "confidence_label": "低",
+        "reason": "目前有 4 張、分布於 3 個見つけた日；新增資料尚未完成地點正規化與跨日群集審查，暫不推定據點。"
+      },
+      "frequent_areas": [],
+      "trip_clusters": [],
+      "avoid_send": {
+        "areas": [],
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
+      }
+    },
+    {
+      "name": "Sha",
+      "evidence_postcard_ids": [
+        "pc-0023",
+        "pc-0044",
+        "pc-0073",
+        "pc-0094"
+      ],
+      "likely_base": {
+        "area": null,
+        "status": "needs-review",
+        "confidence": "low",
+        "confidence_label": "低",
+        "reason": "目前有 4 張、分布於 4 個見つけた日；新增資料尚未完成地點正規化與跨日群集審查，暫不推定據點。"
+      },
+      "frequent_areas": [],
+      "trip_clusters": [],
+      "avoid_send": {
+        "areas": [],
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
+      }
+    },
+    {
+      "name": "りゅう",
+      "evidence_postcard_ids": [
+        "pc-0004",
+        "pc-0005",
+        "pc-0006",
+        "pc-0117"
+      ],
+      "likely_base": {
+        "area": null,
+        "status": "needs-review",
+        "confidence": "low",
+        "confidence_label": "低",
+        "reason": "目前有 4 張、分布於 3 個見つけた日；新增資料尚未完成地點正規化與跨日群集審查，暫不推定據點。"
+      },
+      "frequent_areas": [],
+      "trip_clusters": [],
+      "avoid_send": {
+        "areas": [],
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
+      }
+    },
+    {
+      "name": "🍎Ching🍎",
+      "evidence_postcard_ids": [
+        "pc-0043",
+        "pc-0070",
+        "pc-0091"
+      ],
+      "likely_base": {
+        "area": null,
+        "status": "needs-review",
+        "confidence": "low",
+        "confidence_label": "低",
+        "reason": "目前有 3 張、分布於 3 個見つけた日；新增資料尚未完成地點正規化與跨日群集審查，暫不推定據點。"
+      },
+      "frequent_areas": [],
+      "trip_clusters": [],
+      "avoid_send": {
+        "areas": [],
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
+      }
+    },
+    {
+      "name": "C.C.",
+      "evidence_postcard_ids": [
+        "pc-0025",
+        "pc-0027",
+        "pc-0036"
+      ],
+      "likely_base": {
+        "area": null,
+        "status": "needs-review",
+        "confidence": "low",
+        "confidence_label": "低",
+        "reason": "目前有 3 張、分布於 3 個見つけた日；新增資料尚未完成地點正規化與跨日群集審查，暫不推定據點。"
+      },
+      "frequent_areas": [],
+      "trip_clusters": [],
+      "avoid_send": {
+        "areas": [],
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
+      }
+    },
+    {
+      "name": "Xuan",
+      "evidence_postcard_ids": [
+        "pc-0033",
+        "pc-0040",
+        "pc-0055"
+      ],
+      "likely_base": {
+        "area": null,
+        "status": "needs-review",
+        "confidence": "low",
+        "confidence_label": "低",
+        "reason": "目前有 3 張、分布於 2 個見つけた日；新增資料尚未完成地點正規化與跨日群集審查，暫不推定據點。"
+      },
+      "frequent_areas": [],
+      "trip_clusters": [],
+      "avoid_send": {
+        "areas": [],
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
+      }
+    },
+    {
+      "name": "のすけ",
+      "evidence_postcard_ids": [
+        "pc-0026",
+        "pc-0116",
+        "pc-0118"
+      ],
+      "likely_base": {
+        "area": null,
+        "status": "needs-review",
+        "confidence": "low",
+        "confidence_label": "低",
+        "reason": "目前有 3 張、分布於 3 個見つけた日；新增資料尚未完成地點正規化與跨日群集審查，暫不推定據點。"
+      },
+      "frequent_areas": [],
+      "trip_clusters": [],
+      "avoid_send": {
+        "areas": [],
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
+      }
+    },
+    {
+      "name": "月と海",
+      "evidence_postcard_ids": [
+        "pc-0067",
+        "pc-0078"
+      ],
+      "likely_base": {
+        "area": null,
+        "status": "needs-review",
+        "confidence": "low",
+        "confidence_label": "低",
+        "reason": "目前有 2 張、分布於 1 個見つけた日；新增資料尚未完成地點正規化與跨日群集審查，暫不推定據點。"
+      },
+      "frequent_areas": [],
+      "trip_clusters": [],
+      "avoid_send": {
+        "areas": [],
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
+      }
+    },
+    {
+      "name": "翊翊",
+      "evidence_postcard_ids": [
+        "pc-0031",
+        "pc-0039"
+      ],
+      "likely_base": {
+        "area": null,
+        "status": "needs-review",
+        "confidence": "low",
+        "confidence_label": "低",
+        "reason": "目前有 2 張、分布於 2 個見つけた日；新增資料尚未完成地點正規化與跨日群集審查，暫不推定據點。"
+      },
+      "frequent_areas": [],
+      "trip_clusters": [],
+      "avoid_send": {
+        "areas": [],
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
+      }
+    },
+    {
+      "name": "魚酥",
+      "evidence_postcard_ids": [
+        "pc-0038",
+        "pc-0090"
+      ],
+      "likely_base": {
+        "area": null,
+        "status": "needs-review",
+        "confidence": "low",
+        "confidence_label": "低",
+        "reason": "目前有 2 張、分布於 2 個見つけた日；新增資料尚未完成地點正規化與跨日群集審查，暫不推定據點。"
+      },
+      "frequent_areas": [],
+      "trip_clusters": [],
+      "avoid_send": {
+        "areas": [],
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
+      }
+    },
+    {
       "name": "菎娜",
-      "evidence_postcard_ids": ["pc-0016", "pc-0012"],
+      "evidence_postcard_ids": [
+        "pc-0016",
+        "pc-0012"
+      ],
       "likely_base": {
         "area": "臺北市北投區",
         "status": "early-signal",
@@ -20,44 +351,234 @@
       }
     },
     {
-      "name": "りゅう",
-      "evidence_postcard_ids": ["pc-0004", "pc-0005", "pc-0006"],
-      "likely_base": {
-        "area": null,
-        "status": "insufficient-evidence",
-        "confidence": "low",
-        "confidence_label": "低",
-        "reason": "同日兩張位於ひたちなか市，另有 Ubud 一張；目前更適合視為旅行足跡。"
-      },
-      "frequent_areas": [],
-      "trip_clusters": [
-        {
-          "area": "茨城縣ひたちなか市",
-          "found_date": "2026-05-05",
-          "postcard_ids": ["pc-0004", "pc-0006"],
-          "confidence": "medium"
-        }
+      "name": "Catlover:3",
+      "evidence_postcard_ids": [
+        "pc-0063",
+        "pc-0079"
       ],
-      "avoid_send": {
-        "areas": [],
-        "reason": "無；旅行群集不等於生活據點。"
-      }
-    },
-    {
-      "name": "柳柳",
-      "evidence_postcard_ids": ["pc-0003"],
       "likely_base": {
         "area": null,
-        "status": "insufficient-evidence",
+        "status": "needs-review",
         "confidence": "low",
         "confidence_label": "低",
-        "reason": "目前只有 Kajang 一張，無法區分生活據點與單次旅行。"
+        "reason": "目前有 2 張、分布於 1 個見つけた日；新增資料尚未完成地點正規化與跨日群集審查，暫不推定據點。"
       },
       "frequent_areas": [],
       "trip_clusters": [],
       "avoid_send": {
         "areas": [],
-        "reason": "無；單一觀察不產生建議。"
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
+      }
+    },
+    {
+      "name": "Subway北投店老闆",
+      "evidence_postcard_ids": [
+        "pc-0058",
+        "pc-0085"
+      ],
+      "likely_base": {
+        "area": null,
+        "status": "needs-review",
+        "confidence": "low",
+        "confidence_label": "低",
+        "reason": "目前有 2 張、分布於 1 個見つけた日；新增資料尚未完成地點正規化與跨日群集審查，暫不推定據點。"
+      },
+      "frequent_areas": [],
+      "trip_clusters": [],
+      "avoid_send": {
+        "areas": [],
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
+      }
+    },
+    {
+      "name": "Tribble Mountain Time",
+      "evidence_postcard_ids": [
+        "pc-0030",
+        "pc-0042"
+      ],
+      "likely_base": {
+        "area": null,
+        "status": "needs-review",
+        "confidence": "low",
+        "confidence_label": "低",
+        "reason": "目前有 2 張、分布於 2 個見つけた日；新增資料尚未完成地點正規化與跨日群集審查，暫不推定據點。"
+      },
+      "frequent_areas": [],
+      "trip_clusters": [],
+      "avoid_send": {
+        "areas": [],
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
+      }
+    },
+    {
+      "name": "梨梨五",
+      "evidence_postcard_ids": [
+        "pc-0066"
+      ],
+      "likely_base": {
+        "area": null,
+        "status": "insufficient-evidence",
+        "confidence": "low",
+        "confidence_label": "低",
+        "reason": "目前只有一張觀察，無法區分生活據點與單次旅行。"
+      },
+      "frequent_areas": [],
+      "trip_clusters": [],
+      "avoid_send": {
+        "areas": [],
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
+      }
+    },
+    {
+      "name": "緑",
+      "evidence_postcard_ids": [
+        "pc-0032"
+      ],
+      "likely_base": {
+        "area": null,
+        "status": "insufficient-evidence",
+        "confidence": "low",
+        "confidence_label": "低",
+        "reason": "目前只有一張觀察，無法區分生活據點與單次旅行。"
+      },
+      "frequent_areas": [],
+      "trip_clusters": [],
+      "avoid_send": {
+        "areas": [],
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
+      }
+    },
+    {
+      "name": "戰標のタツマキ",
+      "evidence_postcard_ids": [
+        "pc-0034"
+      ],
+      "likely_base": {
+        "area": null,
+        "status": "insufficient-evidence",
+        "confidence": "low",
+        "confidence_label": "低",
+        "reason": "目前只有一張觀察，無法區分生活據點與單次旅行。"
+      },
+      "frequent_areas": [],
+      "trip_clusters": [],
+      "avoid_send": {
+        "areas": [],
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
+      }
+    },
+    {
+      "name": "jia",
+      "evidence_postcard_ids": [
+        "pc-0140"
+      ],
+      "likely_base": {
+        "area": null,
+        "status": "insufficient-evidence",
+        "confidence": "low",
+        "confidence_label": "低",
+        "reason": "目前只有一張觀察，無法區分生活據點與單次旅行。"
+      },
+      "frequent_areas": [],
+      "trip_clusters": [],
+      "avoid_send": {
+        "areas": [],
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
+      }
+    },
+    {
+      "name": "Lynn",
+      "evidence_postcard_ids": [
+        "pc-0077"
+      ],
+      "likely_base": {
+        "area": null,
+        "status": "insufficient-evidence",
+        "confidence": "low",
+        "confidence_label": "低",
+        "reason": "目前只有一張觀察，無法區分生活據點與單次旅行。"
+      },
+      "frequent_areas": [],
+      "trip_clusters": [],
+      "avoid_send": {
+        "areas": [],
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
+      }
+    },
+    {
+      "name": "Yeii",
+      "evidence_postcard_ids": [
+        "pc-0022"
+      ],
+      "likely_base": {
+        "area": null,
+        "status": "insufficient-evidence",
+        "confidence": "low",
+        "confidence_label": "低",
+        "reason": "目前只有一張觀察，無法區分生活據點與單次旅行。"
+      },
+      "frequent_areas": [],
+      "trip_clusters": [],
+      "avoid_send": {
+        "areas": [],
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
+      }
+    },
+    {
+      "name": "Zana",
+      "evidence_postcard_ids": [
+        "pc-0082"
+      ],
+      "likely_base": {
+        "area": null,
+        "status": "insufficient-evidence",
+        "confidence": "low",
+        "confidence_label": "低",
+        "reason": "目前只有一張觀察，無法區分生活據點與單次旅行。"
+      },
+      "frequent_areas": [],
+      "trip_clusters": [],
+      "avoid_send": {
+        "areas": [],
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
+      }
+    },
+    {
+      "name": "カニカニ",
+      "evidence_postcard_ids": [
+        "pc-0132"
+      ],
+      "likely_base": {
+        "area": null,
+        "status": "insufficient-evidence",
+        "confidence": "low",
+        "confidence_label": "低",
+        "reason": "目前只有一張觀察，無法區分生活據點與單次旅行。"
+      },
+      "frequent_areas": [],
+      "trip_clusters": [],
+      "avoid_send": {
+        "areas": [],
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
+      }
+    },
+    {
+      "name": "なつめ",
+      "evidence_postcard_ids": [
+        "pc-0137"
+      ],
+      "likely_base": {
+        "area": null,
+        "status": "insufficient-evidence",
+        "confidence": "low",
+        "confidence_label": "低",
+        "reason": "目前只有一張觀察，無法區分生活據點與單次旅行。"
+      },
+      "frequent_areas": [],
+      "trip_clusters": [],
+      "avoid_send": {
+        "areas": [],
+        "reason": "無；尚未完成足以產生避免寄送建議的保守推論。"
       }
     }
   ]

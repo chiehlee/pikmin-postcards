@@ -1,0 +1,59 @@
+import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import test from "node:test";
+import assert from "node:assert/strict";
+import { fileURLToPath } from "node:url";
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const postcards = JSON.parse(await readFile(path.join(root, "data/postcards.json"), "utf8")).postcards;
+const contexts = JSON.parse(await readFile(path.join(root, "data/context.json"), "utf8")).records;
+const friends = JSON.parse(await readFile(path.join(root, "data/friends.json"), "utf8")).profiles;
+
+test("canonical postcard ids, hashes and asset paths are unique", () => {
+  assert.equal(new Set(postcards.map((record) => record.id)).size, postcards.length);
+  assert.equal(new Set(postcards.map((record) => record.asset.sha256)).size, postcards.length);
+  assert.equal(new Set(postcards.map((record) => record.asset.path)).size, postcards.length);
+});
+
+test("all canonical assets exist and match their recorded SHA-256", async () => {
+  for (const record of [...postcards, ...contexts]) {
+    const bytes = await readFile(path.join(root, "public", record.asset.path));
+    const actual = createHash("sha256").update(bytes).digest("hex");
+    assert.equal(actual, record.asset.sha256, `${record.id} checksum mismatch`);
+  }
+});
+
+test("related postcard references are valid and symmetric", () => {
+  const byId = new Map(postcards.map((record) => [record.id, record]));
+  for (const record of postcards) {
+    for (const relation of record.related_postcards ?? []) {
+      const target = byId.get(relation.id);
+      assert.ok(target, `${record.id} references missing ${relation.id}`);
+      assert.ok(
+        target.related_postcards?.some(
+          (reverse) => reverse.id === record.id && reverse.relationship === relation.relationship,
+        ),
+        `${record.id} -> ${relation.id} is not symmetric`,
+      );
+    }
+  }
+});
+
+test("friend evidence covers every confirmed sender and references real postcards", () => {
+  const postcardIds = new Set(postcards.map((record) => record.id));
+  const confirmedSenders = new Set(postcards.map((record) => record.sender).filter(Boolean));
+  assert.deepEqual(new Set(friends.map((profile) => profile.name)), confirmedSenders);
+  for (const profile of friends) {
+    for (const id of profile.evidence_postcard_ids) {
+      assert.ok(postcardIds.has(id), `${profile.name} references missing ${id}`);
+      assert.equal(postcards.find((record) => record.id === id).sender, profile.name);
+    }
+  }
+});
+
+test("merged archive has the expected preservation totals", () => {
+  assert.equal(postcards.length, 148);
+  assert.equal(contexts.length, 1);
+  assert.equal(postcards.filter((record) => record.provenance.length > 1).length, 2);
+});

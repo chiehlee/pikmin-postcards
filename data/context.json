@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "records": [
+    {
+      "id": "context-0001",
+      "record_type": "context",
+      "title": "Postcard collection grid (633/650)",
+      "captured_on": null,
+      "asset": {
+        "path": "/images/context/context-0001.jpeg",
+        "sha256": "cfe687cf2372540813e0362bc3c6a9decf1cff5cbe3480cdf9683397d9132107",
+        "bytes": 293673,
+        "media_type": "image/jpeg",
+        "original_filename": "0269F3CF-7E0A-49D7-B7BB-4B98B74C347C.jpeg"
+      },
+      "notes": "Postcard-list overview; retained as session context, not a single postcard.",
+      "provenance": [
+        {
+          "source_session": "postcard-session-2026-08-23",
+          "source_sequence": 81,
+          "source_bundle": "imports/source-bundles/postcard-session-2026-08-23.zip",
+          "source_bundle_sha256": "ada05f1f929ea679b3c430fe4b6d6be12450d8bb7325247c5c591e90ed021d27",
+          "source_screenshot": "screenshots/081_unknown-date_Postcard-collection-grid-(633／650).jpeg",
+          "original_filename": "0269F3CF-7E0A-49D7-B7BB-4B98B74C347C.jpeg",
+          "byte_identical_occurrence_group": [],
+          "screenshot_notes": "Postcard-list overview; retained as session context, not a single postcard.",
+          "research_status": "context_only"
+        }
+      ]
+    }
+  ]
+}

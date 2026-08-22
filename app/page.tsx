@@ -5,20 +5,20 @@ import { useEffect, useMemo, useState } from 'react';
 import archive from '../data/postcards.json';
 import friendArchive from '../data/friends.json';
 
-type Status = 'keep' | 'representative' | 'candidate' | 'delete';
+type Status = 'keep' | 'representative' | 'candidate' | 'delete' | 'unreviewed';
 
 type Postcard = {
   id: string;
   poi_name: string;
-  found_date: string;
+  found_date: string | null;
   received_at: string | null;
   archived_on: string;
   sender: string | null;
   location: {
     raw: string;
     display: string;
-    country: string;
-    country_code: string;
+    country: string | null;
+    country_code: string | null;
   };
   asset: {
     path: string;
@@ -26,8 +26,8 @@ type Postcard = {
     bytes: number;
   };
   curation: {
-    rating: number;
-    recommendation: string;
+    rating: number | null;
+    recommendation: string | null;
     status: Status;
     tags: string[];
   };
@@ -37,6 +37,10 @@ type Postcard = {
     summary: string;
     sources: string[];
   };
+  related_postcards?: {
+    id: string;
+    relationship: 'same-metadata-different-image' | 'same-poi-name-variant';
+  }[];
 };
 
 const postcards = archive.postcards as Postcard[];
@@ -46,11 +50,13 @@ const statusLabels: Record<Status, string> = {
   representative: '代表性保留',
   candidate: '候補',
   delete: '刪除候選',
+  unreviewed: '待整理',
 };
 
 const friendProfiles = friendArchive.profiles;
 
-function compactDate(date: string) {
+function compactDate(date: string | null) {
+  if (!date) return '日期未確認';
   return new Intl.DateTimeFormat('zh-TW', {
     year: 'numeric',
     month: 'short',
@@ -80,7 +86,7 @@ export default function Home() {
     [],
   );
   const countries = useMemo(
-    () => [...new Set(postcards.map((postcard) => postcard.location.country))],
+    () => [...new Set(postcards.map((postcard) => postcard.location.country ?? '未正規化'))],
     [],
   );
 
@@ -88,7 +94,7 @@ export default function Home() {
     const normalizedQuery = query.trim().toLocaleLowerCase('zh-Hant');
     return postcards
       .filter((postcard) => sender === 'all' || (sender === 'unknown' ? !postcard.sender : postcard.sender === sender))
-      .filter((postcard) => country === 'all' || postcard.location.country === country)
+      .filter((postcard) => country === 'all' || (postcard.location.country ?? '未正規化') === country)
       .filter((postcard) => status === 'all' || postcard.curation.status === status)
       .filter((postcard) => {
         if (!normalizedQuery) return true;
@@ -106,8 +112,8 @@ export default function Home() {
       })
       .sort((a, b) =>
         sort === 'rating'
-          ? b.curation.rating - a.curation.rating || b.found_date.localeCompare(a.found_date)
-          : b.found_date.localeCompare(a.found_date) || b.curation.rating - a.curation.rating,
+          ? (b.curation.rating ?? -1) - (a.curation.rating ?? -1) || (b.found_date ?? '').localeCompare(a.found_date ?? '')
+          : (b.found_date ?? '').localeCompare(a.found_date ?? '') || (b.curation.rating ?? -1) - (a.curation.rating ?? -1),
       );
   }, [country, query, sender, sort, status]);
 
@@ -116,7 +122,7 @@ export default function Home() {
       name: profile.name,
       cards: postcards
         .filter((postcard) => profile.evidence_postcard_ids.includes(postcard.id))
-        .sort((a, b) => a.found_date.localeCompare(b.found_date)),
+        .sort((a, b) => (a.found_date ?? '').localeCompare(b.found_date ?? '')),
       signal: profile.likely_base.area ? `${profile.likely_base.area}・早期訊號` : '尚未判定',
       confidence: profile.likely_base.confidence_label,
       note: profile.likely_base.reason,
@@ -235,14 +241,14 @@ export default function Home() {
               {filtered.map((postcard) => (
                 <article className="postcard-card" key={postcard.id}>
                   <button className="image-button" onClick={() => setActive(postcard)} aria-label={`查看 ${postcard.poi_name}`}>
-                    <img src={postcard.asset.path} alt={`${postcard.poi_name} 原始遊戲截圖`} />
-                    <span className="rating">{postcard.curation.rating.toFixed(1)} <b>★</b></span>
+                    <img src={postcard.asset.path} alt={`${postcard.poi_name} 原始遊戲截圖`} loading="lazy" decoding="async" />
+                    <span className="rating">{postcard.curation.rating == null ? '未評分' : <>{postcard.curation.rating.toFixed(1)} <b>★</b></>}</span>
                     <span className="open-hint">查看檔案 ↗</span>
                   </button>
                   <div className="card-body">
                     <div className="card-kicker">
                       <span className={`status status-${postcard.curation.status}`}>{statusLabels[postcard.curation.status]}</span>
-                      <time dateTime={postcard.found_date}>{compactDate(postcard.found_date)}</time>
+                      <time dateTime={postcard.found_date ?? undefined}>{compactDate(postcard.found_date)}</time>
                     </div>
                     <h3><button onClick={() => setActive(postcard)}>{postcard.poi_name}</button></h3>
                     <p className="place">{postcard.location.display}</p>
@@ -281,14 +287,14 @@ export default function Home() {
                 </div>
                 <dl>
                   <div><dt>據點訊號</dt><dd>{friend.signal}</dd></div>
-                  <div><dt>觀察數</dt><dd>{friend.cards.length} 張／{new Set(friend.cards.map((p) => p.found_date)).size} 個日期</dd></div>
+                  <div><dt>觀察數</dt><dd>{friend.cards.length} 張／{new Set(friend.cards.map((p) => p.found_date).filter(Boolean)).size} 個日期</dd></div>
                   <div><dt>避免寄送</dt><dd>{friend.avoid}</dd></div>
                 </dl>
                 <p className="friend-note">{friend.note}</p>
                 <div className="timeline">
                   {friend.cards.map((postcard) => (
                     <button key={postcard.id} onClick={() => setActive(postcard)}>
-                      <time>{postcard.found_date.slice(5).replace('-', '/')}</time>
+                      <time>{postcard.found_date ? postcard.found_date.slice(5).replace('-', '/') : '日期？'}</time>
                       <span>{postcard.poi_name}</span>
                       <small>{postcard.location.display}</small>
                     </button>
@@ -321,16 +327,35 @@ export default function Home() {
               <h2 id="detail-title">{active.poi_name}</h2>
               <p className="detail-location">{active.location.display}<small>遊戲顯示：{active.location.raw}</small></p>
               <div className="detail-facts">
-                <div><span>見つけた日</span><strong>{active.found_date}</strong></div>
+                <div><span>見つけた日</span><strong>{active.found_date ?? '未確認'}</strong></div>
                 <div><span>寄件人</span><strong>{active.sender ?? '未確認'}</strong></div>
-                <div><span>收藏評分</span><strong>{active.curation.rating.toFixed(1)} / 5</strong></div>
-                <div><span>建議</span><strong>{active.curation.recommendation}</strong></div>
+                <div><span>收藏評分</span><strong>{active.curation.rating == null ? '未評分' : `${active.curation.rating.toFixed(1)} / 5`}</strong></div>
+                <div><span>建議</span><strong>{active.curation.recommendation ?? '尚未整理'}</strong></div>
               </div>
               <div className="detail-story">
                 <p className="eyebrow">RESEARCH NOTE</p>
                 <p>{active.research.summary}</p>
               </div>
               <div className="tag-list">{active.curation.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
+              {!!active.related_postcards?.length && (
+                <div className="related-list">
+                  <p className="eyebrow">RELATED SCREENSHOTS</p>
+                  {active.related_postcards.map((relation) => {
+                    const related = postcards.find((postcard) => postcard.id === relation.id);
+                    if (!related) return null;
+                    return (
+                      <button key={`${relation.id}-${relation.relationship}`} onClick={() => setActive(related)}>
+                        <img src={related.asset.path} alt="" />
+                        <span>
+                          <strong>{related.poi_name}</strong>
+                          <small>{relation.relationship === 'same-poi-name-variant' ? '同一 POI 的名稱變體' : '相同 metadata 的另一張原始截圖'}</small>
+                        </span>
+                        <b>→</b>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
               <div className="source-list">
                 <p className="eyebrow">PRESERVED SOURCES</p>
                 {active.research.sources.map((source, index) => (

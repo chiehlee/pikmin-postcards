@@ -2,7 +2,7 @@
 
 Pikmin Bloom 明信片的本機收藏、研究與朋友活動範圍證據庫。
 
-目前已匯入 bootstrap bundle 的 20 張明信片。原始截圖、來源 manifest、長版研究、SHA-256 與來源 session 都有保留；`見つけた日` 永遠視為 `found_date`，不會當作寄送日期。
+目前已合併兩個 source-session bundles，共 148 張 canonical 明信片與 1 張情境截圖。原始截圖、來源 manifest、長版研究、SHA-256 與來源 session 都有保留；`見つけた日` 永遠視為 `found_date`，不會當作寄送日期。
 
 ## 啟動網站
 
@@ -67,13 +67,27 @@ npm run check:duplicate -- \
 - `public/images/postcards/`：不可變更的原始截圖。
 - `data/postcards.json`：網站使用的 canonical postcard records。
 - `data/friends.json`：由已確認寄件人觀察形成的保守推論。
+- `data/context.json`：不應混入明信片列表的收藏清單／情境截圖。
 - `data/imports.json`：來源 bundle 與 checksum 紀錄。
 - `research/raw/`：詳細研究、來源與未解問題。
 - `imports/current-session/`：來源 session 的原始 manifest 與說明。
 - `imports/source-bundles/`：原始 ZIP bundle。
-- `scripts/normalize-current-session.mjs`：由原始 manifest 重建 canonical records。
+- `scripts/normalize-current-session.mjs`：只用於建立全新 repo 時產生第一包 bootstrap records。
+- `scripts/merge-session-bundle.mjs`：驗證 ZIP 內所有 checksum，合併新 bundle 並保留 provenance。
 - `scripts/check-duplicate.mjs`：兩階段去重檢查。
 
-## 尚待合併
+## 合併新的 session bundle
 
-另一個 postcard ChatGPT session 的 bundle 尚未取得。收到後先以截圖 hash 去重，再比對 POI、`found_date` 與寄件人；任何研究與 provenance 都應保留。
+先執行 dry run：
+
+```bash
+npm run merge:bundle -- --bundle /path/to/bundle.zip --id unique-session-id
+```
+
+確認報告後才寫入：
+
+```bash
+npm run merge:bundle -- --bundle /path/to/bundle.zip --id unique-session-id --commit
+```
+
+合併先以截圖 hash 去重，再比對 POI、`found_date` 與寄件人。Byte-identical 重貼會收斂為一個 canonical asset，但每次出現仍保存在來源 ZIP 與 provenance；不同截圖即使 metadata 相同也不會被刪除。

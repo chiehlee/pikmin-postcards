@@ -10,6 +10,22 @@
       "postcard_count": 20,
       "status": "imported",
       "notes": "Bootstrap bundle imported with original screenshots, source manifests and raw research preserved."
+    },
+    {
+      "id": "postcard-session-2026-08-23",
+      "source_session": "postcard-session-bundle",
+      "archived_on": "2026-08-23",
+      "bundle": "imports/source-bundles/postcard-session-2026-08-23.zip",
+      "bundle_sha256": "ada05f1f929ea679b3c430fe4b6d6be12450d8bb7325247c5c591e90ed021d27",
+      "source_record_count": 131,
+      "postcard_occurrence_count": 130,
+      "context_occurrence_count": 1,
+      "canonical_postcards_added": 128,
+      "canonical_context_records_added": 1,
+      "occurrences_collapsed_by_sha256": 2,
+      "related_pairs": 14,
+      "status": "imported",
+      "notes": "Original upload occurrences remain preserved in the source ZIP. Byte-identical occurrences collapse to one canonical asset while retaining provenance; distinct screenshots remain separate records."
     }
   ]
 }

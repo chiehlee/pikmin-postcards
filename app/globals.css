@@ -89,6 +89,7 @@ button { color: inherit; }
 .status-representative { background: #e2e6d1; color: #56612e; }
 .status-candidate { background: #f7e8c8; color: #855d0e; }
 .status-delete { background: #f5ded8; color: #9b3f2c; }
+.status-unreviewed { background: #ecebe7; color: #6d716e; }
 .card-body h3 { margin: 13px 0 6px; font: 550 21px/1.28 Georgia, "Noto Serif TC", serif; }
 .card-body h3 button { padding: 0; border: 0; background: none; text-align: left; cursor: pointer; }
 .card-body h3 button:hover { color: var(--green); }
@@ -146,6 +147,15 @@ footer p { margin: 0; color: var(--ink); font-family: Georgia, serif; }
 .detail-story > p:last-child { margin: 0; color: #435047; font: 16px/1.8 Georgia, "Noto Serif TC", serif; }
 .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 20px 0 28px; }
 .tag-list span { padding: 6px 8px; border-radius: 3px; background: var(--green-light); color: var(--green); font-size: 10px; }
+.related-list { display: flex; flex-direction: column; margin: 0 0 28px; }
+.related-list .eyebrow { margin-bottom: 6px; }
+.related-list button { display: grid; grid-template-columns: 54px 1fr auto; gap: 11px; align-items: center; width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 5px; background: #f5f2e9; text-align: left; cursor: pointer; }
+.related-list button:hover { border-color: var(--green); background: var(--green-light); }
+.related-list img { width: 54px; height: 42px; border-radius: 3px; object-fit: cover; object-position: 50% 19%; }
+.related-list strong, .related-list small { display: block; }
+.related-list strong { font-size: 11px; }
+.related-list small { margin-top: 2px; color: var(--muted); font-size: 9px; }
+.related-list button > b { color: var(--green); }
 .source-list { display: flex; flex-direction: column; }
 .source-list .eyebrow { margin-bottom: 6px; }
 .source-list a { display: flex; gap: 11px; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(31,48,38,.08); color: var(--green); font-size: 11px; text-decoration: none; }
