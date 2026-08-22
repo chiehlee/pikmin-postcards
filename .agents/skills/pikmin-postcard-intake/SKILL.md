@@ -27,7 +27,7 @@ description: "接收新的 Pikmin Bloom 明信片圖片、聊天附件、本機�
 
 ## 不可破壞的不變條件
 
-- 原始圖片必須先落地本機並以 SHA-256 識別；已保存的原圖不可變更、不重新壓縮、不覆寫。之後收到同一張明信片的較高畫質截圖時，保留兩份 bytes 與 checksum，將高畫質版本升為網站 preferred asset，舊檔降為可追溯的 alternate，不可刪除。
+- 原始圖片必須先落地本機並以 SHA-256 識別；已保存的原圖不可變更、不重新壓縮、不覆寫。每一份 bytes 不同的 imported screenshot 都有自己的 postcard ID；POI 名稱、日期、地點或遊戲中的明信片物件都不是 primary key。只有完全相同的 SHA-256 才共用 canonical asset 並增加 occurrence provenance。
 - 圖片不以 BLOB 存入 SQLite。DB 保存本機路徑、網站路徑、checksum、欄位、研究、關聯與 provenance。
 - 遠端 URL 的 query string 不可原文寫入 DB；使用現有 image intake 保存安全 locator 與完整來源的 hash。
 - `見つけた日` 是 `found_date`，不是寄送日期。
@@ -38,7 +38,7 @@ description: "接收新的 Pikmin Bloom 明信片圖片、聊天附件、本機�
 - raw location、正規化 location、座標／地圖查詢與信心分開保存。沒有可靠證據時，不把 Google 的搜尋結果寫成精確座標。
 - condensed `research.summary` 與 `research.detail` 分開。保存不到原長文時明確標示缺漏，不用後寫內容冒充原文。
 - 事實、推論與未解問題分欄；每項外部事實保存直接支持它的 URL。
-- 不因 metadata 相同刪掉不同圖片；不因外觀相似就宣告 duplicate。
+- 不因 metadata 相同刪掉、隱藏或合併不同圖片；不因外觀相似就宣告可移除的 duplicate。duplicate candidate 與 relationship 只供檢查，只有使用者明確提出個案時才能移除或合併 postcard。
 
 ## 收錄流程
 
@@ -56,11 +56,10 @@ npm run image:ingest -- --source '/path/or/https-url'
 
 同時記錄可客觀比較的品質訊號：pixel dimensions、檔案 bytes、格式，以及肉眼可見的縮放、壓縮或模糊。若 metadata 與畫面確認是同一張明信片但新檔更清晰：
 
-1. 將新檔以不同路徑保存，不覆寫舊檔。
-2. 在 postcard asset／provenance 中同時保留兩個 checksum、來源與品質訊號，明確標出 preferred 與 alternate。
-3. 網站、研究放大圖與其他 derived assets 改指向 preferred；既有歷史 checksum 仍可驗證。
-4. 若目前 schema 還不能表達多版本 asset，先新增 migration、snapshot round-trip 與 integrity tests，再 promotion；不可只換檔案讓 DB checksum 失真。
-5. 重新產生受影響的 Mii crop 或縮圖，並在交付時說明升級前後來源。
+1. 將新檔以不同路徑及新的 postcard ID 保存，不覆寫、隱藏或刪除舊 postcard。
+2. 為兩張建立適當的雙向關聯並記錄品質訊號；回報哪張較適合作為放大檢視、Mii crop 或其他 derived asset 的來源。
+3. 可以自動改用較清晰來源重新產生 Mii crop 或縮圖，但收藏列表中的兩張 postcard 都維持可見。
+4. 只有使用者明確要求個案 replace／merge 時，才把其中一張改為 alternate 或從收藏移除；promotion 前須讓 schema、snapshot round-trip 與 integrity tests 能保存兩個 checksum 和來源。
 
 ### 2. 擷取畫面證據
 
@@ -76,7 +75,7 @@ npm run image:ingest -- --source '/path/or/https-url'
 
 依 `lib/acquisition.mjs` 建立 acquisition，不要在別處複製另一套規則。OCR 或視覺不清楚的字元保留疑問，不自行補成看似合理的名稱。
 
-### 3. 去重；先決定 identity 再研究
+### 3. 相似檢查；先建立 screenshot identity 再研究
 
 使用 canonical 圖片或 intake 的本機路徑執行：
 
@@ -85,6 +84,7 @@ npm run check:duplicate -- \
   --image /local/image \
   --poi 'POI name' \
   --found-date YYYY-MM-DD \
+  --location 'raw location' \
   --origin self_found
 ```
 
@@ -92,13 +92,13 @@ npm run check:duplicate -- \
 
 依序處理：
 
-1. 相同 SHA-256：同一 canonical asset，不新增 postcard；保留新的 intake source／occurrence provenance。
-2. 相同 `POI + found_date + sender／acquisition identity` 但 bytes 不同：視為 probable duplicate candidate，人工比較；通常保留成不同 canonical screenshot，並建立雙向 `same-metadata-different-image`。
-3. 只有 POI 名稱接近、名稱變體或位置相同：不是 duplicate。需要時建立雙向 `same-poi-name-variant`。
+1. 相同 SHA-256：同一份 screenshot bytes 與 canonical asset，不新增 postcard；保留新的 intake source／occurrence provenance。
+2. 相同 `POI + found_date + location + sender／acquisition identity` 但 bytes 不同：一定先建立新的 postcard ID，再標成 candidate 並視需要建立雙向 `same-metadata-different-image`；candidate 不表示應刪除。
+3. POI 相同但 location 不同：不是 duplicate candidate；同名 Wayspot 在不同地點是正常資料。只有名稱變體且其他證據指向同一處時，才考慮雙向 `same-poi-name-variant`。
 4. 已確認寄件人不同，或 `self_found` 與 `received unknown` 不同：不可靜默合併。
 5. sender ID 與既有名稱不同：先建立另一個 friend profile；可回報疑似改名線索，但除非使用者明確要求，不把兩個 profile 或其觀察歷史合併。
 
-若 exact duplicate 與使用者所稱「全新」衝突，回報 checksum 證據並只新增 provenance，不複製 canonical record。
+任何 probable／visual duplicate 都不得阻止新 screenshot 建立 postcard ID。只有 exact SHA-256 重複時共用 canonical record 並新增 provenance；若使用者之後指定移除或合併，再依該個案操作。
 
 ### 4. 研究地點與故事
 

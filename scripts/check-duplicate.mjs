@@ -12,7 +12,7 @@ for (let index = 2; index < process.argv.length; index += 2) {
 
 if (!["--image", "--poi", "--found-date"].some((key) => args.has(key))) {
   console.error(
-    "Usage: node scripts/check-duplicate.mjs [--image path] --poi name --found-date YYYY-MM-DD [--sender name] [--origin self_found|received|unknown]",
+    "Usage: node scripts/check-duplicate.mjs [--image path] --poi name --found-date YYYY-MM-DD --location raw-location [--sender name] [--origin self_found|received|unknown]",
   );
   process.exit(1);
 }
@@ -42,6 +42,7 @@ const result = findDuplicate(
   {
     poi_name: args.get("--poi"),
     found_date: args.get("--found-date"),
+    location: { raw: args.get("--location") ?? "" },
     sender,
     acquisition,
     sha256: imageHash,
@@ -53,10 +54,17 @@ console.log(
   JSON.stringify(
     {
       duplicate: result.duplicate,
+      candidate_match: result.candidate,
       match_type: result.match_type,
       confidence: result.confidence,
+      recommended_action: result.duplicate
+        ? "reuse-exact-asset-and-append-provenance"
+        : result.candidate
+          ? "create-independent-postcard-and-link-candidate"
+          : "create-independent-postcard",
       matched_id: result.record?.id ?? null,
       matched_poi_name: result.record?.poi_name ?? null,
+      matched_location: result.record?.location?.raw ?? result.record?.location?.display ?? null,
     },
     null,
     2,

@@ -40,6 +40,19 @@ test("related postcard references are valid and symmetric", () => {
   }
 });
 
+test("distinct imported screenshots remain independent even when postcard metadata repeats", () => {
+  const ironDonQuixotes = postcards.filter((record) => record.poi_name === "鉄のドンキホーテ");
+  assert.deepEqual(ironDonQuixotes.map((record) => record.id), ["pc-0111", "pc-0112"]);
+  assert.equal(new Set(ironDonQuixotes.map((record) => record.asset.sha256)).size, 2);
+  assert.equal(new Set(ironDonQuixotes.map((record) => record.location.raw)).size, 1);
+  assert.ok(ironDonQuixotes.every((record) => (
+    record.related_postcards.some((relation) => (
+      ironDonQuixotes.some((other) => other.id === relation.id && other.id !== record.id)
+      && relation.relationship === "same-metadata-different-image"
+    ))
+  )));
+});
+
 test("friend evidence covers every confirmed sender and references real postcards", () => {
   const postcardsById = new Map(postcards.map((record) => [record.id, record]));
   const postcardIds = new Set(postcards.map((record) => record.id));
