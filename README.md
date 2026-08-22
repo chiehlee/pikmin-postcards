@@ -89,6 +89,20 @@ npm run check:duplicate -- \
 
 新 bundle 的 manifest 可在每張 postcard 加上 `research_detail`（或相容欄位 `research_detail_body`）；匯入器會和 condensed `research_summary` 分開保存。
 
+## Google Maps 研究定位
+
+有保存研究內容的明信片會顯示「研究定位」。外部 Google Maps 搜尋連結不需要 API key；內嵌互動地圖使用 Google Maps Embed API，並且只在使用者按下「載入 Google Map」後建立單一 iframe，不會在首頁或開啟明信片視窗時預先載入。
+
+建立 `.env.local` 並設定：
+
+```bash
+NEXT_PUBLIC_GOOGLE_MAPS_EMBED_API_KEY=your_restricted_embed_key
+```
+
+Google 要求 Maps Embed API key 所屬專案啟用 billing，但 Embed API requests 本身不計費。這個 key 會出現在瀏覽器送出的 iframe URL，因此不可拿來使用其他 API；應建立獨立 key，只允許 Maps Embed API，並加上 `http://localhost:3000/*` 與實際 LAN／VPN 網址的 Website restrictions。設定後需重新 build 並啟動正式服務。
+
+定位資料遵守兩個層級：明信片或 DB 有經緯度時直接用該座標；只有研究地名時以明確的查詢字串交給 Google 解析，UI 會標示「尚非人工確認座標」，不把搜尋結果冒充精確位置。
+
 ## 資料結構
 
 - `var/pikmin-postcards.sqlite3`：本機 SQLite operational database（不進 Git）。

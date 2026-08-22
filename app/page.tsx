@@ -7,6 +7,11 @@ import friendArchive from '../data/friends.json';
 
 type Status = 'keep' | 'representative' | 'candidate' | 'delete' | 'unreviewed';
 type AcquisitionType = 'self_found' | 'received' | 'unknown';
+type MapTarget = {
+  query: string;
+  label: string;
+  precision: 'coordinates' | 'researched_place_query';
+};
 
 type Postcard = {
   id: string;
@@ -26,6 +31,8 @@ type Postcard = {
     display: string;
     country: string | null;
     country_code: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
   };
   asset: {
     path: string;
@@ -60,6 +67,13 @@ type Postcard = {
 };
 
 const postcards = archive.postcards as Postcard[];
+const googleMapsEmbedApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_EMBED_API_KEY?.trim() ?? '';
+const researchedMapOverrides: Record<string, { query: string; label: string }> = {
+  'pc-0020': {
+    query: '壹號交易廣場, 台北市信義區松仁路89號',
+    label: '壹號交易廣場前庭（松仁路 89 號）',
+  },
+};
 
 const statusLabels: Record<Status, string> = {
   keep: '保留',
@@ -102,6 +116,36 @@ function senderLine(postcard: Postcard) {
   return '來源：待確認';
 }
 
+function coordinateQuery(postcard: Postcard) {
+  const { latitude, longitude, raw } = postcard.location;
+  if (latitude != null && longitude != null) return `${latitude},${longitude}`;
+  const visibleCoordinates = raw.match(/^\(?\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*\)?$/);
+  return visibleCoordinates ? `${visibleCoordinates[1]},${visibleCoordinates[2]}` : null;
+}
+
+function mapTargetFor(postcard: Postcard): MapTarget | null {
+  if (postcard.research.detail.status === 'not_recovered') return null;
+  const coordinates = coordinateQuery(postcard);
+  if (coordinates) {
+    return { query: coordinates, label: coordinates, precision: 'coordinates' };
+  }
+  const override = researchedMapOverrides[postcard.id];
+  if (override) return { ...override, precision: 'researched_place_query' };
+  return {
+    query: `${postcard.poi_name}, ${postcard.location.display}`,
+    label: `${postcard.poi_name}・${postcard.location.display}`,
+    precision: 'researched_place_query',
+  };
+}
+
+function googleMapsSearchUrl(query: string) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
+function googleMapsEmbedUrl(query: string) {
+  return `https://www.google.com/maps/embed/v1/place?key=${encodeURIComponent(googleMapsEmbedApiKey)}&q=${encodeURIComponent(query)}`;
+}
+
 export default function Home() {
   const [view, setView] = useState<'archive' | 'friends'>('archive');
   const [query, setQuery] = useState('');
@@ -110,6 +154,17 @@ export default function Home() {
   const [status, setStatus] = useState<'all' | Status>('all');
   const [sort, setSort] = useState<'rating' | 'date'>('rating');
   const [active, setActive] = useState<Postcard | null>(null);
+  const [mapLoadedFor, setMapLoadedFor] = useState<string | null>(null);
+
+  function openPostcard(postcard: Postcard) {
+    setMapLoadedFor(null);
+    setActive(postcard);
+  }
+
+  function closePostcard() {
+    setMapLoadedFor(null);
+    setActive(null);
+  }
 
   const senders = useMemo(
     () => [...new Set(postcards.map((postcard) => postcard.sender).filter(Boolean))] as string[],
@@ -168,11 +223,13 @@ export default function Home() {
       avoid: profile.avoid_send.areas.length ? profile.avoid_send.areas.join('、') : '無正式建議',
     }));
   }, []);
+  const activeMapTarget = active ? mapTargetFor(active) : null;
+  const activeMapIsLoaded = !!active && mapLoadedFor === active.id && !!googleMapsEmbedApiKey;
 
   useEffect(() => {
     if (!active) return;
     const close = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setActive(null);
+      if (event.key === 'Escape') closePostcard();
     };
     document.body.classList.add('modal-open');
     window.addEventListener('keydown', close);
@@ -281,7 +338,7 @@ export default function Home() {
             <div className="postcard-grid">
               {filtered.map((postcard) => (
                 <article className="postcard-card" key={postcard.id}>
-                  <button className="image-button" onClick={() => setActive(postcard)} aria-label={`查看 ${postcard.poi_name}`}>
+                  <button className="image-button" onClick={() => openPostcard(postcard)} aria-label={`查看 ${postcard.poi_name}`}>
                     <img src={postcard.asset.path} alt={`${postcard.poi_name} 原始遊戲截圖`} loading="lazy" decoding="async" />
                     <span className="rating">{postcard.curation.rating == null ? '未評分' : <>{postcard.curation.rating.toFixed(1)} <b>★</b></>}</span>
                     <span className="open-hint">查看檔案 ↗</span>
@@ -291,7 +348,7 @@ export default function Home() {
                       <span className={`status status-${postcard.curation.status}`}>{statusLabels[postcard.curation.status]}</span>
                       <time dateTime={postcard.found_date ?? undefined}>{compactDate(postcard.found_date)}</time>
                     </div>
-                    <h3><button onClick={() => setActive(postcard)}>{postcard.poi_name}</button></h3>
+                    <h3><button onClick={() => openPostcard(postcard)}>{postcard.poi_name}</button></h3>
                     <p className="place">{postcard.location.display}</p>
                     <p className="sender">{senderLine(postcard)}</p>
                     <p className="summary">{postcard.research.summary}</p>
@@ -334,7 +391,7 @@ export default function Home() {
                 <p className="friend-note">{friend.note}</p>
                 <div className="timeline">
                   {friend.cards.map((postcard) => (
-                    <button key={postcard.id} onClick={() => setActive(postcard)}>
+                    <button key={postcard.id} onClick={() => openPostcard(postcard)}>
                       <time>{postcard.found_date ? postcard.found_date.slice(5).replace('-', '/') : '日期？'}</time>
                       <span>{postcard.poi_name}</span>
                       <small>{postcard.location.display}</small>
@@ -353,9 +410,9 @@ export default function Home() {
       </footer>
 
       {active && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setActive(null); }}>
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closePostcard(); }}>
           <section className="detail-modal" role="dialog" aria-modal="true" aria-labelledby="detail-title">
-            <button className="modal-close" onClick={() => setActive(null)} aria-label="關閉">×</button>
+            <button className="modal-close" onClick={closePostcard} aria-label="關閉">×</button>
             <div className="modal-image-panel">
               <img src={active.asset.path} alt={`${active.poi_name} 原始遊戲截圖`} />
               <a href={active.asset.path} target="_blank" rel="noreferrer">開啟原始尺寸 ↗</a>
@@ -373,6 +430,50 @@ export default function Home() {
                 <div><span>收藏評分</span><strong>{active.curation.rating == null ? '未評分' : `${active.curation.rating.toFixed(1)} / 5`}</strong></div>
                 <div><span>建議</span><strong>{active.curation.recommendation ?? '尚未整理'}</strong></div>
               </div>
+              {activeMapTarget && (
+                <section className="location-map" aria-labelledby="location-map-title">
+                  <div className="location-map-heading">
+                    <div>
+                      <p className="eyebrow">RESEARCHED LOCATION</p>
+                      <h3 id="location-map-title">研究定位</h3>
+                      <p>{activeMapTarget.label}</p>
+                    </div>
+                    <a href={googleMapsSearchUrl(activeMapTarget.query)} target="_blank" rel="noreferrer">
+                      Google Maps ↗
+                    </a>
+                  </div>
+                  {activeMapIsLoaded ? (
+                    <iframe
+                      title={`${active.poi_name} 的 Google Maps 研究定位`}
+                      src={googleMapsEmbedUrl(activeMapTarget.query)}
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <div className="location-map-placeholder">
+                      <span aria-hidden="true">⌖</span>
+                      {googleMapsEmbedApiKey ? (
+                        <>
+                          <strong>互動地圖尚未載入</strong>
+                          <p>點擊後才會連線 Google Maps，避免首頁和明信片視窗產生不必要的地圖流量。</p>
+                          <button onClick={() => setMapLoadedFor(active.id)}>載入 Google Map</button>
+                        </>
+                      ) : (
+                        <>
+                          <strong>Google Maps Embed 尚未設定</strong>
+                          <p>加入受限制的 Maps Embed API key 後，這裡會提供延遲載入的互動地圖。</p>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  <p className="location-map-precision">
+                    {activeMapTarget.precision === 'coordinates'
+                      ? '定位依據：明信片保存的座標'
+                      : '定位依據：研究所得地點；marker 由 Google 依地名解析，尚非人工確認座標'}
+                  </p>
+                </section>
+              )}
               <details className="detail-story">
                 <summary>
                   <span className="research-summary-head">
@@ -436,7 +537,7 @@ export default function Home() {
                     const related = postcards.find((postcard) => postcard.id === relation.id);
                     if (!related) return null;
                     return (
-                      <button key={`${relation.id}-${relation.relationship}`} onClick={() => setActive(related)}>
+                      <button key={`${relation.id}-${relation.relationship}`} onClick={() => openPostcard(related)}>
                         <img src={related.asset.path} alt="" />
                         <span>
                           <strong>{related.poi_name}</strong>

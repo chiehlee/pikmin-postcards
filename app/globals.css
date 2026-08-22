@@ -142,6 +142,19 @@ footer p { margin: 0; color: var(--ink); font-family: Georgia, serif; }
 .detail-facts span, .detail-facts strong { display: block; }
 .detail-facts span { color: var(--muted); font-size: 9px; }
 .detail-facts strong { margin-top: 3px; font-size: 12px; }
+.location-map { margin: 0 0 28px; padding: 18px; border: 1px solid var(--line); background: #f8f6ef; }
+.location-map-heading { display: flex; justify-content: space-between; align-items: start; gap: 18px; margin-bottom: 15px; }
+.location-map-heading .eyebrow { margin-bottom: 5px; }
+.location-map-heading h3 { margin: 0; font: 500 22px Georgia, "Noto Serif TC", serif; }
+.location-map-heading div > p:last-child { margin: 5px 0 0; color: var(--muted); font-size: 11px; }
+.location-map-heading > a { flex: 0 0 auto; color: var(--green); font-size: 10px; font-weight: 800; text-decoration: none; }
+.location-map iframe { display: block; width: 100%; height: 300px; border: 0; background: #dce5dd; }
+.location-map-placeholder { display: grid; justify-items: center; min-height: 230px; padding: 35px 24px; place-content: center; background: radial-gradient(circle at 50% 42%, rgba(35,91,67,.13), transparent 85px), #e7e8df; text-align: center; }
+.location-map-placeholder > span { margin-bottom: 8px; color: var(--green); font: 36px Georgia, serif; }
+.location-map-placeholder strong { font-size: 13px; }
+.location-map-placeholder p { max-width: 390px; margin: 7px 0 15px; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.location-map-placeholder button { padding: 9px 13px; border: 1px solid var(--green); border-radius: 999px; background: var(--green); color: white; cursor: pointer; font-size: 11px; font-weight: 750; }
+.location-map-precision { margin: 10px 0 0; color: var(--muted); font-size: 9px; line-height: 1.5; }
 .detail-story { padding: 22px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .detail-story summary { list-style: none; cursor: pointer; }
 .detail-story summary::-webkit-details-marker { display: none; }
@@ -216,6 +229,9 @@ footer p { margin: 0; color: var(--ink); font-family: Georgia, serif; }
   .detail-modal { width: 100%; max-height: 96vh; border-radius: 14px 14px 0 0; }
   .modal-image-panel { min-height: 50vh; padding: 12px; }
   .modal-copy { padding: 28px 20px 45px; }
+  .location-map { padding: 14px; }
+  .location-map-heading { align-items: stretch; flex-direction: column; }
+  .location-map iframe { height: 260px; }
   footer { flex-direction: column; }
 }
 @media (prefers-reduced-motion: reduce) {
