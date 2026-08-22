@@ -116,17 +116,23 @@ npm run check:duplicate -- \
 
 保存完整研究到 `research/raw/`，並讓 `research.detail.source_path` 指向它。新研究可使用 `structured_preserved`；不得把新研究標成歷史原文。
 
-### 5. 搜尋資料庫關聯
+### 5. 用索引找 Related Postcard
 
-在新增前後都掃描 SQLite／`data/postcards.json`，至少比較：
+不要為了找關聯把 `data/postcards.json` 全文、全部圖片或全部研究內容載入模型。Postcard 數量會持續增加，而 Related Postcard 是 best-effort enrichment，不要求 100% recall。canonical record 寫入 SQLite 後先執行：
 
-- SHA-256、metadata dedupe key。
-- NFC 正規化後的 POI 名稱、別名、同地點不同名稱。
-- location raw/display、座標與鄰近位置。
-- sender、found date、同日群集與跨日重複出現。
-- tags、研究摘要、confirmed facts、sources 中的同一建物／作品／事件。
+```bash
+npm run related:candidates -- --id pc-XXXX --limit 8
+```
 
-只把目前 schema 與 UI 支援的關係寫入 `related_postcards`，而且必須雙向。時間群集、朋友據點或主題相似先作研究推論，不塞進不相符的 relationship type。若新的關係類型確有持續價值，先回報設計影響，再一起更新 schema、TypeScript、UI 與 tests。
+工具只用 SQLite indexes 對 exact POI、raw/display location、sender＋日期、tags、research source 與鄰近座標各取有限候選，再合併評分。預設最多輸出 8 張，不輸出圖片或長 research text。依下列 token budget 工作：
+
+1. 先看短候選，不掃完整 archive。
+2. 最多深入開啟前 3 張的圖片與 research detail；弱訊號或沒有候選就停止。
+3. 只有關聯能用一句具體的話說清楚時才寫入，例如同一 postcard 的不同截圖、同一地點／作品系列、共享可辨識主題，或有來源支持的歷史連結。
+4. 同 country、常見 tag、同 sender 或時間接近本身只供召回，不能單獨成為關聯理由。
+5. 外部調查只用於已出現的強候選，不為追求完整關聯圖做開放式搜尋。漏掉低訊號關聯可以接受；後續有新證據時再補。
+
+關聯寫入 `related_postcards` 時使用簡短且語意清楚的 `relationship`，並在可選的 `note` 保存上述一句話理由；兩端必須使用相同 relationship 與 note。UI 標題固定為 `RELATED POSTCARD`。時間群集或朋友據點若沒有 postcard-to-postcard 的具體敘事，只保留為研究推論。新增 relationship type 不需先掃全部資料；若需要新欄位或不同 UI，才同步更新 migration、snapshots、TypeScript 與 tests。
 
 新增 confirmed sender 證據後重建／更新 `data/friends.json`。單張、單日或旅遊群集不足以宣告生活據點；證據不足時維持 low confidence 或 needs-review。
 
@@ -184,6 +190,7 @@ npm run build
 3. **研究矛盾**：可靠來源互相衝突時降低 confidence，寫入 unresolved questions；不要挑一個方便的答案掩蓋衝突。
 4. **流程矛盾**：若現有 script、schema、tests 或本 Skill 造成資料遺失、重工或錯誤分類，立即回報這個 workflow gap，做最小、可驗證的改進，再重新執行受影響步驟。
 5. **Skill 回寫**：當錯誤是可重複的規則缺漏，而非單張明信片的例外，在同一任務內窄幅修改本 `SKILL.md`。不要為單一例外累積普遍規則；例外留在該 postcard 的 evidence/provenance。
-6. 修改 Skill 後執行 skill-creator 的 `quick_validate.py`，再跑相關 project tests。最終明確列出「Skill 改了什麼、哪個觀察觸發、如何防止重犯」。
+6. **關聯回饋**：若候選常出現無意義結果、漏掉使用者指出的強關聯，或 token 成本持續偏高，先調整 index、訊號權重、候選上限或 deep-review 上限，不以全 archive 掃描當補救。
+7. 修改 Skill 後執行 skill-creator 的 `quick_validate.py`，再跑相關 project tests。最終明確列出「Skill 改了什麼、哪個觀察觸發、如何防止重犯」。
 
 不要為了讓舊 tests 通過而維持已被證據推翻的資料，也不要在沒有證據時擴大自動推論。

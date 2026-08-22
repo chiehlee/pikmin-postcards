@@ -79,8 +79,8 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const insertRelation = database.prepare(`
-    INSERT INTO postcard_relations (postcard_id, related_postcard_id, relationship)
-    VALUES (?, ?, ?)
+    INSERT INTO postcard_relations (postcard_id, related_postcard_id, relationship, note)
+    VALUES (?, ?, ?, ?)
   `);
   const insertFriend = database.prepare(`
     INSERT INTO friends (
@@ -214,7 +214,7 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
 
     for (const record of snapshots.postcards.postcards) {
       for (const relation of record.related_postcards ?? []) {
-        insertRelation.run(record.id, relation.id, relation.relationship);
+        insertRelation.run(record.id, relation.id, relation.relationship, relation.note ?? null);
       }
     }
 

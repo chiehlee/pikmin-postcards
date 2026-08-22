@@ -40,10 +40,54 @@ try {
     .all("self_found")
     .map((row) => row.detail)
     .join(" | ");
+  const poiPlan = database
+    .prepare("EXPLAIN QUERY PLAN SELECT id FROM postcards WHERE poi_name = ? LIMIT 16")
+    .all("鉄のドンキホーテ")
+    .map((row) => row.detail)
+    .join(" | ");
+  const rawLocationPlan = database
+    .prepare("EXPLAIN QUERY PLAN SELECT id FROM postcards WHERE location_raw = ? LIMIT 16")
+    .all("Setagaya, Sangenjaya 1-Chōme")
+    .map((row) => row.detail)
+    .join(" | ");
+  const displayLocationPlan = database
+    .prepare("EXPLAIN QUERY PLAN SELECT id FROM postcards WHERE location_display = ? LIMIT 16")
+    .all("臺北市信義區")
+    .map((row) => row.detail)
+    .join(" | ");
+  const tagPlan = database
+    .prepare("EXPLAIN QUERY PLAN SELECT postcard_id FROM postcard_tags WHERE tag = ? LIMIT 16")
+    .all("商業景觀")
+    .map((row) => row.detail)
+    .join(" | ");
+  const sourcePlan = database
+    .prepare("EXPLAIN QUERY PLAN SELECT postcard_id FROM research_sources WHERE url = ? LIMIT 16")
+    .all("https://example.com")
+    .map((row) => row.detail)
+    .join(" | ");
+  const coordinatePlan = database
+    .prepare(`
+      EXPLAIN QUERY PLAN
+      SELECT id FROM postcards
+      WHERE latitude IS NOT NULL
+        AND longitude IS NOT NULL
+        AND latitude BETWEEN ? AND ?
+        AND longitude BETWEEN ? AND ?
+      LIMIT 16
+    `)
+    .all(24, 26, 120, 122)
+    .map((row) => row.detail)
+    .join(" | ");
   assert.match(senderPlan, /idx_postcards_sender_found_date/);
   assert.match(curationPlan, /idx_postcards_curation_status_rating/);
   assert.match(localPathPlan, /idx_assets_local_path/);
   assert.match(acquisitionPlan, /idx_postcards_acquisition_type/);
+  assert.match(poiPlan, /idx_postcards_poi_name/);
+  assert.match(rawLocationPlan, /idx_postcards_location_raw/);
+  assert.match(displayLocationPlan, /idx_postcards_location_display/);
+  assert.match(tagPlan, /idx_postcard_tags_tag_postcard/);
+  assert.match(sourcePlan, /idx_research_sources_url_postcard/);
+  assert.match(coordinatePlan, /idx_postcards_coordinates/);
 
   console.log(
     JSON.stringify(
@@ -58,6 +102,12 @@ try {
           curation_filter: curationPlan,
           local_asset_lookup: localPathPlan,
           acquisition_filter: acquisitionPlan,
+          related_poi_lookup: poiPlan,
+          related_raw_location_lookup: rawLocationPlan,
+          related_display_location_lookup: displayLocationPlan,
+          related_tag_lookup: tagPlan,
+          related_source_lookup: sourcePlan,
+          related_coordinate_lookup: coordinatePlan,
         },
       },
       null,

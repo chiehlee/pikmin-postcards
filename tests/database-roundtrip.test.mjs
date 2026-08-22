@@ -11,11 +11,22 @@ test("SQLite migration preserves every snapshot field exactly", async () => {
   const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "pikmin-db-test-"));
   const databasePath = path.join(temporaryDirectory, "archive.sqlite3");
   const snapshots = await loadSnapshots();
+  for (const postcardId of ["pc-0111", "pc-0112"]) {
+    const postcard = snapshots.postcards.postcards.find((record) => record.id === postcardId);
+    postcard.related_postcards[0].note = "相同 POI、日期與地點的兩張獨立遊戲截圖。";
+  }
   const database = await openDatabase(databasePath);
 
   try {
     replaceDatabaseFromSnapshots(database, snapshots);
     assert.deepEqual(exportSnapshots(database), snapshots);
+    assert.equal(
+      database.prepare(`
+        SELECT note FROM postcard_relations
+        WHERE postcard_id = 'pc-0111' AND related_postcard_id = 'pc-0112'
+      `).get().note,
+      "相同 POI、日期與地點的兩張獨立遊戲截圖。",
+    );
     assert.equal(database.prepare("PRAGMA integrity_check").get().integrity_check, "ok");
     assert.deepEqual(database.prepare("PRAGMA foreign_key_check").all(), []);
     assert.equal(database.prepare("SELECT count(*) AS count FROM postcards").get().count, 148);

@@ -32,7 +32,11 @@ test("related postcard references are valid and symmetric", () => {
       assert.ok(target, `${record.id} references missing ${relation.id}`);
       assert.ok(
         target.related_postcards?.some(
-          (reverse) => reverse.id === record.id && reverse.relationship === relation.relationship,
+          (reverse) => (
+            reverse.id === record.id
+            && reverse.relationship === relation.relationship
+            && (reverse.note ?? null) === (relation.note ?? null)
+          ),
         ),
         `${record.id} -> ${relation.id} is not symmetric`,
       );

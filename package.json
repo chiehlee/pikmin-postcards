@@ -19,6 +19,7 @@
     "check:duplicate": "node --disable-warning=ExperimentalWarning scripts/check-duplicate.mjs",
     "image:ingest": "node --disable-warning=ExperimentalWarning scripts/ingest-image.mjs",
     "friends:avatars": "node --disable-warning=ExperimentalWarning scripts/generate-friend-avatars.mjs",
+    "related:candidates": "node --disable-warning=ExperimentalWarning scripts/find-related-candidates.mjs",
     "db:sync": "node --disable-warning=ExperimentalWarning scripts/db-sync.mjs",
     "db:export": "node --disable-warning=ExperimentalWarning scripts/db-export.mjs",
     "db:verify": "node --disable-warning=ExperimentalWarning scripts/db-verify.mjs",

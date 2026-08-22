@@ -78,7 +78,8 @@ type Postcard = {
   };
   related_postcards?: {
     id: string;
-    relationship: 'same-metadata-different-image' | 'same-poi-name-variant';
+    relationship: string;
+    note?: string;
   }[];
 };
 
@@ -158,6 +159,18 @@ function googleMapsSearchUrl(query: string) {
 
 function googleMapsEmbedUrl(query: string) {
   return `https://www.google.com/maps/embed/v1/place?key=${encodeURIComponent(googleMapsEmbedApiKey)}&q=${encodeURIComponent(query)}`;
+}
+
+function relationshipLabel(relationship: string) {
+  const labels: Record<string, string> = {
+    'same-metadata-different-image': '同一張明信片的另一個截圖',
+    'same-poi-name-variant': '同一 POI 的名稱變體',
+    'same-place': '位於同一地點',
+    'same-subject': '研究主題相互呼應',
+    'same-series': '屬於同一系列',
+    'historical-connection': '具有可說明的歷史關聯',
+  };
+  return labels[relationship] ?? relationship;
 }
 
 export default function Home() {
@@ -692,7 +705,7 @@ export default function Home() {
               <div className="tag-list">{active.curation.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
               {!!active.related_postcards?.length && (
                 <div className="related-list">
-                  <p className="eyebrow">RELATED SCREENSHOTS</p>
+                  <p className="eyebrow">RELATED POSTCARD</p>
                   {active.related_postcards.map((relation) => {
                     const related = postcards.find((postcard) => postcard.id === relation.id);
                     if (!related) return null;
@@ -701,7 +714,7 @@ export default function Home() {
                         <img src={related.asset.path} alt="" />
                         <span>
                           <strong>{related.poi_name}</strong>
-                          <small>{relation.relationship === 'same-poi-name-variant' ? '同一 POI 的名稱變體' : '相同 metadata 的另一張原始截圖'}</small>
+                          <small>{relation.note ?? relationshipLabel(relation.relationship)}</small>
                         </span>
                         <b>→</b>
                       </button>
