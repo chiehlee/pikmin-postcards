@@ -22,6 +22,16 @@ export type PostcardSortOptions = {
   origin?: Coordinates | null;
 };
 
+export type PaginationResult<T> = {
+  items: T[];
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  start: number;
+  end: number;
+};
+
 export function postcardCoordinates(record: Pick<SortablePostcard, 'location'>): Coordinates | null;
 export function distanceKilometers(
   record: Pick<SortablePostcard, 'location'>,
@@ -31,3 +41,8 @@ export function sortPostcards<T extends SortablePostcard>(
   records: T[],
   options: PostcardSortOptions,
 ): T[];
+export function paginateRecords<T>(
+  records: T[],
+  requestedPage: number,
+  pageSize?: number,
+): PaginationResult<T>;

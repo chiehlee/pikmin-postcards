@@ -6,9 +6,12 @@ import archive from '../data/postcards.json';
 import friendArchive from '../data/friends.json';
 import {
   distanceKilometers,
+  paginateRecords,
   postcardCoordinates,
   sortPostcards,
 } from '../lib/postcard-sort.mjs';
+
+const postcardsPerPage = 60;
 
 type Status = 'keep' | 'representative' | 'candidate' | 'delete' | 'unreviewed';
 type AcquisitionType = 'self_found' | 'received' | 'unknown';
@@ -170,6 +173,7 @@ export default function Home() {
   const [locating, setLocating] = useState(false);
   const [manualLatitude, setManualLatitude] = useState('');
   const [manualLongitude, setManualLongitude] = useState('');
+  const [page, setPage] = useState(1);
   const [active, setActive] = useState<Postcard | null>(null);
   const [mapLoadedFor, setMapLoadedFor] = useState<string | null>(null);
 
@@ -202,6 +206,7 @@ export default function Home() {
           accuracy: position.coords.accuracy,
           source: 'device',
         });
+        setPage(1);
         setLocationFeedback(`已使用裝置位置，定位精度約 ±${Math.round(position.coords.accuracy)} 公尺；位置只保存在目前頁面記憶體。`);
         setLocating(false);
       },
@@ -229,13 +234,20 @@ export default function Home() {
       return;
     }
     setDistanceOrigin({ latitude, longitude, source: 'manual' });
+    setPage(1);
     setLocationFeedback(`已使用手動參考座標 ${latitude}, ${longitude}；資料只保存在目前頁面記憶體。`);
   }
 
   function changeSortField(nextField: SortField) {
     setSortField(nextField);
     setSortDirection(nextField === 'distance' ? 'asc' : 'desc');
+    setPage(1);
     if (nextField === 'distance' && !distanceOrigin) requestDeviceLocation();
+  }
+
+  function goToPage(nextPage: number) {
+    setPage(nextPage);
+    document.getElementById('archive')?.scrollIntoView({ block: 'start' });
   }
 
   const senders = useMemo(
@@ -298,6 +310,7 @@ export default function Home() {
   const activeMapTarget = active ? mapTargetFor(active) : null;
   const activeMapIsLoaded = !!active && mapLoadedFor === active.id && !!googleMapsEmbedApiKey;
   const filteredCoordinateCount = filtered.filter((postcard) => postcardCoordinates(postcard)).length;
+  const pagination = paginateRecords(filtered, page, postcardsPerPage);
 
   useEffect(() => {
     if (!active) return;
@@ -355,13 +368,13 @@ export default function Home() {
       </aside>
 
       {view === 'archive' ? (
-        <section className="content-section" aria-labelledby="archive-title">
+        <section className="content-section" id="archive" aria-labelledby="archive-title">
           <div className="section-heading">
             <div>
               <p className="eyebrow">ARCHIVE</p>
               <h2 id="archive-title">收藏檔案</h2>
             </div>
-            <p>顯示 {filtered.length} / {postcards.length} 張</p>
+            <p>顯示 {pagination.start}–{pagination.end}，共 {filtered.length} / {postcards.length} 張</p>
           </div>
 
           <div className="filters">
@@ -370,13 +383,13 @@ export default function Home() {
               <input
                 type="search"
                 value={query}
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={(event) => { setQuery(event.target.value); setPage(1); }}
                 placeholder="名稱、地點、故事或標籤"
               />
             </label>
             <label>
               <span>來源／寄件人</span>
-              <select value={senderFilter} onChange={(event) => setSenderFilter(event.target.value)}>
+              <select value={senderFilter} onChange={(event) => { setSenderFilter(event.target.value); setPage(1); }}>
                 <option value="all">全部</option>
                 <option value="self-found">自己發現</option>
                 {senders.map((name) => <option key={name} value={`sender:${name}`}>{name}</option>)}
@@ -386,14 +399,14 @@ export default function Home() {
             </label>
             <label>
               <span>國家／地區</span>
-              <select value={country} onChange={(event) => setCountry(event.target.value)}>
+              <select value={country} onChange={(event) => { setCountry(event.target.value); setPage(1); }}>
                 <option value="all">全部</option>
                 {countries.map((name) => <option key={name}>{name}</option>)}
               </select>
             </label>
             <label>
               <span>收藏判斷</span>
-              <select value={status} onChange={(event) => setStatus(event.target.value as 'all' | Status)}>
+              <select value={status} onChange={(event) => { setStatus(event.target.value as 'all' | Status); setPage(1); }}>
                 <option value="all">全部</option>
                 {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
@@ -408,7 +421,7 @@ export default function Home() {
             </label>
             <label>
               <span>排序方向</span>
-              <select value={sortDirection} onChange={(event) => setSortDirection(event.target.value as SortDirection)}>
+              <select value={sortDirection} onChange={(event) => { setSortDirection(event.target.value as SortDirection); setPage(1); }}>
                 <option value="asc">
                   {sortField === 'rating' ? '低 → 高' : sortField === 'date' ? '舊 → 新' : '近 → 遠'}
                 </option>
@@ -445,7 +458,7 @@ export default function Home() {
 
           {filtered.length ? (
             <div className="postcard-grid">
-              {filtered.map((postcard) => {
+              {pagination.items.map((postcard) => {
                 const distance = distanceOrigin ? distanceKilometers(postcard, distanceOrigin) : null;
                 return (
                   <article className="postcard-card" key={postcard.id}>
@@ -476,8 +489,33 @@ export default function Home() {
           ) : (
             <div className="empty-state">
               <strong>沒有符合條件的明信片</strong>
-              <button onClick={() => { setQuery(''); setSenderFilter('all'); setCountry('all'); setStatus('all'); }}>清除篩選</button>
+              <button onClick={() => { setQuery(''); setSenderFilter('all'); setCountry('all'); setStatus('all'); setPage(1); }}>清除篩選</button>
             </div>
+          )}
+
+          {filtered.length > postcardsPerPage && (
+            <nav className="pagination" aria-label="明信片分頁">
+              <button type="button" onClick={() => goToPage(pagination.page - 1)} disabled={pagination.page === 1}>
+                ← 上一頁
+              </button>
+              <div className="pagination-position">
+                <span>第</span>
+                <select
+                  value={pagination.page}
+                  onChange={(event) => goToPage(Number(event.target.value))}
+                  aria-label="選擇頁數"
+                >
+                  {Array.from({ length: pagination.totalPages }, (_, index) => (
+                    <option key={index + 1} value={index + 1}>{index + 1}</option>
+                  ))}
+                </select>
+                <span>/ {pagination.totalPages} 頁</span>
+                <small>{pagination.start}–{pagination.end} / {filtered.length} 張</small>
+              </div>
+              <button type="button" onClick={() => goToPage(pagination.page + 1)} disabled={pagination.page === pagination.totalPages}>
+                下一頁 →
+              </button>
+            </nav>
           )}
         </section>
       ) : (

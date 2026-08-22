@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   distanceKilometers,
+  paginateRecords,
   postcardCoordinates,
   sortPostcards,
 } from "../lib/postcard-sort.mjs";
@@ -33,6 +34,27 @@ test("coordinates can be recovered from the postcard's raw coordinate label", ()
     { latitude: 35.644348, longitude: 139.705267 },
   );
   assert.equal(postcardCoordinates({ location: { raw: "Ankang, Xinyi District" } }), null);
+});
+
+test("pagination slices the globally sorted collection into 60-card pages", () => {
+  const collection = Array.from({ length: 125 }, (_, index) => (
+    postcard(String(index), index, "2026-05-01", 0, index)
+  ));
+  const sorted = sortPostcards(collection, { field: "rating", direction: "desc" });
+  const firstPage = paginateRecords(sorted, 1);
+  const secondPage = paginateRecords(sorted, 2);
+  const lastPage = paginateRecords(sorted, 99);
+
+  assert.equal(firstPage.items.length, 60);
+  assert.equal(secondPage.items.length, 60);
+  assert.equal(lastPage.items.length, 5);
+  assert.equal(firstPage.items.at(-1).id, "65");
+  assert.equal(secondPage.items[0].id, "64");
+  assert.deepEqual(ids(lastPage.items), ["4", "3", "2", "1", "0"]);
+  assert.deepEqual(
+    [lastPage.page, lastPage.totalPages, lastPage.start, lastPage.end],
+    [3, 3, 121, 125],
+  );
 });
 
 function postcard(id, rating, foundDate, latitude, longitude) {
