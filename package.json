@@ -24,7 +24,15 @@
     "db:export": "node --disable-warning=ExperimentalWarning scripts/db-export.mjs",
     "db:verify": "node --disable-warning=ExperimentalWarning scripts/db-verify.mjs",
     "db:stats": "node --disable-warning=ExperimentalWarning scripts/db-stats.mjs",
-    "test": "node --disable-warning=ExperimentalWarning --test"
+    "test": "npm run test:all",
+    "test:unit": "node --disable-warning=ExperimentalWarning --experimental-test-coverage --test-coverage-include='lib/**/*.mjs' --test-coverage-lines=95 --test-coverage-branches=80 --test-coverage-functions=95 --test tests/*.unit.test.mjs",
+    "test:regression": "node --disable-warning=ExperimentalWarning --test tests/*.regression.test.mjs",
+    "test:functional": "npm run build && node --disable-warning=ExperimentalWarning --test tests/*.functional.test.mjs",
+    "test:all": "npm run test:unit && npm run test:regression && npm run test:functional",
+    "test:quick": "npm run test:unit && npm run test:regression",
+    "test:watch": "node --disable-warning=ExperimentalWarning --watch --test tests/*.unit.test.mjs tests/*.regression.test.mjs",
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run test:all && npm run lint && npm run typecheck && npm run db:verify && npm run db:stats"
   },
   "dependencies": {
     "next": "16.3.2",

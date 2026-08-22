@@ -22,6 +22,7 @@ description: "接收新的 Pikmin Bloom 明信片圖片、聊天附件、本機�
 - 畫面判讀完成：可見欄位、來源／寄件人分類及不確定欄位。
 - 研究與關聯掃描完成：定位信心、候選關聯及任何矛盾。
 - 寫入完成：新增或修改的 postcard IDs、受影響的朋友／關聯，以及驗證狀態。
+- 每個可獨立驗證的修改完成：立即執行最小相關 suite；失敗時先回報被破壞的行為，再修正，不把失敗累積到最後。
 
 發現矛盾時立即說明「證據、衝突欄位、影響、建議處理」，同時繼續所有不依賴該答案的安全工作。只有互斥選項會改變 canonical identity、寄件人或是否合併，且本機證據無法解決時，才停下來請使用者決定。
 
@@ -158,18 +159,30 @@ npm run friends:avatars -- --commit
 
 網站原則上直接讀 snapshots；只有新增欄位或互動需要時才修改 UI。任何資料模型改動使用新的 migration，不改寫已套用的 migration。Map iframe 維持使用者點擊後才載入，不能讓新增資料導致首頁一次載入多張地圖。
 
-### 7. 驗證與交付
+### 7. 測試、驗證與交付
 
-至少執行：
+先依改動選擇測試層級；同一項行為不需要在三層重複測試，但不可沒有對應層級：
+
+- 純函式、排序、判讀與 domain rule 使用 `.unit.test.mjs`。
+- canonical totals、不可變圖片、既有 bug、資料關聯與 JSON ↔ SQLite round-trip 使用 `.regression.test.mjs`。
+- CLI、filesystem、SQLite 寫入、下載與 production HTTP 邊界使用 `.functional.test.mjs`；只操作 temp DB／temp directory，不修改 canonical archive。
+
+新增或修改 production behavior、schema、script 或 workflow 時，必須在同一變更新增或修改至少一個能觀察結果的 test。修 bug 時，在可行範圍內先寫出會失敗的 regression test，再修實作。純新增 postcard 資料至少更新／通過 explicit totals 與 archive integrity；若它揭露新的規則邊界，再補對應 unit 或 regression case。不得用刪除 assertion、放寬 expected value 或跳過 suite 來掩蓋 regression。
+
+開發中先執行受影響的單一檔案或：
 
 ```bash
-npm test
-npm run lint
-npx tsc --noEmit
-npm run db:verify
-npm run db:stats
-npm run build
+npm run test:quick
+# 需要持續回饋時使用 npm run test:watch
 ```
+
+交付或 commit 前固定執行：
+
+```bash
+npm run verify
+```
+
+`verify` 必須涵蓋 unit coverage gate、regression、functional production build／HTTP、lint、TypeScript、DB integrity／query plans 與 stats。測試檔名使用 `.unit.test.mjs`、`.regression.test.mjs` 或 `.functional.test.mjs`；suite meta-test 會拒絕未分類檔案，避免新 test 靜默漏跑。
 
 再確認：
 
