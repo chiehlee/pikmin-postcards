@@ -1,0 +1,6 @@
+*.zip binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+public/images/postcards/** filter=lfs diff=lfs merge=lfs -text
+imports/source-bundles/*.zip filter=lfs diff=lfs merge=lfs -text

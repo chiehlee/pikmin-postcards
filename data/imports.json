@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "imports": [
+    {
+      "id": "current-session-2026-08-23",
+      "source_session": "current-session",
+      "archived_on": "2026-08-23",
+      "bundle": "imports/source-bundles/current-session-2026-08-23.zip",
+      "bundle_sha256": "7c5f2de818891f8a5e15fa085dd625381d09fbd34f5513ce7e6e020a8a161df3",
+      "postcard_count": 20,
+      "status": "imported",
+      "notes": "Bootstrap bundle imported with original screenshots, source manifests and raw research preserved."
+    }
+  ]
+}
