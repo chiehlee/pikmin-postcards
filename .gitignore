@@ -42,3 +42,4 @@ next-env.d.ts
 /var/*.sqlite3
 /var/*.sqlite3-*
 /var/backups/
+/var/image-inbox/

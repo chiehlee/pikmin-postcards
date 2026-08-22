@@ -15,6 +15,7 @@
     "normalize:bootstrap": "node scripts/normalize-current-session.mjs",
     "merge:bundle": "node --disable-warning=ExperimentalWarning scripts/merge-session-bundle.mjs",
     "check:duplicate": "node --disable-warning=ExperimentalWarning scripts/check-duplicate.mjs",
+    "image:ingest": "node --disable-warning=ExperimentalWarning scripts/ingest-image.mjs",
     "db:sync": "node --disable-warning=ExperimentalWarning scripts/db-sync.mjs",
     "db:export": "node --disable-warning=ExperimentalWarning scripts/db-export.mjs",
     "db:verify": "node --disable-warning=ExperimentalWarning scripts/db-verify.mjs",

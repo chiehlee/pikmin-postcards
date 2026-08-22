@@ -68,6 +68,7 @@ npm run check:duplicate -- \
 ## 資料結構
 
 - `var/pikmin-postcards.sqlite3`：本機 SQLite operational database（不進 Git）。
+- `var/image-inbox/`：尚未 canonicalize 的本機圖片 intake（以 SHA-256 命名，不進 Git）。
 - `db/migrations/`：可版控、依序執行的資料庫 schema migrations。
 - `public/images/postcards/`：不可變更的原始截圖。
 - `data/postcards.json`：網站使用、可攜且可版控的 canonical postcard snapshot。
@@ -81,7 +82,20 @@ npm run check:duplicate -- \
 - `scripts/merge-session-bundle.mjs`：驗證 ZIP 內所有 checksum，合併新 bundle 並保留 provenance。
 - `scripts/check-duplicate.mjs`：兩階段去重檢查。
 
-圖片不存進 SQLite；資料庫只保存圖片路徑、checksum、欄位、關聯、研究來源與 provenance。這能讓原圖繼續當作不可變更檔案保存，也避免資料庫隨圖片數量快速膨脹。
+圖片不存進 SQLite；資料庫只保存圖片的本機路徑、網站路徑、checksum、欄位、關聯、研究來源與 provenance。Canonical 圖片的 `assets.local_path` 會指向 `public/images/...`；尚待整理的圖片則由 `image_intake.local_path` 指向 `var/image-inbox/...`。這能讓原圖繼續當作不可變更檔案保存，也避免資料庫隨圖片數量快速膨脹。
+
+## 匯入單張圖片
+
+聊天附件先使用附件在本機的實際路徑；一般本機圖片與 Dropbox／HTTP(S) 連結使用同一個入口：
+
+```bash
+npm run image:ingest -- --source '/local/path/postcard.png'
+npm run image:ingest -- --source 'https://www.dropbox.com/scl/fi/.../postcard.png?rlkey=...&dl=0'
+```
+
+匯入器會依序下載或讀取圖片、檢查格式與 100 MiB 上限、計算 SHA-256、以 content-addressed 名稱落地，再寫入 DB。新圖片會標記為 `pending`；若 checksum 已屬於 canonical asset，則直接標記為 `canonicalized` 並指向既有的 `public/images/...`。相同圖片或相同來源重送不會建立重複檔案。
+
+遠端 URL 的 query string 不會原文存進資料庫；DB 只保留移除 query 後的位置與完整來源字串的 SHA-256，避免把 Dropbox token 類資訊寫入紀錄。圖片成為正式明信片後，bundle merge／`db:sync` 會把相同 checksum 的 intake 自動連回 canonical asset。
 
 ### SQLite 與網站 snapshot
 

@@ -3,6 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { resolveStoredLocalPath } from "../db/asset-paths.mjs";
 import { openDatabase } from "../db/database.mjs";
 import { exportSnapshots, loadSnapshots, replaceDatabaseFromSnapshots } from "../db/snapshots.mjs";
 
@@ -18,6 +19,10 @@ test("SQLite migration preserves every snapshot field exactly", async () => {
     assert.equal(database.prepare("PRAGMA integrity_check").get().integrity_check, "ok");
     assert.deepEqual(database.prepare("PRAGMA foreign_key_check").all(), []);
     assert.equal(database.prepare("SELECT count(*) AS count FROM postcards").get().count, 148);
+    const assets = database.prepare("SELECT local_path FROM assets").all();
+    assert.equal(assets.length, 149);
+    assert.ok(assets.every((asset) => asset.local_path.startsWith("public/images/")));
+    assert.ok(assets.every((asset) => path.isAbsolute(resolveStoredLocalPath(asset.local_path))));
 
     const senderPlan = database
       .prepare("EXPLAIN QUERY PLAN SELECT id FROM postcards WHERE sender = ? ORDER BY found_date DESC")

@@ -20,6 +20,7 @@ try {
     friends: database.prepare("SELECT count(*) AS count FROM friends").get().count,
     imports: database.prepare("SELECT count(*) AS count FROM imports").get().count,
     context_records: database.prepare("SELECT count(*) AS count FROM context_records").get().count,
+    image_intake: database.prepare("SELECT count(*) AS count FROM image_intake").get().count,
   };
   console.log(JSON.stringify(stats, null, 2));
 } finally {

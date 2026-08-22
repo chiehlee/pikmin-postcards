@@ -19,7 +19,9 @@ export async function backupDatabase(databasePath = defaultDatabasePath) {
   checkpoint.exec("PRAGMA wal_checkpoint(TRUNCATE)");
   checkpoint.close();
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const backupDir = path.join(projectRoot, "var/backups");
+  const backupDir = path.resolve(databasePath) === path.resolve(defaultDatabasePath)
+    ? path.join(projectRoot, "var/backups")
+    : path.join(path.dirname(databasePath), "backups");
   const destination = path.join(backupDir, `pikmin-postcards-${stamp}.sqlite3`);
   await mkdir(backupDir, { recursive: true });
   await copyFile(databasePath, destination);

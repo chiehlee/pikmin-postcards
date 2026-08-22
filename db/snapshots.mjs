@@ -1,5 +1,6 @@
 import { readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { publicPathToLocalPath } from "./asset-paths.mjs";
 import { projectRoot } from "./database.mjs";
 
 const snapshotDefinitions = {
@@ -38,8 +39,8 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
   ];
 
   const insertAsset = database.prepare(`
-    INSERT INTO assets (sha256, path, bytes, media_type, original_filename)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO assets (sha256, path, local_path, bytes, media_type, original_filename)
+    VALUES (?, ?, ?, ?, ?, ?)
   `);
   const insertPostcard = database.prepare(`
     INSERT INTO postcards (
@@ -114,6 +115,7 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
       insertAsset.run(
         record.asset.sha256,
         record.asset.path,
+        publicPathToLocalPath(record.asset.path),
         record.asset.bytes,
         record.asset.media_type,
         record.asset.original_filename ?? null,
@@ -254,6 +256,26 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
       delete header[definition.collection];
       insertHeader.run(name, JSON.stringify(header));
     }
+
+    database.exec(`
+      UPDATE image_intake
+      SET
+        asset_sha256 = sha256,
+        status = 'canonicalized',
+        local_path = (
+          SELECT assets.local_path
+          FROM assets
+          WHERE assets.sha256 = image_intake.sha256
+        ),
+        last_seen_at = CURRENT_TIMESTAMP
+      WHERE EXISTS (
+        SELECT 1 FROM assets WHERE assets.sha256 = image_intake.sha256
+      );
+
+      UPDATE image_intake
+      SET status = 'pending'
+      WHERE asset_sha256 IS NULL;
+    `);
 
     database.exec("COMMIT");
     database.exec("PRAGMA optimize");
