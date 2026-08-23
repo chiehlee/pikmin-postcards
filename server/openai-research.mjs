@@ -2,6 +2,28 @@ const apiBase = "https://api.openai.com/v1";
 
 export const defaultResearchModel = "gpt-5.6";
 
+export async function verifyOpenAIConnection({ apiKey, model, fetchImpl = globalThis.fetch }) {
+  if (!apiKey) throw new Error("OPENAI_API_KEY 尚未設定");
+  let response;
+  try {
+    response = await fetchImpl(`${apiBase}/models`, {
+      headers: { authorization: `Bearer ${apiKey}` },
+    });
+    const payload = await checkedJson(response);
+    const models = Array.isArray(payload.data) ? payload.data : [];
+    return {
+      ok: true,
+      checked_at: new Date().toISOString(),
+      model,
+      model_available: models.some((item) => item?.id === model),
+      accessible_model_count: models.length,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "OpenAI 連線測試失敗";
+    throw new Error(message.split(apiKey).join("[REDACTED]"));
+  }
+}
+
 export function buildResearchPrompt({ kind, postcard = null, intakeNote = "", relatedCandidates = [] }) {
   const operation = kind === "add"
     ? "分析這張尚未收錄的 Pikmin Bloom 明信片截圖，完成畫面判讀、地點與故事研究、收藏判斷。"

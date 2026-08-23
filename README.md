@@ -37,13 +37,24 @@ mise exec node@22.23.2 -- npm run dev:lan
 - 「再研究」：建立 OpenAI background job；UI 顯示 queued／研究中／更新資料庫／完成或失敗，以及持續時間。重新載入頁面會從 SQLite 找回未完成工作並繼續 polling；遠端 response 完成後仍要等本機驗證與 applying 成功，才算網站已更新。
 - 「刪除」：需再次確認，只 soft delete 當前 postcard。正常列表會隱藏它，但原圖、研究檔、SQLite row、provenance、關聯及其他疑似重複明信片都保留，ID 不回收。
 
-AI key 只由 server process 讀取，瀏覽器只會收到「是否已設定」的布林值。先從範本建立不進 Git 的本機環境檔：
+首頁右上角的「設定」會開啟 `/settings`。在這台 Mac 的瀏覽器使用 `http://localhost:3000/settings`，可以：
+
+- 設定、替換或移除 server-side OpenAI API key。
+- 選擇研究 model；新工作會在建立時保存當下的 model ID。
+- 保存前測試新 key，或測試目前已保存的連線。
+- 查看「已設定／未設定」、來源與末四碼遮罩；網站永遠不會把完整 key 讀回瀏覽器。
+
+設定頁把 key 原子寫入 Git 已忽略的 `.env.local`，權限設為 `0600`，並同步目前 server process，因此由設定頁保存後不必重啟。這符合 OpenAI 的 [API key 安全建議](https://help.openai.com/en/articles/5112595-best-practices-for-api-key-safety)：key 留在 server，不部署到瀏覽器，也不提交到 repository。
+
+目前 LAN／VPN 網址使用 HTTP，因此從其他裝置開啟設定頁時，key 欄位與移除操作會鎖定，避免祕密在網路上明文傳輸；仍可調整 model，並由 server 使用已保存的 key 測試連線。要設定 key，請回到主機上的 localhost。若日後為站點加入 HTTPS 與登入，再重新評估遠端祕密管理。
+
+也可以保留手動 fallback。先從範本建立不進 Git 的本機環境檔：
 
 ```bash
 cp .env.example .env.local
 ```
 
-再把 `OPENAI_API_KEY` 填入 `.env.local`，重啟 server。不要使用 `NEXT_PUBLIC_` 前綴，也不要把真正的 key 貼進程式、snapshot、SQLite 或 commit。這個 repository 目前刻意不含任何 API key；功能與測試完成後再一起做實際設定。
+再把 `OPENAI_API_KEY` 填入 `.env.local` 並重啟 server。不要使用 `NEXT_PUBLIC_` 前綴，也不要把真正的 key 貼進程式、snapshot、SQLite 或 commit。這個 repository 目前刻意不含任何 API key；之後可一起在 localhost 設定頁完成實際連線。
 
 正式建置與啟動：
 
@@ -71,7 +82,7 @@ npm run verify
 - `test:unit`：純函式與領域規則，包含 line 95%、branch 80%、function 95% 的 coverage gate。
 - `test:regression`：canonical 圖片、資料筆數、來源分類、雙向關聯、JSON ↔ SQLite round-trip 與既有 bug cases。
 - `test:functional`：先 production build，再從外部邊界測試圖片 intake、關聯候選 CLI、HTTP 網站與 canonical 圖片。
-- `test:ui`：以 Playwright Chromium 在桌面與手機 viewport 操作 production UI；涵蓋 modal 捲動、鍵盤／焦點、背景關閉、Google Map 延遲載入，以及新增、soft delete、再研究進度與完成後 UI 更新。失敗時保留 screenshot、trace 與 video。
+- `test:ui`：以 Playwright Chromium 在桌面與手機 viewport 操作 production UI；涵蓋 modal 捲動、鍵盤／焦點、背景關閉、Google Map 延遲載入、新增、soft delete、再研究進度，以及設定頁的 key 遮罩、localhost／LAN 權限、連線測試與確認移除。失敗時保留 screenshot、trace 與 video。
 - `test:quick`：開發中快速執行 unit + regression。
 - `test:watch`：修改程式時持續重跑 unit + regression，提供即時回饋。
 - 第一次在新電腦執行 UI test 前先跑 `npx playwright install chromium`。`npm test` 等同完整的 `test:all`；`npm run verify` 再加上 lint、TypeScript、DB integrity/query plans 與資料統計，是 commit 前固定入口。
@@ -143,6 +154,7 @@ npm run check:duplicate -- \
 - `var/image-inbox/`：尚未 canonicalize 的本機圖片 intake（以 SHA-256 命名，不進 Git）。
 - `db/migrations/`：可版控、依序執行的資料庫 schema migrations。
 - `ai_jobs`（SQLite）：保存 UI 新增／再研究工作的 prompt、SKILL checksum、OpenAI response ID、狀態、時間、結果或錯誤；不保存 API key。
+- `.env.local`：本機 server 設定（不進 Git）；設定頁以 `0600` 保存 OpenAI API key 與研究 model。
 - `public/images/postcards/`：不可變更的原始截圖。
 - `data/postcards.json`：網站使用、可攜且可版控的 canonical postcard snapshot。
 - `data/friends.json`：由已確認寄件人觀察形成的保守推論。

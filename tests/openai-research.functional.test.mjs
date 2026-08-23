@@ -4,6 +4,7 @@ import {
   buildResearchPrompt,
   createBackgroundResearch,
   extractResearchResult,
+  verifyOpenAIConnection,
 } from "../server/openai-research.mjs";
 
 test("research request uses server authorization, background mode, web search, image input, and strict JSON", async () => {
@@ -59,4 +60,30 @@ test("completed research must contain a web-search trace and structured output",
     status: "completed",
     output: [{ type: "message", content: [{ type: "output_text", text: "{}" }] }],
   }), /未留下 web search/);
+});
+
+test("connection verification reports model visibility and redacts a key from errors", async () => {
+  const verified = await verifyOpenAIConnection({
+    apiKey: "sk-project-functional_123456789",
+    model: "test-model",
+    fetchImpl: async () => Response.json({ data: [{ id: "test-model" }, { id: "other-model" }] }),
+  });
+  assert.equal(verified.ok, true);
+  assert.equal(verified.model_available, true);
+  assert.equal(verified.accessible_model_count, 2);
+
+  await assert.rejects(
+    verifyOpenAIConnection({
+      apiKey: "sk-project-never_echo_123456789",
+      model: "test-model",
+      fetchImpl: async () => Response.json({
+        error: { message: "bad sk-project-never_echo_123456789" },
+      }, { status: 401 }),
+    }),
+    (error) => {
+      assert.match(error.message, /\[REDACTED\]/);
+      assert.doesNotMatch(error.message, /never_echo/);
+      return true;
+    },
+  );
 });

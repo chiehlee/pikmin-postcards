@@ -595,6 +595,7 @@ export default function Home() {
           </button>
         </nav>
         <div className="header-management">
+          <a className="settings-link" href="/settings" aria-label="開啟設定頁">設定</a>
           <button type="button" className="add-postcard-button" onClick={() => { setAddOpen(true); setNotice(null); }}>
             ＋ 新增明信片
           </button>

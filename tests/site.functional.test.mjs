@@ -32,6 +32,20 @@ test("production site serves dialogs, keyless maps, and canonical assets", { tim
     assert.match(home.headers.get("content-type") ?? "", /text\/html/);
     assert.match(html, /<title>Pikmin 明信片收藏研究庫<\/title>/);
 
+    const settingsPage = await fetch(`${origin}/settings`);
+    assert.equal(settingsPage.status, 200);
+    const settingsHtml = await settingsPage.text();
+    assert.match(settingsHtml, /<title>設定 · Pikmin 明信片收藏研究庫<\/title>/);
+    assert.match(settingsHtml, /server-side OpenAI/);
+
+    const settingsResponse = await fetch(`${origin}/api/settings`);
+    assert.equal(settingsResponse.status, 200);
+    const settingsPayload = await settingsResponse.json();
+    assert.equal(typeof settingsPayload.settings.api_key_configured, "boolean");
+    assert.equal(settingsPayload.settings.secret_write_allowed, true);
+    assert.equal(Object.hasOwn(settingsPayload.settings, "api_key"), false);
+    assert.equal(Object.hasOwn(settingsPayload.settings, "OPENAI_API_KEY"), false);
+
     const clientPaths = [...html.matchAll(/(?:src|href)="([^"]+\.js)"/g)]
       .map((match) => match[1]);
     assert.ok(clientPaths.length > 0, "Expected production client bundles in the HTML");
