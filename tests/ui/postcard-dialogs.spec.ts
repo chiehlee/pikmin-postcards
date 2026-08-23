@@ -14,6 +14,31 @@ async function openPostcard(page: Page, name = postcardName) {
   return dialog;
 }
 
+test('date sorting distinguishes found date from the date added to the archive', async ({ page }) => {
+  await page.goto('/');
+  const sortField = page.getByLabel('排序依據');
+  const sortDirection = page.getByLabel('排序方向');
+
+  await expect(sortField.locator('option')).toHaveText([
+    '評分優先',
+    '發現日期優先',
+    '加入系統日期優先',
+    '距離優先',
+  ]);
+
+  await sortField.selectOption('found_date');
+  await sortDirection.selectOption('asc');
+  const foundDates = await page.locator('.postcard-card time[datetime]').evaluateAll(
+    (elements) => elements.map((element) => element.getAttribute('datetime') ?? ''),
+  );
+  expect(foundDates).toEqual([...foundDates].sort());
+  await expect(page.locator('.postcard-card time').first()).toContainText('發現');
+
+  await sortField.selectOption('archived_on');
+  await expect(page.locator('.postcard-card time').first()).toContainText('加入系統');
+  await expect(page.locator('.postcard-card time').first()).toHaveAttribute('datetime', '2026-08-23');
+});
+
 test('long-form research uses an independently scrollable modal and restores focus', async ({ page }) => {
   const postcardDialog = await openPostcard(page);
   const body = page.locator('body');

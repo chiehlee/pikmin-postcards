@@ -6,6 +6,7 @@ export type Coordinates = {
 export type SortablePostcard = {
   id: string;
   found_date: string | null;
+  archived_on: string | null;
   curation: {
     rating: number | null;
   };
@@ -17,7 +18,7 @@ export type SortablePostcard = {
 };
 
 export type PostcardSortOptions = {
-  field: 'rating' | 'date' | 'distance';
+  field: 'rating' | 'found_date' | 'archived_on' | 'distance';
   direction: 'asc' | 'desc';
   origin?: Coordinates | null;
 };

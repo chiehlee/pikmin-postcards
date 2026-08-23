@@ -166,6 +166,7 @@ footer p { margin: 0; color: var(--ink); font-family: Georgia, serif; }
 .detail-facts span, .detail-facts strong { display: block; }
 .detail-facts span { color: var(--muted); font-size: 9px; }
 .detail-facts strong { margin-top: 3px; font-size: 12px; }
+.detail-facts small { display: block; margin-top: 4px; color: var(--muted); font-size: 9px; }
 .location-map { margin: 28px 0; padding: 18px; border: 1px solid var(--line); background: #f8f6ef; }
 .location-map-heading { display: flex; justify-content: space-between; align-items: start; gap: 18px; margin-bottom: 15px; }
 .location-map-heading .eyebrow { margin-bottom: 5px; }

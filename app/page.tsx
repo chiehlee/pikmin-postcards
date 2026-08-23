@@ -24,7 +24,7 @@ const postcardsPerPage = 60;
 
 type Status = 'keep' | 'representative' | 'candidate' | 'delete' | 'unreviewed';
 type AcquisitionType = 'self_found' | 'received' | 'unknown';
-type SortField = 'rating' | 'date' | 'distance';
+type SortField = 'rating' | 'found_date' | 'archived_on' | 'distance';
 type SortDirection = 'asc' | 'desc';
 type DistanceOrigin = {
   latitude: number;
@@ -347,6 +347,7 @@ export default function Home() {
   }, []);
   const activeMapTarget = active ? mapTargetFor(active) : null;
   const activeMapIsLoaded = !!active && mapLoadedFor === active.id;
+  const chronologicalSort = sortField === 'found_date' || sortField === 'archived_on';
   const filteredCoordinateCount = filtered.filter((postcard) => postcardCoordinates(postcard)).length;
   const pagination = paginateRecords(filtered, page, postcardsPerPage);
 
@@ -455,7 +456,8 @@ export default function Home() {
               <span>排序依據</span>
               <select value={sortField} onChange={(event) => changeSortField(event.target.value as SortField)}>
                 <option value="rating">評分優先</option>
-                <option value="date">日期優先</option>
+                <option value="found_date">發現日期優先</option>
+                <option value="archived_on">加入系統日期優先</option>
                 <option value="distance">距離優先</option>
               </select>
             </label>
@@ -463,10 +465,10 @@ export default function Home() {
               <span>排序方向</span>
               <select value={sortDirection} onChange={(event) => { setSortDirection(event.target.value as SortDirection); setPage(1); }}>
                 <option value="asc">
-                  {sortField === 'rating' ? '低 → 高' : sortField === 'date' ? '舊 → 新' : '近 → 遠'}
+                  {sortField === 'rating' ? '低 → 高' : chronologicalSort ? '舊 → 新' : '近 → 遠'}
                 </option>
                 <option value="desc">
-                  {sortField === 'rating' ? '高 → 低' : sortField === 'date' ? '新 → 舊' : '遠 → 近'}
+                  {sortField === 'rating' ? '高 → 低' : chronologicalSort ? '新 → 舊' : '遠 → 近'}
                 </option>
               </select>
             </label>
@@ -500,6 +502,8 @@ export default function Home() {
             <div className="postcard-grid">
               {pagination.items.map((postcard) => {
                 const distance = distanceOrigin ? distanceKilometers(postcard, distanceOrigin) : null;
+                const displayedDate = sortField === 'archived_on' ? postcard.archived_on : postcard.found_date;
+                const displayedDateLabel = sortField === 'archived_on' ? '加入系統' : '發現';
                 return (
                   <article className="postcard-card" key={postcard.id}>
                     <button className="image-button" onClick={() => openPostcard(postcard)} aria-label={`查看 ${postcard.poi_name}`}>
@@ -510,7 +514,7 @@ export default function Home() {
                     <div className="card-body">
                       <div className="card-kicker">
                         <span className={`status status-${postcard.curation.status}`}>{statusLabels[postcard.curation.status]}</span>
-                        <time dateTime={postcard.found_date ?? undefined}>{compactDate(postcard.found_date)}</time>
+                        <time dateTime={displayedDate ?? undefined}>{displayedDateLabel} · {compactDate(displayedDate)}</time>
                       </div>
                       <h3><button onClick={() => openPostcard(postcard)}>{postcard.poi_name}</button></h3>
                       <p className="place">{postcard.location.display}</p>
@@ -631,7 +635,11 @@ export default function Home() {
               <h2 id="detail-title">{active.poi_name}</h2>
               <p className="detail-location">{active.location.display}<small>遊戲顯示：{active.location.raw}</small></p>
               <div className="detail-facts">
-                <div><span>見つけた日</span><strong>{active.found_date ?? '未確認'}</strong></div>
+                <div>
+                  <span>見つけた日／加入系統</span>
+                  <strong>{active.found_date ?? '未確認'}</strong>
+                  <small>加入系統 · {active.archived_on}</small>
+                </div>
                 <div><span>來源／寄件人</span><strong>{acquisitionLabel(active)}</strong></div>
                 <div><span>收藏評分</span><strong>{active.curation.rating == null ? '未評分' : `${active.curation.rating.toFixed(1)} / 5`}</strong></div>
                 <div><span>建議</span><strong>{active.curation.recommendation ?? '尚未整理'}</strong></div>

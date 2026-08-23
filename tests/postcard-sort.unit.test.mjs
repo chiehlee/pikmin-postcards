@@ -8,17 +8,19 @@ import {
 } from "../lib/postcard-sort.mjs";
 
 const records = [
-  postcard("a", 4, "2026-05-03", 0, 1),
-  postcard("b", 2, "2026-05-01", 0, 2),
-  postcard("c", null, null, null, null),
-  postcard("d", 4, "2026-05-02", 0, 3),
+  postcard("a", 4, "2026-05-03", "2026-08-01", 0, 1),
+  postcard("b", 2, "2026-05-01", "2026-08-03", 0, 2),
+  postcard("c", null, null, null, null, null),
+  postcard("d", 4, "2026-05-02", "2026-08-02", 0, 3),
 ];
 
-test("rating and date sorting support both directions while missing values stay last", () => {
+test("rating, found date, and archive date sorting support both directions while missing values stay last", () => {
   assert.deepEqual(ids(sortPostcards(records, { field: "rating", direction: "desc" })), ["a", "d", "b", "c"]);
   assert.deepEqual(ids(sortPostcards(records, { field: "rating", direction: "asc" })), ["b", "a", "d", "c"]);
-  assert.deepEqual(ids(sortPostcards(records, { field: "date", direction: "desc" })), ["a", "d", "b", "c"]);
-  assert.deepEqual(ids(sortPostcards(records, { field: "date", direction: "asc" })), ["b", "d", "a", "c"]);
+  assert.deepEqual(ids(sortPostcards(records, { field: "found_date", direction: "desc" })), ["a", "d", "b", "c"]);
+  assert.deepEqual(ids(sortPostcards(records, { field: "found_date", direction: "asc" })), ["b", "d", "a", "c"]);
+  assert.deepEqual(ids(sortPostcards(records, { field: "archived_on", direction: "desc" })), ["b", "d", "a", "c"]);
+  assert.deepEqual(ids(sortPostcards(records, { field: "archived_on", direction: "asc" })), ["a", "d", "b", "c"]);
 });
 
 test("distance sorting supports nearest and farthest with ungeocoded records last", () => {
@@ -38,7 +40,7 @@ test("coordinates can be recovered from the postcard's raw coordinate label", ()
 
 test("pagination slices the globally sorted collection into 60-card pages", () => {
   const collection = Array.from({ length: 125 }, (_, index) => (
-    postcard(String(index), index, "2026-05-01", 0, index)
+    postcard(String(index), index, "2026-05-01", "2026-08-23", 0, index)
   ));
   const sorted = sortPostcards(collection, { field: "rating", direction: "desc" });
   const firstPage = paginateRecords(sorted, 1);
@@ -57,10 +59,11 @@ test("pagination slices the globally sorted collection into 60-card pages", () =
   );
 });
 
-function postcard(id, rating, foundDate, latitude, longitude) {
+function postcard(id, rating, foundDate, archivedOn, latitude, longitude) {
   return {
     id,
     found_date: foundDate,
+    archived_on: archivedOn,
     curation: { rating },
     location: { raw: `${latitude}, ${longitude}`, latitude, longitude },
   };
