@@ -47,15 +47,17 @@ mise exec node@22.23.2 -- npm run start:lan
 npm run test:unit
 npm run test:regression
 npm run test:functional
+npm run test:ui
 npm run verify
 ```
 
 - `test:unit`：純函式與領域規則，包含 line 95%、branch 80%、function 95% 的 coverage gate。
 - `test:regression`：canonical 圖片、資料筆數、來源分類、雙向關聯、JSON ↔ SQLite round-trip 與既有 bug cases。
 - `test:functional`：先 production build，再從外部邊界測試圖片 intake、關聯候選 CLI、HTTP 網站與 canonical 圖片。
+- `test:ui`：以 Playwright Chromium 在桌面與手機 viewport 操作 production UI；涵蓋 modal 捲動、鍵盤／焦點、背景關閉與 Google Map 延遲載入。失敗時保留 screenshot、trace 與 video。
 - `test:quick`：開發中快速執行 unit + regression。
 - `test:watch`：修改程式時持續重跑 unit + regression，提供即時回饋。
-- `npm test` 等同完整的 `test:all`；`npm run verify` 再加上 lint、TypeScript、DB integrity/query plans 與資料統計，是 commit 前固定入口。
+- 第一次在新電腦執行 UI test 前先跑 `npx playwright install chromium`。`npm test` 等同完整的 `test:all`；`npm run verify` 再加上 lint、TypeScript、DB integrity/query plans 與資料統計，是 commit 前固定入口。
 
 測試檔必須以 `.unit.test.mjs`、`.regression.test.mjs` 或 `.functional.test.mjs` 結尾。Regression suite 會檢查分類，避免新測試因為命名錯誤而沒有被固定入口執行。新增或改變行為時，同一個變更必須新增或修改至少一個能觀察該行為的測試；修 bug 時，能重現問題的 regression test 應先於修正通過。
 

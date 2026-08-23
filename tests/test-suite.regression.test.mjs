@@ -23,9 +23,10 @@ test("every test file belongs to exactly one executable suite", async () => {
 test("package test gates execute every named suite", async () => {
   const packageJson = JSON.parse(await readFile(path.join(testDirectory, "../package.json"), "utf8"));
   assert.equal(packageJson.scripts.test, "npm run test:all");
-  assert.match(packageJson.scripts["test:all"], /test:unit.*test:regression.*test:functional/);
+  assert.match(packageJson.scripts["test:all"], /test:unit.*test:regression.*test:functional.*test:ui/);
   assert.match(packageJson.scripts.verify, /test:all/);
   for (const suite of ["unit", "regression", "functional"]) {
     assert.match(packageJson.scripts[`test:${suite}`], new RegExp(`tests/\\*\\.${suite}\\.test\\.mjs`));
   }
+  assert.match(packageJson.scripts["test:ui"], /playwright test/);
 });

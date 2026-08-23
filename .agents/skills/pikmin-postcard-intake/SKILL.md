@@ -167,6 +167,7 @@ npm run friends:avatars -- --commit
 - 純函式、排序、判讀與 domain rule 使用 `.unit.test.mjs`。
 - canonical totals、不可變圖片、既有 bug、資料關聯與 JSON ↔ SQLite round-trip 使用 `.regression.test.mjs`。
 - CLI、filesystem、SQLite 寫入、下載與 production HTTP 邊界使用 `.functional.test.mjs`；只操作 temp DB／temp directory，不修改 canonical archive。
+- 使用者口述的 UI 行為、互動 bug、modal／scroll、keyboard／focus、responsive layout 或第三方 iframe 載入，使用 `tests/ui/*.spec.ts` 的 Playwright test 操作 production UI；至少覆蓋直接相關的桌面與手機 viewport。不可只用 source regex、CSS 字串或 HTTP response 代替瀏覽器行為驗證。失敗 artifacts 保留 screenshot 與 trace；需要理解使用者看到的狀況時，實際檢視 Playwright screenshot 再調整。
 
 新增或修改 production behavior、schema、script 或 workflow 時，必須在同一變更新增或修改至少一個能觀察結果的 test。修 bug 時，在可行範圍內先寫出會失敗的 regression test，再修實作。純新增 postcard 資料至少更新／通過 explicit totals 與 archive integrity；若它揭露新的規則邊界，再補對應 unit 或 regression case。不得用刪除 assertion、放寬 expected value 或跳過 suite 來掩蓋 regression。
 
@@ -183,7 +184,7 @@ npm run test:quick
 npm run verify
 ```
 
-`verify` 必須涵蓋 unit coverage gate、regression、functional production build／HTTP、lint、TypeScript、DB integrity／query plans 與 stats。測試檔名使用 `.unit.test.mjs`、`.regression.test.mjs` 或 `.functional.test.mjs`；suite meta-test 會拒絕未分類檔案，避免新 test 靜默漏跑。
+`verify` 必須涵蓋 unit coverage gate、regression、functional production build／HTTP、Playwright production UI、lint、TypeScript、DB integrity／query plans 與 stats。Node test 檔名使用 `.unit.test.mjs`、`.regression.test.mjs` 或 `.functional.test.mjs`；Playwright tests 使用 `tests/ui/*.spec.ts`。suite meta-test 會拒絕未分類的 Node tests，並確認 UI suite 已納入固定 gate，避免新 test 靜默漏跑。
 
 再確認：
 
