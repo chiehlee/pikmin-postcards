@@ -106,6 +106,17 @@ npm run check:duplicate -- \
 
 定位資料遵守兩個層級：明信片或 DB 有經緯度時直接用該座標；只有研究地名時以明確的查詢字串交給 Google 解析，UI 會標示「尚非人工確認座標」，不把搜尋結果冒充精確位置。
 
+## 地名的原文與譯名
+
+每張 postcard 的 `location.raw` 永遠保存遊戲畫面原字串，UI 以「遊戲顯示：」呈現，不會被研究結果覆寫。粗體研究地名使用分開的欄位：
+
+- `endonym`：研究確認的當地原名；日本用日文、臺灣／香港／澳門用繁體中文、韓國用韓文、美國用英文，其他地區依當地語言。
+- `zh_tw`：當 `endonym` 不是中文或日文時保存台灣慣用的繁體中文譯名；UI 組成 `原名（台灣繁中譯名）`。
+- `language`：原名語言標籤；`name_status` 與 `name_confidence` 分別保存研究狀態及信心。
+- `display`：由上述欄位組成的快取，測試會確認它沒有與 `endonym`／`zh_tw` 分岔。
+
+地圖查詢使用 `endonym`，不把括號裡的譯名送進 Google。既有資料的可重跑回填入口是 `npm run backfill:location-names`；先 dry-run，確認覆蓋後再加 `-- --commit`。
+
 ## 資料結構
 
 - `var/pikmin-postcards.sqlite3`：本機 SQLite operational database（不進 Git）。

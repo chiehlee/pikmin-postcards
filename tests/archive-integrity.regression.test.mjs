@@ -4,6 +4,7 @@ import path from "node:path";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
+import { researchedLocationDisplay, validateLocationNaming } from "../lib/location-names.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const postcards = JSON.parse(await readFile(path.join(root, "data/postcards.json"), "utf8")).postcards;
@@ -14,6 +15,28 @@ test("canonical postcard ids, hashes and asset paths are unique", () => {
   assert.equal(new Set(postcards.map((record) => record.id)).size, postcards.length);
   assert.equal(new Set(postcards.map((record) => record.asset.sha256)).size, postcards.length);
   assert.equal(new Set(postcards.map((record) => record.asset.path)).size, postcards.length);
+});
+
+test("researched locations preserve the game text and compose local names consistently", () => {
+  for (const postcard of postcards) {
+    assert.ok(postcard.location.raw.trim(), `${postcard.id} lost its game-displayed location`);
+    assert.deepEqual(validateLocationNaming(postcard.location), [], postcard.id);
+    assert.equal(postcard.location.display, researchedLocationDisplay(postcard.location), postcard.id);
+  }
+
+  const nasu = postcards.find((record) => record.id === "pc-0089");
+  assert.equal(nasu.location.raw, "Nasu, Yumoto");
+  assert.equal(nasu.location.endonym, "栃木県那須町湯本");
+  assert.equal(nasu.location.zh_tw, null);
+  assert.equal(nasu.location.display, "栃木県那須町湯本");
+
+  const seoul = postcards.find((record) => record.id === "pc-0084");
+  assert.equal(seoul.location.endonym, "서울특별시");
+  assert.equal(seoul.location.zh_tw, "首爾特別市");
+  assert.equal(seoul.location.display, "서울특별시（首爾特別市）");
+
+  const laramie = postcards.find((record) => record.id === "pc-0030");
+  assert.equal(laramie.location.display, "Laramie, Wyoming（懷俄明州拉勒米）");
 });
 
 test("all canonical assets exist and match their recorded SHA-256", async () => {

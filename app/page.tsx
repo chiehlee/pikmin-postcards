@@ -12,6 +12,7 @@ import {
 } from 'react';
 import archive from '../data/postcards.json';
 import friendArchive from '../data/friends.json';
+import { researchedLocationDisplay, researchedLocationQuery } from '../lib/location-names.mjs';
 import { googleMapsEmbedUrl, googleMapsSearchUrl } from '../lib/map-links.mjs';
 import {
   distanceKilometers,
@@ -54,6 +55,11 @@ type Postcard = {
   location: {
     raw: string;
     display: string;
+    endonym: string;
+    zh_tw: string | null;
+    language: string;
+    name_status: 'researched' | 'provisional';
+    name_confidence: 'high' | 'medium' | 'low';
     country: string | null;
     country_code: string | null;
     latitude?: number | null;
@@ -154,9 +160,10 @@ function mapTargetFor(postcard: Postcard): MapTarget | null {
   }
   const override = researchedMapOverrides[postcard.id];
   if (override) return { ...override, precision: 'researched_place_query' };
+  const researchedLocation = researchedLocationQuery(postcard.location);
   return {
-    query: `${postcard.poi_name}, ${postcard.location.display}`,
-    label: `${postcard.poi_name}・${postcard.location.display}`,
+    query: [postcard.poi_name, researchedLocation].filter(Boolean).join(', '),
+    label: `${postcard.poi_name}・${researchedLocationDisplay(postcard.location)}`,
     precision: 'researched_place_query',
   };
 }
@@ -317,6 +324,8 @@ export default function Home() {
           postcard.sender ?? '未確認',
           postcard.location.raw,
           postcard.location.display,
+          postcard.location.endonym,
+          postcard.location.zh_tw ?? '',
           postcard.research.summary,
           acquisitionLabel(postcard),
           ...postcard.curation.tags,
@@ -517,7 +526,7 @@ export default function Home() {
                         <time dateTime={displayedDate ?? undefined}>{displayedDateLabel} · {compactDate(displayedDate)}</time>
                       </div>
                       <h3><button onClick={() => openPostcard(postcard)}>{postcard.poi_name}</button></h3>
-                      <p className="place">{postcard.location.display}</p>
+                      <p className="place">{researchedLocationDisplay(postcard.location)}</p>
                       <p className="sender">{senderLine(postcard)}</p>
                       {sortField === 'distance' && (
                         <p className={`distance ${distance == null ? 'distance-missing' : ''}`}>
@@ -597,7 +606,7 @@ export default function Home() {
                     <button key={postcard.id} onClick={() => openPostcard(postcard)}>
                       <time>{postcard.found_date ? postcard.found_date.slice(5).replace('-', '/') : '日期？'}</time>
                       <span>{postcard.poi_name}</span>
-                      <small>{postcard.location.display}</small>
+                      <small>{researchedLocationDisplay(postcard.location)}</small>
                     </button>
                   ))}
                 </div>
@@ -633,7 +642,10 @@ export default function Home() {
                 <span>研究信心 {active.research.confidence_label}</span>
               </div>
               <h2 id="detail-title">{active.poi_name}</h2>
-              <p className="detail-location">{active.location.display}<small>遊戲顯示：{active.location.raw}</small></p>
+              <p className="detail-location">
+                {researchedLocationDisplay(active.location)}
+                <small>遊戲顯示：{active.location.raw}</small>
+              </p>
               <div className="detail-facts">
                 <div>
                   <span>見つけた日／加入系統</span>
@@ -749,7 +761,7 @@ export default function Home() {
                   <div>
                     <p className="eyebrow">LONG-FORM RESEARCH</p>
                     <h2 id="research-dialog-title">{active.poi_name}</h2>
-                    <p>{active.location.display}</p>
+                    <p>{researchedLocationDisplay(active.location)}</p>
                   </div>
                   <button type="button" className="research-modal-close" onClick={closeResearch} aria-label="關閉長版研究" autoFocus>×</button>
                 </header>

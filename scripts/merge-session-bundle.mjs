@@ -161,6 +161,11 @@ try {
       location: {
         raw: source.location_displayed,
         display: source.location_displayed,
+        endonym: source.location_displayed,
+        zh_tw: null,
+        language: "und",
+        name_status: "provisional",
+        name_confidence: "low",
         city: null,
         district: null,
         locality: null,

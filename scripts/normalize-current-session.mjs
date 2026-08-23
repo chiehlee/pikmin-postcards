@@ -96,6 +96,11 @@ const confidenceKeys = {
 function area(display, city, district, locality, country, countryCode, region = null, county = null) {
   return {
     display,
+    endonym: display,
+    zh_tw: null,
+    language: "und",
+    name_status: "provisional",
+    name_confidence: "low",
     city,
     district,
     locality,

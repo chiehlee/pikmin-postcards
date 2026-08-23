@@ -39,6 +39,19 @@ test('date sorting distinguishes found date from the date added to the archive',
   await expect(page.locator('.postcard-card time').first()).toHaveAttribute('datetime', '2026-08-23');
 });
 
+test('researched locations use the local script while preserving the game text', async ({ page }) => {
+  const nasuDialog = await openPostcard(page, '藤城清治美術館');
+  const nasuLocation = nasuDialog.locator('.detail-location');
+  await expect(nasuLocation).toContainText('栃木県那須町湯本');
+  await expect(nasuLocation.locator('small')).toHaveText('遊戲顯示：Nasu, Yumoto');
+  await page.keyboard.press('Escape');
+
+  const seoulDialog = await openPostcard(page, '인공폭포');
+  const seoulLocation = seoulDialog.locator('.detail-location');
+  await expect(seoulLocation).toContainText('서울특별시（首爾特別市）');
+  await expect(seoulLocation.locator('small')).toHaveText('遊戲顯示：Seoul');
+});
+
 test('long-form research uses an independently scrollable modal and restores focus', async ({ page }) => {
   const postcardDialog = await openPostcard(page);
   const body = page.locator('body');

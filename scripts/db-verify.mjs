@@ -55,6 +55,16 @@ try {
     .all("臺北市信義區")
     .map((row) => row.detail)
     .join(" | ");
+  const endonymLocationPlan = database
+    .prepare("EXPLAIN QUERY PLAN SELECT id FROM postcards WHERE location_endonym = ? LIMIT 16")
+    .all("那須町湯本")
+    .map((row) => row.detail)
+    .join(" | ");
+  const zhTwLocationPlan = database
+    .prepare("EXPLAIN QUERY PLAN SELECT id FROM postcards WHERE location_zh_tw = ? LIMIT 16")
+    .all("首爾特別市")
+    .map((row) => row.detail)
+    .join(" | ");
   const tagPlan = database
     .prepare("EXPLAIN QUERY PLAN SELECT postcard_id FROM postcard_tags WHERE tag = ? LIMIT 16")
     .all("商業景觀")
@@ -85,6 +95,8 @@ try {
   assert.match(poiPlan, /idx_postcards_poi_name/);
   assert.match(rawLocationPlan, /idx_postcards_location_raw/);
   assert.match(displayLocationPlan, /idx_postcards_location_display/);
+  assert.match(endonymLocationPlan, /idx_postcards_location_endonym/);
+  assert.match(zhTwLocationPlan, /idx_postcards_location_zh_tw/);
   assert.match(tagPlan, /idx_postcard_tags_tag_postcard/);
   assert.match(sourcePlan, /idx_research_sources_url_postcard/);
   assert.match(coordinatePlan, /idx_postcards_coordinates/);
@@ -105,6 +117,8 @@ try {
           related_poi_lookup: poiPlan,
           related_raw_location_lookup: rawLocationPlan,
           related_display_location_lookup: displayLocationPlan,
+          related_endonym_location_lookup: endonymLocationPlan,
+          related_zh_tw_location_lookup: zhTwLocationPlan,
           related_tag_lookup: tagPlan,
           related_source_lookup: sourcePlan,
           related_coordinate_lookup: coordinatePlan,

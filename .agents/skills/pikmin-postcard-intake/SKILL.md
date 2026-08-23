@@ -36,7 +36,7 @@ description: "接收新的 Pikmin Bloom 明信片圖片、聊天附件、本機�
 - 已確認 `○○ より` 才能把姓名存成 sender。收到但名稱留白可標成 `received + unknown`；UI 證據不足則維持 acquisition `unknown`。
 - 每次都把畫面可見 sender ID 與現有 friends／postcards 重新比對。不同字串預設為不同的 provisional player，即使 Mii、地點或時間看似相同也不自動建立 alias 或合併；只有使用者明確提出個案合併時才改 player identity。名稱改變本身不能證明是同一人。
 - `sender: null` 本身絕不等於未知寄件人。
-- raw location、正規化 location、座標／地圖查詢與信心分開保存。沒有可靠證據時，不把 Google 的搜尋結果寫成精確座標。
+- raw location、研究後當地原名、台灣繁中譯名、座標／地圖查詢與信心分開保存。`location.raw` 必須逐字保留遊戲畫面；`location.endonym` 使用當地原文（日本日文、臺灣繁中、韓國韓文、美國英文等）。當原名語言不是中文或日文時，另填 `location.zh_tw`，UI 顯示為 `原名（台灣繁中譯名）`；中文或日文的 `zh_tw` 維持 null。`location.display` 只作為共用 formatter 組成的快取，地圖 query 使用 `endonym`，不得拿 raw 或含括號譯名的 display 冒充研究定點。尚未研究完成時用 `language: und`、`name_status: provisional` 與低信心，不假裝已確認。沒有可靠證據時，不把 Google 的搜尋結果寫成精確座標。
 - condensed `research.summary` 與 `research.detail` 分開。保存不到原長文時明確標示缺漏，不用後寫內容冒充原文。
 - 使用者要求補做 `not_recovered` 研究時，保留原缺漏的歷史 provenance，另用帶日期的新 research status 與新的 `research/raw/` 檔保存「本次重做」；不可覆寫成已復原舊文。批次補做要有 manifest 或等價的確定性輸入，先 dry-run 驗證目標集合完全相符，再以 regression test 鎖定覆蓋數、來源檔與零殘留 `not_recovered`。
 - 事實、推論與未解問題分欄；每項外部事實保存直接支持它的 URL。
@@ -109,6 +109,7 @@ npm run check:duplicate -- \
 研究輸出至少包含：
 
 - normalized location 與 confidence；可靠時才填 latitude/longitude。
+- 研究地名的 `endonym`、BCP-47 風格 `language`、必要時的台灣繁中 `zh_tw`，以及 name status/confidence；相同 raw location 可先查既有命名 registry/索引再研究，避免逐張重做。研究結果不得覆寫 `raw`。
 - condensed summary，供列表與 modal 快速閱讀。
 - preserved detail，包含較完整脈絡。
 - confirmed facts、inferences、unresolved questions。

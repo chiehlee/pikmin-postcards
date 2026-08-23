@@ -20,7 +20,8 @@ const database = await openDatabase(databasePath);
 
 try {
   const source = database.prepare(`
-    SELECT id, poi_name, found_date, sender, location_raw, location_display, latitude, longitude
+    SELECT id, poi_name, found_date, sender, location_raw, location_display,
+      location_endonym, location_zh_tw, latitude, longitude
     FROM postcards
     WHERE id = ?
   `).get(postcardId);
@@ -59,6 +60,8 @@ try {
   addExactMatches(database, source, "poi_name", "same-poi", 8, perSignalLimit, addSignal);
   addExactMatches(database, source, "location_raw", "same-raw-location", 5, perSignalLimit, addSignal);
   addExactMatches(database, source, "location_display", "same-display-location", 4, perSignalLimit, addSignal);
+  addExactMatches(database, source, "location_endonym", "same-endonym", 4, perSignalLimit, addSignal);
+  addExactMatches(database, source, "location_zh_tw", "same-zh-tw-location", 3, perSignalLimit, addSignal);
 
   if (source.sender) {
     const rows = database.prepare(`
@@ -138,6 +141,8 @@ try {
       sender: source.sender,
       location_raw: source.location_raw,
       location_display: source.location_display,
+      location_endonym: source.location_endonym,
+      location_zh_tw: source.location_zh_tw,
     },
     policy: {
       exhaustive: false,
@@ -160,7 +165,13 @@ try {
 function addExactMatches(database, source, column, type, points, rowLimit, addSignal) {
   const value = source[column];
   if (!value?.trim()) return;
-  const allowedColumns = new Set(["poi_name", "location_raw", "location_display"]);
+  const allowedColumns = new Set([
+    "poi_name",
+    "location_raw",
+    "location_display",
+    "location_endonym",
+    "location_zh_tw",
+  ]);
   if (!allowedColumns.has(column)) throw new Error(`Unsupported candidate column: ${column}`);
   const rows = database.prepare(`
     SELECT id
@@ -176,7 +187,8 @@ function loadCandidateDetails(database, ids) {
   if (!ids.length) return [];
   const placeholders = ids.map(() => "?").join(", ");
   return database.prepare(`
-    SELECT id, poi_name, found_date, sender, location_raw, location_display, latitude, longitude
+    SELECT id, poi_name, found_date, sender, location_raw, location_display,
+      location_endonym, location_zh_tw, latitude, longitude
     FROM postcards
     WHERE id IN (${placeholders})
   `).all(...ids);
