@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-test("production site serves the archive, client behavior, and canonical assets", { timeout: 20_000 }, async () => {
+test("production site serves dialogs, keyless maps, and canonical assets", { timeout: 20_000 }, async () => {
   const port = await availablePort();
   const origin = `http://127.0.0.1:${port}`;
   const server = spawn(
@@ -42,6 +42,12 @@ test("production site serves the archive, client behavior, and canonical assets"
     }))).join("\n");
     assert.match(clientCode, /RELATED POSTCARD/);
     assert.doesNotMatch(clientCode, /RELATED SCREENSHOTS/);
+    assert.match(clientCode, /關閉長版研究/);
+    assert.match(clientCode, /research-modal-scroll/);
+    assert.match(clientCode, /載入 Google Map/);
+    assert.match(clientCode, /https:\/\/www\.google\.com\/maps\?/);
+    assert.doesNotMatch(clientCode, /Google Maps Embed 尚未設定/);
+    assert.doesNotMatch(clientCode, /NEXT_PUBLIC_GOOGLE_MAPS_EMBED_API_KEY/);
 
     const image = await fetch(`${origin}/images/postcards/2026/05/pc-020.png`);
     assert.equal(image.status, 200);

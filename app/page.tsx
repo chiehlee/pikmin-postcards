@@ -1,9 +1,18 @@
 'use client';
 /* eslint-disable @next/next/no-img-element -- originals are intentionally served without transformation */
 
-import { type FormEvent, useEffect, useMemo, useState } from 'react';
+import {
+  type FormEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import archive from '../data/postcards.json';
 import friendArchive from '../data/friends.json';
+import { googleMapsEmbedUrl, googleMapsSearchUrl } from '../lib/map-links.mjs';
 import {
   distanceKilometers,
   paginateRecords,
@@ -84,7 +93,6 @@ type Postcard = {
 };
 
 const postcards = archive.postcards as Postcard[];
-const googleMapsEmbedApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_EMBED_API_KEY?.trim() ?? '';
 const researchedMapOverrides: Record<string, { query: string; label: string }> = {
   'pc-0020': {
     query: '壹號交易廣場, 台北市信義區松仁路89號',
@@ -153,14 +161,6 @@ function mapTargetFor(postcard: Postcard): MapTarget | null {
   };
 }
 
-function googleMapsSearchUrl(query: string) {
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
-}
-
-function googleMapsEmbedUrl(query: string) {
-  return `https://www.google.com/maps/embed/v1/place?key=${encodeURIComponent(googleMapsEmbedApiKey)}&q=${encodeURIComponent(query)}`;
-}
-
 function relationshipLabel(relationship: string) {
   const labels: Record<string, string> = {
     'same-metadata-different-image': '同一張明信片的另一個截圖',
@@ -171,6 +171,21 @@ function relationshipLabel(relationship: string) {
     'historical-connection': '具有可說明的歷史關聯',
   };
   return labels[relationship] ?? relationship;
+}
+
+function trapDialogFocus(event: ReactKeyboardEvent<HTMLElement>) {
+  if (event.key !== 'Tab') return;
+  const focusable = [...event.currentTarget.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])')];
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
 }
 
 export default function Home() {
@@ -189,16 +204,25 @@ export default function Home() {
   const [page, setPage] = useState(1);
   const [active, setActive] = useState<Postcard | null>(null);
   const [mapLoadedFor, setMapLoadedFor] = useState<string | null>(null);
+  const [researchOpen, setResearchOpen] = useState(false);
+  const researchTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   function openPostcard(postcard: Postcard) {
     setMapLoadedFor(null);
+    setResearchOpen(false);
     setActive(postcard);
   }
 
-  function closePostcard() {
+  const closePostcard = useCallback(() => {
     setMapLoadedFor(null);
+    setResearchOpen(false);
     setActive(null);
-  }
+  }, []);
+
+  const closeResearch = useCallback(() => {
+    setResearchOpen(false);
+    window.requestAnimationFrame(() => researchTriggerRef.current?.focus());
+  }, []);
 
   function requestDeviceLocation() {
     if (typeof window === 'undefined' || !window.isSecureContext) {
@@ -322,14 +346,16 @@ export default function Home() {
     }));
   }, []);
   const activeMapTarget = active ? mapTargetFor(active) : null;
-  const activeMapIsLoaded = !!active && mapLoadedFor === active.id && !!googleMapsEmbedApiKey;
+  const activeMapIsLoaded = !!active && mapLoadedFor === active.id;
   const filteredCoordinateCount = filtered.filter((postcard) => postcardCoordinates(postcard)).length;
   const pagination = paginateRecords(filtered, page, postcardsPerPage);
 
   useEffect(() => {
     if (!active) return;
     const close = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') closePostcard();
+      if (event.key !== 'Escape') return;
+      if (researchOpen) closeResearch();
+      else closePostcard();
     };
     document.body.classList.add('modal-open');
     window.addEventListener('keydown', close);
@@ -337,7 +363,7 @@ export default function Home() {
       document.body.classList.remove('modal-open');
       window.removeEventListener('keydown', close);
     };
-  }, [active]);
+  }, [active, closePostcard, closeResearch, researchOpen]);
 
   return (
     <main>
@@ -583,14 +609,21 @@ export default function Home() {
       </footer>
 
       {active && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closePostcard(); }}>
-          <section className="detail-modal" role="dialog" aria-modal="true" aria-labelledby="detail-title">
-            <button className="modal-close" onClick={closePostcard} aria-label="關閉">×</button>
-            <div className="modal-image-panel">
-              <img src={active.asset.path} alt={`${active.poi_name} 原始遊戲截圖`} />
-              <a href={active.asset.path} target="_blank" rel="noreferrer">開啟原始尺寸 ↗</a>
-            </div>
-            <div className="modal-copy">
+        <>
+          <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closePostcard(); }}>
+            <section
+              className="detail-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="detail-title"
+              inert={researchOpen || undefined}
+            >
+              <button className="modal-close" onClick={closePostcard} aria-label="關閉">×</button>
+              <div className="modal-image-panel">
+                <img src={active.asset.path} alt={`${active.poi_name} 原始遊戲截圖`} />
+                <a href={active.asset.path} target="_blank" rel="noreferrer">開啟原始尺寸 ↗</a>
+              </div>
+              <div className="modal-copy">
               <div className="detail-meta">
                 <span className={`status status-${active.curation.status}`}>{statusLabels[active.curation.status]}</span>
                 <span>研究信心 {active.research.confidence_label}</span>
@@ -626,18 +659,9 @@ export default function Home() {
                   ) : (
                     <div className="location-map-placeholder">
                       <span aria-hidden="true">⌖</span>
-                      {googleMapsEmbedApiKey ? (
-                        <>
-                          <strong>互動地圖尚未載入</strong>
-                          <p>點擊後才會連線 Google Maps，避免首頁和明信片視窗產生不必要的地圖流量。</p>
-                          <button onClick={() => setMapLoadedFor(active.id)}>載入 Google Map</button>
-                        </>
-                      ) : (
-                        <>
-                          <strong>Google Maps Embed 尚未設定</strong>
-                          <p>加入受限制的 Maps Embed API key 後，這裡會提供延遲載入的互動地圖。</p>
-                        </>
-                      )}
+                      <strong>互動地圖尚未載入</strong>
+                      <p>點擊後才會連線 Google Maps，避免首頁和明信片視窗產生不必要的地圖流量。</p>
+                      <button onClick={() => setMapLoadedFor(active.id)}>載入 Google Map</button>
                     </div>
                   )}
                   <p className="location-map-precision">
@@ -647,8 +671,16 @@ export default function Home() {
                   </p>
                 </section>
               )}
-              <details className="detail-story">
-                <summary>
+              <section className="detail-story">
+                <button
+                  ref={researchTriggerRef}
+                  type="button"
+                  className="research-summary-button"
+                  aria-haspopup="dialog"
+                  aria-expanded={researchOpen}
+                  aria-controls="research-dialog"
+                  onClick={() => setResearchOpen(true)}
+                >
                   <span className="research-summary-head">
                     <span className="eyebrow">RESEARCH NOTE</span>
                     <span className="research-note-action">
@@ -656,52 +688,8 @@ export default function Home() {
                     </span>
                   </span>
                   <span className="research-summary-copy">{active.research.summary}</span>
-                </summary>
-                <div className="research-detail">
-                  {active.research.detail.status === 'not_recovered' ? (
-                    <section className="research-unavailable">
-                      <p className="eyebrow">DETAIL NOT RECOVERED</p>
-                      <h3>原始長版尚未復原</h3>
-                      <p>{active.research.detail.preservation_note}</p>
-                    </section>
-                  ) : (
-                    <>
-                      <div className="research-detail-stats">
-                        <span><small>研究信心</small>{active.research.confidence_label}</span>
-                        <span><small>已確認事實</small>{active.research.confirmed_facts?.length ?? 0}</span>
-                        <span><small>保存來源</small>{active.research.sources.length}</span>
-                      </div>
-                      <section>
-                        <p className="eyebrow">PRESERVED DETAIL</p>
-                        <h3>長版研究原文</h3>
-                        <p>{active.research.detail.body}</p>
-                      </section>
-                      {!!active.research.confirmed_facts?.length && (
-                        <section>
-                          <p className="eyebrow">CONFIRMED FACTS</p>
-                          <h3>已確認事實</h3>
-                          <ul>{active.research.confirmed_facts.map((fact) => <li key={fact}>{fact}</li>)}</ul>
-                        </section>
-                      )}
-                      {!!active.research.inferences?.length && (
-                        <section>
-                          <p className="eyebrow">INTERPRETATION</p>
-                          <h3>推論與收藏解讀</h3>
-                          <ul>{active.research.inferences.map((item) => <li key={item}>{item}</li>)}</ul>
-                        </section>
-                      )}
-                      {!!active.research.unresolved_questions?.length && (
-                        <section>
-                          <p className="eyebrow">OPEN QUESTIONS</p>
-                          <h3>仍待確認</h3>
-                          <ul>{active.research.unresolved_questions.map((question) => <li key={question}>{question}</li>)}</ul>
-                        </section>
-                      )}
-                    </>
-                  )}
-                  <p className="research-provenance">研究保存來源 · {active.research.detail.source_path}</p>
-                </div>
-              </details>
+                </button>
+              </section>
               <div className="tag-list">{active.curation.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
               {!!active.related_postcards?.length && (
                 <div className="related-list">
@@ -731,9 +719,93 @@ export default function Home() {
                 ))}
               </div>
               <p className="hash">SHA-256 · {active.asset.sha256}</p>
+              </div>
+            </section>
+          </div>
+
+          {researchOpen && (
+            <div
+              className="research-modal-backdrop"
+              role="presentation"
+              onMouseDown={(event) => { if (event.target === event.currentTarget) closeResearch(); }}
+            >
+              <section
+                id="research-dialog"
+                className="research-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="research-dialog-title"
+                onKeyDown={trapDialogFocus}
+              >
+                <header className="research-modal-header">
+                  <div>
+                    <p className="eyebrow">LONG-FORM RESEARCH</p>
+                    <h2 id="research-dialog-title">{active.poi_name}</h2>
+                    <p>{active.location.display}</p>
+                  </div>
+                  <button type="button" className="research-modal-close" onClick={closeResearch} aria-label="關閉長版研究" autoFocus>×</button>
+                </header>
+                <div className="research-modal-scroll">
+                  <div className="research-detail">
+                    {active.research.detail.status === 'not_recovered' ? (
+                      <section className="research-unavailable">
+                        <p className="eyebrow">DETAIL NOT RECOVERED</p>
+                        <h3>原始長版尚未復原</h3>
+                        <p>{active.research.detail.preservation_note}</p>
+                      </section>
+                    ) : (
+                      <>
+                        <div className="research-detail-stats">
+                          <span><small>研究信心</small>{active.research.confidence_label}</span>
+                          <span><small>已確認事實</small>{active.research.confirmed_facts?.length ?? 0}</span>
+                          <span><small>保存來源</small>{active.research.sources.length}</span>
+                        </div>
+                        <section>
+                          <p className="eyebrow">PRESERVED DETAIL</p>
+                          <h3>長版研究原文</h3>
+                          <p>{active.research.detail.body}</p>
+                        </section>
+                        {!!active.research.confirmed_facts?.length && (
+                          <section>
+                            <p className="eyebrow">CONFIRMED FACTS</p>
+                            <h3>已確認事實</h3>
+                            <ul>{active.research.confirmed_facts.map((fact) => <li key={fact}>{fact}</li>)}</ul>
+                          </section>
+                        )}
+                        {!!active.research.inferences?.length && (
+                          <section>
+                            <p className="eyebrow">INTERPRETATION</p>
+                            <h3>推論與收藏解讀</h3>
+                            <ul>{active.research.inferences.map((item) => <li key={item}>{item}</li>)}</ul>
+                          </section>
+                        )}
+                        {!!active.research.unresolved_questions?.length && (
+                          <section>
+                            <p className="eyebrow">OPEN QUESTIONS</p>
+                            <h3>仍待確認</h3>
+                            <ul>{active.research.unresolved_questions.map((question) => <li key={question}>{question}</li>)}</ul>
+                          </section>
+                        )}
+                      </>
+                    )}
+                    {!!active.research.sources.length && (
+                      <section className="source-list research-source-list">
+                        <p className="eyebrow">PRESERVED SOURCES</p>
+                        <h3>研究來源</h3>
+                        {active.research.sources.map((source, index) => (
+                          <a href={source} target="_blank" rel="noreferrer" key={source}>
+                            <span>{String(index + 1).padStart(2, '0')}</span>{hostname(source)} ↗
+                          </a>
+                        ))}
+                      </section>
+                    )}
+                    <p className="research-provenance">研究保存來源 · {active.research.detail.source_path}</p>
+                  </div>
+                </div>
+              </section>
             </div>
-          </section>
-        </div>
+          )}
+        </>
       )}
     </main>
   );

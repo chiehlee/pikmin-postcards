@@ -88,7 +88,7 @@ npm run check:duplicate -- \
 
 ## 研究筆記保存方式
 
-列表與明信片視窗先顯示適合快速閱讀的 `research.summary`；視窗內的 `RESEARCH NOTE` 可展開 `research.detail`，再顯示保存下來的長版內容、已確認事實、推論、未解問題與來源路徑。
+列表與明信片視窗先顯示適合快速閱讀的 `research.summary`；按下視窗內的 `RESEARCH NOTE` 會開啟獨立、可捲動的長版研究視窗，再顯示保存下來的 `research.detail`、已確認事實、推論、未解問題與來源路徑。關閉長版研究後會回到原本的明信片視窗與觸發按鈕。
 
 每張明信片的長版狀態會明確保存為：
 
@@ -100,15 +100,7 @@ npm run check:duplicate -- \
 
 ## Google Maps 研究定位
 
-有保存研究內容的明信片會顯示「研究定位」。外部 Google Maps 搜尋連結不需要 API key；內嵌互動地圖使用 Google Maps Embed API，並且只在使用者按下「載入 Google Map」後建立單一 iframe，不會在首頁或開啟明信片視窗時預先載入。
-
-建立 `.env.local` 並設定：
-
-```bash
-NEXT_PUBLIC_GOOGLE_MAPS_EMBED_API_KEY=your_restricted_embed_key
-```
-
-Google 要求 Maps Embed API key 所屬專案啟用 billing，但 Embed API requests 本身不計費。這個 key 會出現在瀏覽器送出的 iframe URL，因此不可拿來使用其他 API；應建立獨立 key，只允許 Maps Embed API，並加上 `http://localhost:3000/*` 與實際 LAN／VPN 網址的 Website restrictions。設定後需重新 build 並啟動正式服務。
+有保存研究內容的明信片會顯示「研究定位」。外部 Google Maps 搜尋連結與內嵌地圖都不需要本機 API key；內嵌使用 Google Maps 的分享式地圖網址，並且只在使用者按下「載入 Google Map」後建立單一 iframe，不會在首頁或開啟明信片視窗時預先載入。若 Google 日後變更分享式嵌入行為，右上角的外部 Google Maps 連結仍可作為 fallback。
 
 定位資料遵守兩個層級：明信片或 DB 有經緯度時直接用該座標；只有研究地名時以明確的查詢字串交給 Google 解析，UI 會標示「尚非人工確認座標」，不把搜尋結果冒充精確位置。
 
