@@ -636,6 +636,25 @@ export default function Home() {
                 <div><span>收藏評分</span><strong>{active.curation.rating == null ? '未評分' : `${active.curation.rating.toFixed(1)} / 5`}</strong></div>
                 <div><span>建議</span><strong>{active.curation.recommendation ?? '尚未整理'}</strong></div>
               </div>
+              <section className="detail-story">
+                <button
+                  ref={researchTriggerRef}
+                  type="button"
+                  className="research-summary-button"
+                  aria-haspopup="dialog"
+                  aria-expanded={researchOpen}
+                  aria-controls="research-dialog"
+                  onClick={() => setResearchOpen(true)}
+                >
+                  <span className="research-summary-head">
+                    <span className="eyebrow">RESEARCH NOTE</span>
+                    <span className="research-note-action">
+                      {active.research.detail.status === 'not_recovered' ? '查看保存狀態' : '展開長版研究'}
+                    </span>
+                  </span>
+                  <span className="research-summary-copy">{active.research.summary}</span>
+                </button>
+              </section>
               {activeMapTarget && (
                 <section className="location-map" aria-labelledby="location-map-title">
                   <div className="location-map-heading">
@@ -671,25 +690,6 @@ export default function Home() {
                   </p>
                 </section>
               )}
-              <section className="detail-story">
-                <button
-                  ref={researchTriggerRef}
-                  type="button"
-                  className="research-summary-button"
-                  aria-haspopup="dialog"
-                  aria-expanded={researchOpen}
-                  aria-controls="research-dialog"
-                  onClick={() => setResearchOpen(true)}
-                >
-                  <span className="research-summary-head">
-                    <span className="eyebrow">RESEARCH NOTE</span>
-                    <span className="research-note-action">
-                      {active.research.detail.status === 'not_recovered' ? '查看保存狀態' : '展開長版研究'}
-                    </span>
-                  </span>
-                  <span className="research-summary-copy">{active.research.summary}</span>
-                </button>
-              </section>
               <div className="tag-list">{active.curation.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
               {!!active.related_postcards?.length && (
                 <div className="related-list">

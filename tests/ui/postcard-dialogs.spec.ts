@@ -1,13 +1,14 @@
 import { expect, type Page, test } from '@playwright/test';
 
 const postcardName = 'One Grantai Fontain';
+const tallPostcardName = 'CK124蒸汽火車特色郵筒';
 
-async function openPostcard(page: Page) {
+async function openPostcard(page: Page, name = postcardName) {
   await page.goto('/');
-  await page.getByPlaceholder('名稱、地點、故事或標籤').fill(postcardName);
-  const card = page.locator('.postcard-card').filter({ hasText: postcardName });
+  await page.getByPlaceholder('名稱、地點、故事或標籤').fill(name);
+  const card = page.locator('.postcard-card').filter({ hasText: name });
   await expect(card).toHaveCount(1);
-  await card.getByRole('button', { name: `查看 ${postcardName}` }).click();
+  await card.getByRole('button', { name: `查看 ${name}` }).click();
   const dialog = page.locator('.detail-modal');
   await expect(dialog).toBeVisible();
   return dialog;
@@ -63,6 +64,44 @@ test('long-form research uses an independently scrollable modal and restores foc
   await page.keyboard.press('Escape');
   await expect(postcardDialog).toBeHidden();
   await expect(body).not.toHaveClass(/modal-open/);
+});
+
+test('postcard details scroll independently while the image panel stays fixed', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-chromium', 'The split-pane layout only applies above the mobile breakpoint.');
+  const postcardDialog = await openPostcard(page, tallPostcardName);
+  const copy = postcardDialog.locator('.modal-copy');
+  const imagePanel = postcardDialog.locator('.modal-image-panel');
+
+  const dimensions = await copy.evaluate((element) => ({
+    clientHeight: element.clientHeight,
+    scrollHeight: element.scrollHeight,
+  }));
+  expect(dimensions.scrollHeight).toBeGreaterThan(dimensions.clientHeight);
+
+  const mapFollowsResearchNote = await postcardDialog.evaluate((element) => {
+    const researchNote = element.querySelector('.detail-story');
+    const map = element.querySelector('.location-map');
+    return Boolean(
+      researchNote
+      && map
+      && researchNote.compareDocumentPosition(map) & Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+  });
+  expect(mapFollowsResearchNote).toBe(true);
+
+  const imageBefore = await imagePanel.boundingBox();
+  const initialScrollTop = await copy.evaluate((element) => element.scrollTop);
+  await copy.hover();
+  await page.mouse.wheel(0, 700);
+  await expect.poll(() => copy.evaluate((element) => element.scrollTop)).toBeGreaterThan(initialScrollTop);
+  const imageAfter = await imagePanel.boundingBox();
+
+  expect(imageBefore).not.toBeNull();
+  expect(imageAfter).not.toBeNull();
+  expect(Math.abs(imageAfter!.x - imageBefore!.x)).toBeLessThan(1);
+  expect(Math.abs(imageAfter!.y - imageBefore!.y)).toBeLessThan(1);
+  expect(Math.abs(imageAfter!.width - imageBefore!.width)).toBeLessThan(1);
+  expect(Math.abs(imageAfter!.height - imageBefore!.height)).toBeLessThan(1);
 });
 
 test('Google Map stays lazy, then loads a working keyless embed', async ({ page }) => {

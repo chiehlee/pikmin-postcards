@@ -149,12 +149,14 @@ footer { display: flex; justify-content: space-between; gap: 20px; padding: 28px
 footer p { margin: 0; color: var(--ink); font-family: Georgia, serif; }
 
 .modal-backdrop { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 24px; background: rgba(16,27,20,.72); backdrop-filter: blur(8px); }
-.detail-modal { position: relative; display: grid; grid-template-columns: minmax(300px, .85fr) minmax(420px, 1.15fr); width: min(1120px, 96vw); max-height: 92vh; overflow: hidden; border-radius: 10px; background: var(--card); box-shadow: 0 35px 100px rgba(0,0,0,.35); }
+.detail-modal { position: relative; display: grid; grid-template-columns: minmax(300px, .85fr) minmax(420px, 1.15fr); grid-template-rows: minmax(0, 1fr); width: min(1120px, 96vw); height: min(92vh, 1120px); max-height: 92vh; overflow: hidden; border-radius: 10px; background: var(--card); box-shadow: 0 35px 100px rgba(0,0,0,.35); }
 .modal-close { position: absolute; top: 12px; right: 12px; z-index: 2; display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid rgba(255,255,255,.35); border-radius: 50%; background: rgba(24,34,28,.75); color: white; font-size: 25px; cursor: pointer; }
-.modal-image-panel { display: flex; min-height: 0; flex-direction: column; padding: 20px; background: #17231c; }
-.modal-image-panel img { min-height: 0; width: 100%; height: 100%; object-fit: contain; }
+.modal-image-panel { display: flex; min-width: 0; min-height: 0; height: 100%; overflow: hidden; flex-direction: column; padding: 20px; background: #17231c; }
+.modal-image-panel img { min-height: 0; width: 100%; height: auto; flex: 1 1 0; object-fit: contain; }
 .modal-image-panel a { margin-top: 12px; color: rgba(255,255,255,.72); font-size: 11px; text-align: center; text-decoration: none; }
-.modal-copy { min-width: 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: clamp(28px, 4vw, 58px); }
+.modal-copy { min-width: 0; min-height: 0; height: 100%; overflow-y: auto; overscroll-behavior: contain; scrollbar-color: rgba(35,91,67,.42) transparent; scrollbar-gutter: stable; scrollbar-width: thin; padding: clamp(28px, 4vw, 58px); }
+.modal-copy::-webkit-scrollbar { width: 9px; }
+.modal-copy::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 999px; background: rgba(35,91,67,.42); background-clip: padding-box; }
 .detail-meta { display: flex; gap: 8px; align-items: center; color: var(--muted); font-size: 10px; }
 .modal-copy h2 { margin: 16px 0 8px; padding-right: 30px; font: 500 clamp(31px, 4vw, 50px)/1.12 Georgia, "Noto Serif TC", serif; letter-spacing: -.03em; }
 .detail-location { margin: 0; color: var(--green); font-size: 14px; font-weight: 750; }
@@ -164,7 +166,7 @@ footer p { margin: 0; color: var(--ink); font-family: Georgia, serif; }
 .detail-facts span, .detail-facts strong { display: block; }
 .detail-facts span { color: var(--muted); font-size: 9px; }
 .detail-facts strong { margin-top: 3px; font-size: 12px; }
-.location-map { margin: 0 0 28px; padding: 18px; border: 1px solid var(--line); background: #f8f6ef; }
+.location-map { margin: 28px 0; padding: 18px; border: 1px solid var(--line); background: #f8f6ef; }
 .location-map-heading { display: flex; justify-content: space-between; align-items: start; gap: 18px; margin-bottom: 15px; }
 .location-map-heading .eyebrow { margin-bottom: 5px; }
 .location-map-heading h3 { margin: 0; font: 500 22px Georgia, "Noto Serif TC", serif; }
@@ -245,9 +247,9 @@ footer p { margin: 0; color: var(--ink); font-family: Georgia, serif; }
   .distance-sort-tools { grid-template-columns: 1fr; align-items: start; }
   .distance-sort-tools > button { width: fit-content; }
   .distance-sort-tools form { grid-column: auto; }
-  .detail-modal { grid-template-columns: 1fr; overflow-y: auto; }
-  .modal-image-panel { min-height: 58vh; }
-  .modal-copy { overflow: visible; }
+  .detail-modal { grid-template-columns: 1fr; grid-template-rows: auto auto; height: 96dvh; max-height: 96dvh; overflow-y: auto; }
+  .modal-image-panel { height: auto; min-height: 58vh; overflow: visible; }
+  .modal-copy { height: auto; overflow: visible; }
 }
 @media (max-width: 560px) {
   .site-header { padding: 10px 14px; }
@@ -268,7 +270,7 @@ footer p { margin: 0; color: var(--ink); font-family: Georgia, serif; }
   .image-button { aspect-ratio: 1.32; }
   .open-hint { opacity: 1; transform: none; }
   .modal-backdrop { align-items: end; padding: 0; }
-  .detail-modal { width: 100%; max-height: 96vh; border-radius: 14px 14px 0 0; }
+  .detail-modal { width: 100%; height: 96dvh; max-height: 96dvh; border-radius: 14px 14px 0 0; }
   .modal-image-panel { min-height: 50vh; padding: 12px; }
   .modal-copy { padding: 28px 20px 45px; }
   .location-map { padding: 14px; }
