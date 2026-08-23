@@ -38,7 +38,7 @@ description: "接收新的 Pikmin Bloom 明信片圖片、聊天附件、本機�
 - `sender: null` 本身絕不等於未知寄件人。
 - raw location、研究後當地原名、台灣繁中譯名、完整地址、顯示精度、座標／地圖查詢與信心分開保存。`location.raw` 必須逐字保留遊戲畫面；`location.endonym` 使用當地原文，`location.address_local` 保存來源能支持的最完整當地地址，`location.precision` 明示可靠層級。臺灣主標有證據時到路／街及段，完整巷弄門牌留給 `address_local`；日本有證據時主標到丁目・番・号；兩地證據不足就由町里、區市、都道府縣逐級退回。臺灣、日本以外顯示城市內可確認區域，並在原文末尾附 `country_endonym`；非中日文另填 `zh_tw`，繁中括號內也在末尾附台灣譯名國家。中文或日文的 `zh_tw` 維持 null。`location.display` 只作為共用 formatter 組成的快取，地圖 query 使用 `address_local` 與必要的當地國名，不得拿 raw 或含括號譯名的 display 冒充研究定點。尚未研究完成時用 `language: und`、`name_status: provisional`、`precision: unknown` 與低信心，不假裝已確認。沒有可靠證據時，不把搜尋結果寫成精確地址或座標。
 - 明信片拍到紀念碑、遺址標、復刻物或移設物時，canonical `location` 定位畫面中的現物；所紀念事件、原建物或原物件的歷史位置另存於 research facts／inferences／unresolved questions，並分別表達精度與信心。不得把現物的精確地址或座標冒充歷史事件的精確位置，也不因歷史基址未定就降低現物定位的信心。
-- condensed `research.summary` 與 `research.detail` 分開。保存不到原長文時明確標示缺漏，不用後寫內容冒充原文。
+- condensed `research.summary` 與 `research.detail` 分開。`research.detail` 必須是可獨立閱讀的研究稿，不是摘要換句話說；對具有歷史、文化或空間考證價值的題材，依證據涵蓋現物身分、事件時間線、人物／組織、時代與地點脈絡、來源衝突或限制、後續發展／紀念方式，以及這張卡的收藏解讀。沒有證據的面向直接省略，不以泛論灌水。保存不到原長文時明確標示缺漏，不用後寫內容冒充原文。
 - 使用者要求補做 `not_recovered` 研究時，保留原缺漏的歷史 provenance，另用帶日期的新 research status 與新的 `research/raw/` 檔保存「本次重做」；不可覆寫成已復原舊文。批次補做要有 manifest 或等價的確定性輸入，先 dry-run 驗證目標集合完全相符，再以 regression test 鎖定覆蓋數、來源檔與零殘留 `not_recovered`。
 - 事實、推論與未解問題分欄；每項外部事實保存直接支持它的 URL。
 - 不因 metadata 相同刪掉、隱藏或合併不同圖片；不因外觀相似就宣告可移除的 duplicate。duplicate candidate 與 relationship 只供檢查，只有使用者明確提出個案時才能移除或合併 postcard。
@@ -112,7 +112,7 @@ npm run check:duplicate -- \
 - normalized location 與 confidence；可靠時才填 latitude/longitude。
 - 研究地名的 `endonym`、`address_local`、`precision`、`country_endonym`、BCP-47 風格 `language`、必要時的台灣繁中 `zh_tw`，以及 name status/confidence；先依臺灣道路／日本丁目番號／其他地區城市內區域＋國名的層級取可由來源支持的最深精度，再逐級 fallback。相同 raw location 可先查既有命名 registry/索引再研究，避免逐張重做。研究結果不得覆寫 `raw`。
 - condensed summary，供列表與 modal 快速閱讀。
-- preserved detail，包含較完整脈絡。
+- preserved detail，須可不依賴 condensed summary 獨立理解研究對象；有足夠材料時用清楚的小節依序交代時間線、行動者、空間證據、歷史影響與仍不能確定之處，避免只把 summary 擴寫成一段長文。
 - confirmed facts、inferences、unresolved questions。
 - sources；每個 URL 必須實際打開並支持相鄰主張。
 - curation rating、recommendation、status 與 tags；不確定時用 `unreviewed`，不要為了完整而假造評分。
@@ -181,7 +181,9 @@ npm run test:quick
 # 需要持續回饋時使用 npm run test:watch
 ```
 
-交付或 commit 前固定執行：
+純研究文字、facts、sources 或既有 postcard 資料的局部更新，先跑直接相關的 regression、JSON／SQLite sync 與 integrity check；若 production snapshot 由 build 產生，再完成 build 與目前服務的 HTTP smoke test。這類變更不因單張內容調整而無條件重跑 Playwright 或整套 `verify`，可在批次邊界集中執行。
+
+新增或修改 UI、production code、schema、script、workflow，或進行 release／批次交付時，執行：
 
 ```bash
 npm run verify
