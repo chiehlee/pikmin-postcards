@@ -21,7 +21,7 @@ const database = await openDatabase(databasePath);
 try {
   const source = database.prepare(`
     SELECT id, poi_name, found_date, sender, location_raw, location_display,
-      location_endonym, location_zh_tw, latitude, longitude
+      location_endonym, location_zh_tw, location_address_local, latitude, longitude
     FROM postcards
     WHERE id = ?
   `).get(postcardId);
@@ -62,6 +62,7 @@ try {
   addExactMatches(database, source, "location_display", "same-display-location", 4, perSignalLimit, addSignal);
   addExactMatches(database, source, "location_endonym", "same-endonym", 4, perSignalLimit, addSignal);
   addExactMatches(database, source, "location_zh_tw", "same-zh-tw-location", 3, perSignalLimit, addSignal);
+  addExactMatches(database, source, "location_address_local", "same-researched-address", 6, perSignalLimit, addSignal);
 
   if (source.sender) {
     const rows = database.prepare(`
@@ -143,6 +144,7 @@ try {
       location_display: source.location_display,
       location_endonym: source.location_endonym,
       location_zh_tw: source.location_zh_tw,
+      location_address_local: source.location_address_local,
     },
     policy: {
       exhaustive: false,
@@ -171,6 +173,7 @@ function addExactMatches(database, source, column, type, points, rowLimit, addSi
     "location_display",
     "location_endonym",
     "location_zh_tw",
+    "location_address_local",
   ]);
   if (!allowedColumns.has(column)) throw new Error(`Unsupported candidate column: ${column}`);
   const rows = database.prepare(`
@@ -188,7 +191,7 @@ function loadCandidateDetails(database, ids) {
   const placeholders = ids.map(() => "?").join(", ");
   return database.prepare(`
     SELECT id, poi_name, found_date, sender, location_raw, location_display,
-      location_endonym, location_zh_tw, latitude, longitude
+      location_endonym, location_zh_tw, location_address_local, latitude, longitude
     FROM postcards
     WHERE id IN (${placeholders})
   `).all(...ids);

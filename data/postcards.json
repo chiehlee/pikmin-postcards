@@ -1,5 +1,5 @@
 {
-  "schema_version": 4,
+  "schema_version": 5,
   "archive_name": "Pikmin Postcard Archive",
   "source_principles": {
     "found_date_is_sent_date": false,
@@ -18,7 +18,7 @@
       "sender": null,
       "location": {
         "raw": "Linxing, Zhongzheng District",
-        "display": "臺北市中正區林興里",
+        "display": "臺北市中正區汀州路三段",
         "city": "臺北市",
         "district": "中正區",
         "locality": "林興里",
@@ -29,11 +29,14 @@
         "latitude": null,
         "longitude": null,
         "normalization_confidence": "medium",
-        "endonym": "臺北市中正區林興里",
+        "endonym": "臺北市中正區汀州路三段",
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市中正區汀州路三段2號",
+        "precision": "road"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-001.png",
@@ -117,7 +120,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市中正區梅花里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-002.png",
@@ -184,7 +190,7 @@
       "sender": "柳柳",
       "location": {
         "raw": "Kajang",
-        "display": "Kajang, Selangor（雪蘭莪州加影）",
+        "display": "Kajang, Selangor, Malaysia（雪蘭莪州加影，馬來西亞）",
         "city": "Kajang",
         "district": null,
         "locality": null,
@@ -199,7 +205,10 @@
         "zh_tw": "雪蘭莪州加影",
         "language": "ms",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "Malaysia",
+        "address_local": "Kajang, Selangor",
+        "precision": "city"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-003.png",
@@ -279,7 +288,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "茨城県ひたちなか市湊本町",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-004.png",
@@ -345,7 +357,7 @@
       "sender": "りゅう",
       "location": {
         "raw": "Ubud, Gianyar",
-        "display": "Ubud, Kabupaten Gianyar（峇里省吉安雅縣烏布）",
+        "display": "Ubud, Kabupaten Gianyar, Indonesia（峇里省吉安雅縣烏布，印尼）",
         "city": "Ubud",
         "district": null,
         "locality": null,
@@ -360,7 +372,10 @@
         "zh_tw": "峇里省吉安雅縣烏布",
         "language": "id",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "Indonesia",
+        "address_local": "Ubud, Kabupaten Gianyar",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-005.png",
@@ -439,7 +454,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "茨城県ひたちなか市阿字ケ浦町",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-006.png",
@@ -520,7 +538,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市北投區清江里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-007.png",
@@ -601,7 +622,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市北投區大同里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-008.png",
@@ -683,7 +707,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市北投區八仙里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-009.png",
@@ -764,7 +791,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市北投區長安里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-010.png",
@@ -845,7 +875,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市北投區清江里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-011.png",
@@ -925,7 +958,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市北投區文化里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-012.jpeg",
@@ -1007,7 +1043,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市北投區長安里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-013.jpeg",
@@ -1085,7 +1124,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "桃園市大園區埔心里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-014.jpeg",
@@ -1164,7 +1206,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市北投區中心里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-015.jpeg",
@@ -1245,7 +1290,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市北投區開明里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-016.jpeg",
@@ -1326,7 +1374,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市北投區一德里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-017.png",
@@ -1392,7 +1443,7 @@
       "sender": null,
       "location": {
         "raw": "Xinren, Xinyi District",
-        "display": "臺北市信義區新仁里",
+        "display": "臺北市信義區光復南路",
         "city": "臺北市",
         "district": "信義區",
         "locality": "新仁里",
@@ -1403,11 +1454,14 @@
         "latitude": null,
         "longitude": null,
         "normalization_confidence": "medium",
-        "endonym": "臺北市信義區新仁里",
+        "endonym": "臺北市信義區光復南路",
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市信義區光復南路133號",
+        "precision": "road"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-018.png",
@@ -1487,7 +1541,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市大安區華聲里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-019.png",
@@ -1554,7 +1611,7 @@
       "sender": null,
       "location": {
         "raw": "Ankang, Xinyi District",
-        "display": "臺北市信義區安康里",
+        "display": "臺北市信義區松仁路",
         "city": "臺北市",
         "district": "信義區",
         "locality": "安康里",
@@ -1565,11 +1622,14 @@
         "latitude": null,
         "longitude": null,
         "normalization_confidence": "medium",
-        "endonym": "臺北市信義區安康里",
+        "endonym": "臺北市信義區松仁路",
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市信義區松仁路89號",
+        "precision": "road"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-020.png",
@@ -1648,7 +1708,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "臺灣",
+        "address_local": "花蓮縣壽豐鄉鹽寮村",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/07/pc-0021.jpeg",
@@ -1724,7 +1787,7 @@
       "sender": "Yeii",
       "location": {
         "raw": "Taixing Village, Dongshi District",
-        "display": "臺中市東勢區石城里石城街178號",
+        "display": "臺中市東勢區石城街",
         "city": "臺中市",
         "district": "東勢區",
         "locality": "石城里",
@@ -1735,11 +1798,14 @@
         "latitude": 24.28559,
         "longitude": 120.79232,
         "normalization_confidence": "high",
-        "endonym": "臺中市東勢區石城里石城街178號",
+        "endonym": "臺中市東勢區石城街",
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺中市東勢區石城街178號",
+        "precision": "road"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0022.png",
@@ -1817,7 +1883,7 @@
       "sender": "Sha",
       "location": {
         "raw": "Wan Chai",
-        "display": "灣仔",
+        "display": "灣仔，香港",
         "city": null,
         "district": null,
         "locality": null,
@@ -1832,7 +1898,10 @@
         "zh_tw": null,
         "language": "zh-Hant-HK",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "香港",
+        "address_local": "灣仔",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-0023.png",
@@ -1922,7 +1991,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "石川県加賀市伊切町",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0024.jpeg",
@@ -2014,7 +2086,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "高雄市內門區內南里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-0025.jpeg",
@@ -2108,7 +2183,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "千葉県浦安市",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/07/pc-0026.png",
@@ -2202,7 +2280,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "臺灣",
+        "address_local": "高雄市阿蓮區阿蓮里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0027.jpeg",
@@ -2292,7 +2373,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "島根県隠岐の島町布施",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/07/pc-0028.jpeg",
@@ -2368,7 +2452,7 @@
       "sender": "花花",
       "location": {
         "raw": "Telford Gardens, Kowloon Bay",
-        "display": "九龍灣德福花園",
+        "display": "九龍灣德福花園，香港",
         "city": null,
         "district": null,
         "locality": null,
@@ -2383,7 +2467,10 @@
         "zh_tw": null,
         "language": "zh-Hant-HK",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "香港",
+        "address_local": "九龍灣德福花園",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/06/pc-0029.jpeg",
@@ -2461,7 +2548,7 @@
       "sender": "Tribble Mountain Time",
       "location": {
         "raw": "Laramie",
-        "display": "Laramie, Wyoming（懷俄明州拉勒米）",
+        "display": "Laramie, Wyoming, United States（懷俄明州拉勒米，美國）",
         "city": null,
         "district": null,
         "locality": null,
@@ -2476,7 +2563,10 @@
         "zh_tw": "懷俄明州拉勒米",
         "language": "en-US",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "United States",
+        "address_local": "Laramie, Wyoming",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/07/pc-0030.jpeg",
@@ -2570,7 +2660,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "宜蘭縣蘇澳鎮蘇西里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/07/pc-0031.jpeg",
@@ -2646,7 +2739,7 @@
       "sender": "緑",
       "location": {
         "raw": "(36.6768750, 127.3937000)",
-        "display": "충청북도 청주시 가락리（忠清北道清州市佳樂里）",
+        "display": "충청북도 청주시 가락리, 대한민국（忠清北道清州市佳樂里，韓國）",
         "city": null,
         "district": null,
         "locality": null,
@@ -2661,7 +2754,10 @@
         "zh_tw": "忠清北道清州市佳樂里",
         "language": "ko",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "대한민국",
+        "address_local": "충청북도 청주시 가락리",
+        "precision": "coordinates"
       },
       "asset": {
         "path": "/images/postcards/2026/06/pc-0032.jpeg",
@@ -2737,7 +2833,7 @@
       "sender": "Xuan",
       "location": {
         "raw": "Kanding Village, Tamsui District",
-        "display": "新北市淡水區中山北路二段381巷2號",
+        "display": "新北市淡水區中山北路二段",
         "city": "新北市",
         "district": "淡水區",
         "locality": null,
@@ -2748,11 +2844,14 @@
         "latitude": 25.1876389,
         "longitude": 121.4427778,
         "normalization_confidence": "high",
-        "endonym": "新北市淡水區中山北路二段381巷2號",
+        "endonym": "新北市淡水區中山北路二段",
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "新北市淡水區中山北路二段381巷2號",
+        "precision": "road"
       },
       "asset": {
         "path": "/images/postcards/2026/07/pc-0033.png",
@@ -2843,7 +2942,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市北投區桃源里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/07/pc-0034.png",
@@ -2918,7 +3020,7 @@
       "sender": "花花",
       "location": {
         "raw": "Tsim Sha Tsui",
-        "display": "尖沙咀",
+        "display": "尖沙咀，香港",
         "city": null,
         "district": null,
         "locality": null,
@@ -2933,7 +3035,10 @@
         "zh_tw": null,
         "language": "zh-Hant-HK",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "香港",
+        "address_local": "尖沙咀",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/07/pc-0035.png",
@@ -3023,7 +3128,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "高雄市前鎮區興邦里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/07/pc-0036.jpeg",
@@ -3101,7 +3209,7 @@
       "sender": "Yumi",
       "location": {
         "raw": "Saint-Laurent-des-Autels, Orée d'Anjou",
-        "display": "Saint-Laurent-des-Autels, Orée-d’Anjou（羅亞爾河地區奧雷當茹聖洛朗德索泰勒）",
+        "display": "Saint-Laurent-des-Autels, Orée-d’Anjou, France（羅亞爾河地區奧雷當茹聖洛朗德索泰勒，法國）",
         "city": null,
         "district": null,
         "locality": null,
@@ -3116,7 +3224,10 @@
         "zh_tw": "羅亞爾河地區奧雷當茹聖洛朗德索泰勒",
         "language": "fr",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "France",
+        "address_local": "Saint-Laurent-des-Autels, Orée-d’Anjou",
+        "precision": "city"
       },
       "asset": {
         "path": "/images/postcards/2026/07/pc-0037.jpeg",
@@ -3206,7 +3317,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市士林區仁勇里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-0038.png",
@@ -3299,7 +3413,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "臺灣",
+        "address_local": "宜蘭縣冬山鄉群英村",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/07/pc-0039.jpeg",
@@ -3389,7 +3506,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市中山區中原里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/07/pc-0040.jpeg",
@@ -3464,7 +3584,7 @@
       "sender": "JessieJc",
       "location": {
         "raw": "Xinzhuang, Zhongshan District",
-        "display": "臺北市中山區新庄里",
+        "display": "臺北市中山區濱江街",
         "city": null,
         "district": null,
         "locality": null,
@@ -3475,11 +3595,14 @@
         "latitude": null,
         "longitude": null,
         "normalization_confidence": "medium",
-        "endonym": "臺北市中山區新庄里",
+        "endonym": "臺北市中山區濱江街",
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市中山區濱江街5號",
+        "precision": "road"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0041.jpeg",
@@ -3557,7 +3680,7 @@
       "sender": "Tribble Mountain Time",
       "location": {
         "raw": "Downtown, Laramie",
-        "display": "Downtown Laramie, Wyoming（懷俄明州拉勒米市中心）",
+        "display": "Downtown Laramie, Wyoming, United States（懷俄明州拉勒米市中心，美國）",
         "city": null,
         "district": null,
         "locality": null,
@@ -3572,7 +3695,10 @@
         "zh_tw": "懷俄明州拉勒米市中心",
         "language": "en-US",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "United States",
+        "address_local": "Downtown Laramie, Wyoming",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/07/pc-0042.jpeg",
@@ -3650,7 +3776,7 @@
       "sender": "🍎Ching🍎",
       "location": {
         "raw": "Chinatown, Victoria",
-        "display": "Chinatown, Victoria, British Columbia（卑詩省維多利亞華埠）",
+        "display": "Chinatown, Victoria, British Columbia, Canada（卑詩省維多利亞華埠，加拿大）",
         "city": null,
         "district": null,
         "locality": null,
@@ -3665,7 +3791,10 @@
         "zh_tw": "卑詩省維多利亞華埠",
         "language": "en-CA",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "Canada",
+        "address_local": "Chinatown, Victoria, British Columbia",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/07/pc-0043.png",
@@ -3740,7 +3869,7 @@
       "sender": "Sha",
       "location": {
         "raw": "Yau Ma Tei",
-        "display": "油麻地",
+        "display": "油麻地，香港",
         "city": null,
         "district": null,
         "locality": null,
@@ -3755,7 +3884,10 @@
         "zh_tw": null,
         "language": "zh-Hant-HK",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "香港",
+        "address_local": "油麻地",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/03/pc-0044.png",
@@ -3849,7 +3981,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市北投區稻香里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0045.png",
@@ -3940,7 +4075,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "東京都世田谷区花みず木通り（砧線跡）",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0046.jpeg",
@@ -4016,7 +4154,7 @@
       "sender": "花花",
       "location": {
         "raw": "Shenzhen",
-        "display": "深圳市",
+        "display": "深圳市，中国",
         "city": null,
         "district": null,
         "locality": null,
@@ -4031,7 +4169,10 @@
         "zh_tw": null,
         "language": "zh-Hans-CN",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "中国",
+        "address_local": "深圳市",
+        "precision": "city"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0047.png",
@@ -4106,7 +4247,7 @@
       "sender": "Yumi",
       "location": {
         "raw": "Nantes",
-        "display": "Nantes（南特）",
+        "display": "Nantes, France（南特，法國）",
         "city": null,
         "district": null,
         "locality": null,
@@ -4121,7 +4262,10 @@
         "zh_tw": "南特",
         "language": "fr",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "France",
+        "address_local": "Nantes",
+        "precision": "city"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0048.png",
@@ -4211,7 +4355,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "日本",
+        "address_local": "東京都中央区日本橋三丁目",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0049.png",
@@ -4286,7 +4433,7 @@
       "sender": null,
       "location": {
         "raw": "Albion Park Rail",
-        "display": "Albion Park Rail, New South Wales（新南威爾斯州阿爾比恩帕克雷爾）",
+        "display": "Albion Park Rail, New South Wales, Australia（新南威爾斯州阿爾比恩帕克雷爾，澳洲）",
         "city": null,
         "district": null,
         "locality": null,
@@ -4301,7 +4448,10 @@
         "zh_tw": "新南威爾斯州阿爾比恩帕克雷爾",
         "language": "en-AU",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "Australia",
+        "address_local": "Albion Park Rail, New South Wales",
+        "precision": "city"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0050.jpeg",
@@ -4391,7 +4541,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "東京都世田谷区三軒茶屋二丁目",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0051.png",
@@ -4485,7 +4638,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "日本",
+        "address_local": "東京都世田谷区太子堂二丁目",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0052.jpeg",
@@ -4575,7 +4731,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "東京都新宿区百人町二丁目",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0053.png",
@@ -4653,7 +4812,7 @@
       "sender": "V",
       "location": {
         "raw": "Quanan, Daan District",
-        "display": "臺北市大安區全安里",
+        "display": "臺北市大安區敦化南路二段",
         "city": null,
         "district": null,
         "locality": null,
@@ -4664,11 +4823,14 @@
         "latitude": null,
         "longitude": null,
         "normalization_confidence": "medium",
-        "endonym": "臺北市大安區全安里",
+        "endonym": "臺北市大安區敦化南路二段",
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市大安區敦化南路二段201號",
+        "precision": "road"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0054.png",
@@ -4762,7 +4924,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市中正區黎明里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0055.jpeg",
@@ -4852,7 +5017,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市北投區八仙里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0056.png",
@@ -4928,7 +5096,7 @@
       "sender": null,
       "location": {
         "raw": "San Francisco, General Trias",
-        "display": "San Francisco, General Trias, Cavite（甲米地省將軍特里亞斯市聖弗朗西斯科）",
+        "display": "San Francisco, General Trias, Cavite, Philippines（甲米地省將軍特里亞斯市聖弗朗西斯科，菲律賓）",
         "city": null,
         "district": null,
         "locality": null,
@@ -4943,7 +5111,10 @@
         "zh_tw": "甲米地省將軍特里亞斯市聖弗朗西斯科",
         "language": "en-PH",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "Philippines",
+        "address_local": "San Francisco, General Trias, Cavite",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0057.png",
@@ -5019,7 +5190,7 @@
       "sender": "Subway北投店老闆",
       "location": {
         "raw": "Ryd, Linköping",
-        "display": "Ryd, Linköping（林雪平市里德）",
+        "display": "Ryd, Linköping, Sverige（林雪平市里德，瑞典）",
         "city": null,
         "district": null,
         "locality": null,
@@ -5034,7 +5205,10 @@
         "zh_tw": "林雪平市里德",
         "language": "sv",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "Sverige",
+        "address_local": "Ryd, Linköping",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0058.jpeg",
@@ -5125,7 +5299,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "日本",
+        "address_local": "東京都目黒区目黒本町五丁目",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0059.png",
@@ -5215,7 +5392,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "日本",
+        "address_local": "福井県丹生郡越前町米ノ",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0060.png",
@@ -5290,7 +5470,7 @@
       "sender": null,
       "location": {
         "raw": "Bundanoon",
-        "display": "Bundanoon, New South Wales（新南威爾斯州班達努）",
+        "display": "Bundanoon, New South Wales, Australia（新南威爾斯州班達努，澳洲）",
         "city": null,
         "district": null,
         "locality": null,
@@ -5305,7 +5485,10 @@
         "zh_tw": "新南威爾斯州班達努",
         "language": "en-AU",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "Australia",
+        "address_local": "Bundanoon, New South Wales",
+        "precision": "city"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0061.png",
@@ -5403,7 +5586,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "千葉県成田市三里塚御料",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0062.png",
@@ -5481,7 +5667,7 @@
       "sender": "Catlover:3",
       "location": {
         "raw": "Bowral",
-        "display": "Corbett Gardens, Bowral, New South Wales（新南威爾斯州鮑勒爾科貝特花園）",
+        "display": "Corbett Gardens, Bowral, New South Wales, Australia（新南威爾斯州鮑勒爾科貝特花園，澳洲）",
         "city": "Bowral",
         "district": null,
         "locality": null,
@@ -5496,7 +5682,10 @@
         "zh_tw": "新南威爾斯州鮑勒爾科貝特花園",
         "language": "en-AU",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "Australia",
+        "address_local": "Corbett Gardens, Bowral, New South Wales",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0063.png",
@@ -5572,7 +5761,7 @@
       "sender": "花花",
       "location": {
         "raw": "Kwun Tong",
-        "display": "觀塘",
+        "display": "觀塘，香港",
         "city": null,
         "district": null,
         "locality": null,
@@ -5587,7 +5776,10 @@
         "zh_tw": null,
         "language": "zh-Hant-HK",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "香港",
+        "address_local": "觀塘",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-0064.png",
@@ -5677,7 +5869,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市中正區愛國里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0065.png",
@@ -5752,7 +5947,7 @@
       "sender": "梨梨五",
       "location": {
         "raw": "Our Lady of Carmel, Taipa",
-        "display": "澳門氹仔嘉模堂區",
+        "display": "氹仔嘉模堂區，澳門",
         "city": null,
         "district": null,
         "locality": null,
@@ -5763,11 +5958,14 @@
         "latitude": null,
         "longitude": null,
         "normalization_confidence": "medium",
-        "endonym": "澳門氹仔嘉模堂區",
+        "endonym": "氹仔嘉模堂區",
         "zh_tw": null,
         "language": "zh-Hant-MO",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "澳門",
+        "address_local": "氹仔嘉模堂區",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/07/pc-0066.png",
@@ -5861,7 +6059,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "大阪府東大阪市上石切町二丁目",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0067.png",
@@ -5952,7 +6153,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "東京都渋谷区神山町",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0068.png",
@@ -6045,7 +6249,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市北投區一德里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0069.png",
@@ -6135,7 +6342,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "臺灣",
+        "address_local": "花蓮縣花蓮市民德里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0070.png",
@@ -6225,7 +6435,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "日本",
+        "address_local": "東京都渋谷区恵比寿一丁目",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0071.png",
@@ -6300,7 +6513,7 @@
       "sender": null,
       "location": {
         "raw": "Minato, Higashishimbashi 1-Chōme",
-        "display": "東京都港区東新橋一丁目",
+        "display": "東京都港区東新橋一丁目5−3",
         "city": null,
         "district": null,
         "locality": null,
@@ -6311,11 +6524,14 @@
         "latitude": null,
         "longitude": null,
         "normalization_confidence": "medium",
-        "endonym": "東京都港区東新橋一丁目",
+        "endonym": "東京都港区東新橋一丁目5−3",
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "東京都港区東新橋一丁目5−3",
+        "precision": "full_address"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0072.png",
@@ -6392,7 +6608,7 @@
       "sender": "Sha",
       "location": {
         "raw": "Jordan",
-        "display": "佐敦",
+        "display": "佐敦，香港",
         "city": null,
         "district": null,
         "locality": null,
@@ -6407,7 +6623,10 @@
         "zh_tw": null,
         "language": "zh-Hant-HK",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "香港",
+        "address_local": "佐敦",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0073.png",
@@ -6501,7 +6720,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "日本",
+        "address_local": "東京都世田谷区上馬四丁目",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0074.png",
@@ -6591,7 +6813,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "東京都世田谷区玉川通り",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0075.png",
@@ -6668,7 +6893,7 @@
       "sender": null,
       "location": {
         "raw": "Bundanoon",
-        "display": "Bundanoon, New South Wales（新南威爾斯州班達努）",
+        "display": "Bundanoon, New South Wales, Australia（新南威爾斯州班達努，澳洲）",
         "city": null,
         "district": null,
         "locality": null,
@@ -6683,7 +6908,10 @@
         "zh_tw": "新南威爾斯州班達努",
         "language": "en-AU",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "Australia",
+        "address_local": "Bundanoon, New South Wales",
+        "precision": "city"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0076.png",
@@ -6766,7 +6994,7 @@
       "sender": "Lynn",
       "location": {
         "raw": "Arna, Trengereid",
-        "display": "Trengereid, Arna, Bergen（卑爾根市阿納區特倫厄雷德）",
+        "display": "Trengereid, Arna, Bergen, Norge（卑爾根市阿納區特倫厄雷德，挪威）",
         "city": null,
         "district": null,
         "locality": null,
@@ -6781,7 +7009,10 @@
         "zh_tw": "卑爾根市阿納區特倫厄雷德",
         "language": "nb",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "Norge",
+        "address_local": "Trengereid, Arna, Bergen",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0077.png",
@@ -6888,7 +7119,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "奈良県生駒市元町一丁目",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/unknown/unknown/pc-0078.png",
@@ -6964,7 +7198,7 @@
       "sender": "Catlover:3",
       "location": {
         "raw": "Bowral",
-        "display": "Rivulet Park, Bowral, New South Wales（新南威爾斯州鮑勒爾里弗萊特公園）",
+        "display": "Rivulet Park, Bowral, New South Wales, Australia（新南威爾斯州鮑勒爾里弗萊特公園，澳洲）",
         "city": "Bowral",
         "district": null,
         "locality": null,
@@ -6979,7 +7213,10 @@
         "zh_tw": "新南威爾斯州鮑勒爾里弗萊特公園",
         "language": "en-AU",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "Australia",
+        "address_local": "Rivulet Park, Bowral, New South Wales",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0079.png",
@@ -7073,7 +7310,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "東京都港区西麻布三丁目",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0080.png",
@@ -7171,7 +7411,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "東京都港区西麻布三丁目",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0081.png",
@@ -7254,7 +7497,7 @@
       "sender": "Zana",
       "location": {
         "raw": "Guangchun Village, Chaozhou Township",
-        "display": "屏東縣潮州鎮光春里",
+        "display": "屏東縣潮州鎮信義路",
         "city": null,
         "district": null,
         "locality": null,
@@ -7265,11 +7508,14 @@
         "latitude": null,
         "longitude": null,
         "normalization_confidence": "medium",
-        "endonym": "屏東縣潮州鎮光春里",
+        "endonym": "屏東縣潮州鎮信義路",
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "屏東縣潮州鎮信義路111號",
+        "precision": "road"
       },
       "asset": {
         "path": "/images/postcards/unknown/unknown/pc-0082.png",
@@ -7360,7 +7606,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市中山區劍潭里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/07/pc-0083.png",
@@ -7441,7 +7690,7 @@
       "sender": "유니",
       "location": {
         "raw": "Seoul",
-        "display": "서울특별시（首爾特別市）",
+        "display": "서울특별시, 대한민국（首爾特別市，韓國）",
         "city": null,
         "district": null,
         "locality": null,
@@ -7456,7 +7705,10 @@
         "zh_tw": "首爾特別市",
         "language": "ko",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "대한민국",
+        "address_local": "서울특별시",
+        "precision": "city"
       },
       "asset": {
         "path": "/images/postcards/unknown/unknown/pc-0084.png",
@@ -7550,7 +7802,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市北投區建民里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/unknown/unknown/pc-0085.png",
@@ -7641,7 +7896,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市內湖區湖元里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/unknown/unknown/pc-0086.png",
@@ -7732,7 +7990,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "東京都世田谷区三軒茶屋一丁目",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0087.png",
@@ -7825,7 +8086,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市北投區長安里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0088.png",
@@ -7900,7 +8164,7 @@
       "sender": null,
       "location": {
         "raw": "Nasu, Yumoto",
-        "display": "栃木県那須町湯本",
+        "display": "栃木県那須町湯本203",
         "city": null,
         "district": null,
         "locality": null,
@@ -7911,11 +8175,14 @@
         "latitude": null,
         "longitude": null,
         "normalization_confidence": "medium",
-        "endonym": "栃木県那須町湯本",
+        "endonym": "栃木県那須町湯本203",
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "high"
+        "name_confidence": "high",
+        "country_endonym": "日本",
+        "address_local": "栃木県那須郡那須町湯本203",
+        "precision": "full_address"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0089.png",
@@ -8007,7 +8274,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市大安區華聲里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0090.png",
@@ -8097,7 +8367,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "臺灣",
+        "address_local": "花蓮縣花蓮市國聯里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/06/pc-0091.png",
@@ -8187,7 +8460,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "新北市板橋區莊敬里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/07/pc-0092.png",
@@ -8270,7 +8546,7 @@
       "sender": "Yumi",
       "location": {
         "raw": "Ullevi, Färjestaden",
-        "display": "Ullevi, Färjestaden（費里耶斯塔登烏勒維）",
+        "display": "Ullevi, Färjestaden, Sverige（費里耶斯塔登烏勒維，瑞典）",
         "city": null,
         "district": null,
         "locality": null,
@@ -8285,7 +8561,10 @@
         "zh_tw": "費里耶斯塔登烏勒維",
         "language": "sv",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "Sverige",
+        "address_local": "Ullevi, Färjestaden",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0093.png",
@@ -8369,7 +8648,7 @@
       "sender": "Sha",
       "location": {
         "raw": "Causeway Bay",
-        "display": "銅鑼灣",
+        "display": "銅鑼灣，香港",
         "city": null,
         "district": null,
         "locality": null,
@@ -8384,7 +8663,10 @@
         "zh_tw": null,
         "language": "zh-Hant-HK",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "香港",
+        "address_local": "銅鑼灣",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0094.png",
@@ -8474,7 +8756,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市內湖區寶湖里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0095.png",
@@ -8568,7 +8853,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "新北市板橋區莊敬里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/07/pc-0096.png",
@@ -8651,7 +8939,7 @@
       "sender": "Yumi",
       "location": {
         "raw": "Ullevi, Färjestaden",
-        "display": "Ullevi, Färjestaden（費里耶斯塔登烏勒維）",
+        "display": "Ullevi, Färjestaden, Sverige（費里耶斯塔登烏勒維，瑞典）",
         "city": null,
         "district": null,
         "locality": null,
@@ -8666,7 +8954,10 @@
         "zh_tw": "費里耶斯塔登烏勒維",
         "language": "sv",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "Sverige",
+        "address_local": "Ullevi, Färjestaden",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0097.png",
@@ -8750,7 +9041,7 @@
       "sender": "花花",
       "location": {
         "raw": "Tsuen Wan",
-        "display": "荃灣",
+        "display": "荃灣，香港",
         "city": null,
         "district": null,
         "locality": null,
@@ -8765,7 +9056,10 @@
         "zh_tw": null,
         "language": "zh-Hant-HK",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "香港",
+        "address_local": "荃灣",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-0098.png",
@@ -8842,7 +9136,7 @@
       "sender": null,
       "location": {
         "raw": "Changan, Beitou District",
-        "display": "臺北市北投區光明路157巷2弄光明橋",
+        "display": "臺北市北投區光明路",
         "city": "臺北市",
         "district": "北投區",
         "locality": null,
@@ -8853,11 +9147,14 @@
         "latitude": 25.13571,
         "longitude": 121.502532,
         "normalization_confidence": "high",
-        "endonym": "臺北市北投區光明路157巷2弄光明橋",
+        "endonym": "臺北市北投區光明路",
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市北投區光明路157巷2弄",
+        "precision": "road"
       },
       "asset": {
         "path": "/images/postcards/2026/08/pc-0099.png",
@@ -8948,7 +9245,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "臺灣",
+        "address_local": "桃園市大園區埔心里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0100.jpeg",
@@ -9038,7 +9338,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市北投區中央里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0101.png",
@@ -9128,7 +9431,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "福井県敦賀市沓見",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0102.jpeg",
@@ -9226,7 +9532,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "東京都目黒区中目黒二丁目",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0103.jpeg",
@@ -9322,7 +9631,7 @@
       "sender": "柳柳",
       "location": {
         "raw": "Inakadate, Takahi Omagari",
-        "display": "青森県田舎館村高樋字大曲",
+        "display": "青森県田舎館村高樋字大曲63",
         "city": null,
         "district": null,
         "locality": null,
@@ -9333,11 +9642,14 @@
         "latitude": null,
         "longitude": null,
         "normalization_confidence": "medium",
-        "endonym": "青森県田舎館村高樋字大曲",
+        "endonym": "青森県田舎館村高樋字大曲63",
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "青森県田舎館村高樋字大曲63",
+        "precision": "full_address"
       },
       "asset": {
         "path": "/images/postcards/2026/03/pc-0104.png",
@@ -9431,7 +9743,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "日本",
+        "address_local": "東京都渋谷区恵比寿西一丁目",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0105.jpeg",
@@ -9526,7 +9841,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "日本",
+        "address_local": "東京都世田谷区上馬三丁目",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0106.jpeg",
@@ -9606,7 +9924,7 @@
       "sender": null,
       "location": {
         "raw": "Datong, Beitou District",
-        "display": "臺北市北投區大同街15號",
+        "display": "臺北市北投區大同街",
         "city": "臺北市",
         "district": "北投區",
         "locality": null,
@@ -9617,11 +9935,14 @@
         "latitude": null,
         "longitude": null,
         "normalization_confidence": "high",
-        "endonym": "臺北市北投區大同街15號",
+        "endonym": "臺北市北投區大同街",
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市北投區大同街15號",
+        "precision": "road"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0107.jpeg",
@@ -9720,7 +10041,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市北投區八仙里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0108.jpeg",
@@ -9804,7 +10128,7 @@
       "sender": null,
       "location": {
         "raw": "Setagaya, Komazawa 1-Chōme",
-        "display": "東京都世田谷区駒沢一丁目2-33",
+        "display": "東京都世田谷区駒沢一丁目2−33",
         "city": "東京都",
         "district": "世田谷区",
         "locality": "駒沢1丁目",
@@ -9815,11 +10139,14 @@
         "latitude": null,
         "longitude": null,
         "normalization_confidence": "high",
-        "endonym": "東京都世田谷区駒沢一丁目2-33",
+        "endonym": "東京都世田谷区駒沢一丁目2−33",
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "東京都世田谷区駒沢一丁目2−33",
+        "precision": "full_address"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0109.jpeg",
@@ -9918,7 +10245,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "福井県敦賀市沓見",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0110.png",
@@ -10016,7 +10346,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "日本",
+        "address_local": "東京都世田谷区三軒茶屋一丁目",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/03/pc-0111.png",
@@ -10112,7 +10445,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "日本",
+        "address_local": "東京都世田谷区三軒茶屋一丁目",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/03/pc-0112.png",
@@ -10208,7 +10544,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "東京都世田谷区野沢一丁目",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/03/pc-0113.jpeg",
@@ -10302,7 +10641,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "日本",
+        "address_local": "東京都世田谷区野沢四丁目",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/03/pc-0114.jpeg",
@@ -10392,7 +10734,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市士林區天福里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0115.png",
@@ -10467,7 +10812,7 @@
       "sender": "のすけ",
       "location": {
         "raw": "Taito, Ikenohata 1-Chōme",
-        "display": "東京都台東区池之端一丁目",
+        "display": "東京都台東区池之端一丁目3−45",
         "city": null,
         "district": null,
         "locality": null,
@@ -10478,11 +10823,14 @@
         "latitude": null,
         "longitude": null,
         "normalization_confidence": "medium",
-        "endonym": "東京都台東区池之端一丁目",
+        "endonym": "東京都台東区池之端一丁目3−45",
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "東京都台東区池之端一丁目3−45",
+        "precision": "full_address"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0116.jpeg",
@@ -10576,7 +10924,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "日本",
+        "address_local": "神奈川県川崎市高津区久本三丁目",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0117.jpeg",
@@ -10667,7 +11018,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "東京都世田谷区桜新町一丁目",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0118.jpeg",
@@ -10761,7 +11115,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市北投區中央里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0119.jpeg",
@@ -10851,7 +11208,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "福井県敦賀市市橋",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0120.jpeg",
@@ -10930,7 +11290,7 @@
       "sender": null,
       "location": {
         "raw": "Setagaya, Komazawa 1-Chōme",
-        "display": "東京都世田谷区駒沢一丁目2-33",
+        "display": "東京都世田谷区駒沢一丁目2−33",
         "city": "東京都",
         "district": "世田谷区",
         "locality": "駒沢1丁目",
@@ -10941,11 +11301,14 @@
         "latitude": null,
         "longitude": null,
         "normalization_confidence": "high",
-        "endonym": "東京都世田谷区駒沢一丁目2-33",
+        "endonym": "東京都世田谷区駒沢一丁目2−33",
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "東京都世田谷区駒沢一丁目2−33",
+        "precision": "full_address"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0121.png",
@@ -11044,7 +11407,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市北投區八仙里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0122.png",
@@ -11128,7 +11494,7 @@
       "sender": null,
       "location": {
         "raw": "Datong, Beitou District",
-        "display": "臺北市北投區大同街15號",
+        "display": "臺北市北投區大同街",
         "city": "臺北市",
         "district": "北投區",
         "locality": null,
@@ -11139,11 +11505,14 @@
         "latitude": null,
         "longitude": null,
         "normalization_confidence": "high",
-        "endonym": "臺北市北投區大同街15號",
+        "endonym": "臺北市北投區大同街",
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市北投區大同街15號",
+        "precision": "road"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0123.png",
@@ -11242,7 +11611,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "日本",
+        "address_local": "東京都世田谷区上馬三丁目",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0124.png",
@@ -11337,7 +11709,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "provisional",
-        "name_confidence": "low"
+        "name_confidence": "low",
+        "country_endonym": "日本",
+        "address_local": "東京都渋谷区恵比寿西一丁目",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0125.png",
@@ -11417,7 +11792,7 @@
       "sender": "柳柳",
       "location": {
         "raw": "Inakadate, Takahi Omagari",
-        "display": "青森県田舎館村高樋字大曲",
+        "display": "青森県田舎館村高樋字大曲63",
         "city": null,
         "district": null,
         "locality": null,
@@ -11428,11 +11803,14 @@
         "latitude": null,
         "longitude": null,
         "normalization_confidence": "medium",
-        "endonym": "青森県田舎館村高樋字大曲",
+        "endonym": "青森県田舎館村高樋字大曲63",
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "青森県田舎館村高樋字大曲63",
+        "precision": "full_address"
       },
       "asset": {
         "path": "/images/postcards/2026/03/pc-0126.png",
@@ -11526,7 +11904,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "東京都目黒区中目黒二丁目",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0127.png",
@@ -11637,7 +12018,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "桃園市大園區埔心里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0128.png",
@@ -11719,7 +12103,7 @@
       "sender": "柳柳",
       "location": {
         "raw": "Ulaanbaatar",
-        "display": "Улаанбаатар（烏蘭巴托）",
+        "display": "Улаанбаатар, Монгол Улс（烏蘭巴托，蒙古）",
         "city": null,
         "district": null,
         "locality": null,
@@ -11734,7 +12118,10 @@
         "zh_tw": "烏蘭巴托",
         "language": "mn",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "Монгол Улс",
+        "address_local": "Улаанбаатар",
+        "precision": "city"
       },
       "asset": {
         "path": "/images/postcards/2026/03/pc-0129.png",
@@ -11833,7 +12220,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "東京都港区虎ノ門二丁目",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0130.png",
@@ -11950,7 +12340,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "東京都港区赤坂二丁目",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0131.png",
@@ -12052,7 +12445,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "東京都目黒区南三丁目",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0132.png",
@@ -12150,7 +12546,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "新竹市東區前溪里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/unknown/unknown/pc-0133.png",
@@ -12255,7 +12654,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "青森県弘前市元寺町",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/03/pc-0134.png",
@@ -12333,7 +12735,7 @@
       "sender": null,
       "location": {
         "raw": "Oarai, Isohamacho",
-        "display": "茨城県大洗町磯浜町",
+        "display": "茨城県大洗町磯浜町8231−4",
         "city": null,
         "district": null,
         "locality": null,
@@ -12344,11 +12746,14 @@
         "latitude": null,
         "longitude": null,
         "normalization_confidence": "medium",
-        "endonym": "茨城県大洗町磯浜町",
+        "endonym": "茨城県大洗町磯浜町8231−4",
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "茨城県大洗町磯浜町8231−4",
+        "precision": "full_address"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0135.png",
@@ -12449,7 +12854,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "桃園市大園區埔心里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0136.png",
@@ -12545,7 +12953,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市士林區社子里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/unknown/unknown/pc-0137.png",
@@ -12644,7 +13055,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市北投區長安里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-0138.png",
@@ -12726,7 +13140,7 @@
       "sender": null,
       "location": {
         "raw": "Biarritz",
-        "display": "Biarritz（比亞里茲）",
+        "display": "Biarritz, France（比亞里茲，法國）",
         "city": null,
         "district": null,
         "locality": null,
@@ -12741,7 +13155,10 @@
         "zh_tw": "比亞里茲",
         "language": "fr",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "France",
+        "address_local": "Biarritz",
+        "precision": "city"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-0139.jpeg",
@@ -12842,7 +13259,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "三重県松阪市飯南町粥見",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0140.jpeg",
@@ -12943,7 +13363,10 @@
         "zh_tw": null,
         "language": "ja",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "日本",
+        "address_local": "愛知県新城市富岡東川",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/04/pc-0141.jpeg",
@@ -13026,7 +13449,7 @@
       "sender": null,
       "location": {
         "raw": "Zhongyang, Beitou District",
-        "display": "臺北市北投區中央里",
+        "display": "臺北市北投區光明路",
         "city": null,
         "district": null,
         "locality": null,
@@ -13037,11 +13460,14 @@
         "latitude": null,
         "longitude": null,
         "normalization_confidence": "medium",
-        "endonym": "臺北市北投區中央里",
+        "endonym": "臺北市北投區光明路",
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市北投區光明路1號",
+        "precision": "road"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-0142.png",
@@ -13140,7 +13566,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市大安區龍生里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-0143.png",
@@ -13236,7 +13665,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市北投區洲美里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-0144.png",
@@ -13332,7 +13764,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市北投區洲美里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-0145.png",
@@ -13414,7 +13849,7 @@
       "sender": null,
       "location": {
         "raw": "Minhui, Daan District",
-        "display": "臺北市大安區民輝里",
+        "display": "臺北市大安區忠孝東路三段",
         "city": null,
         "district": null,
         "locality": null,
@@ -13425,11 +13860,14 @@
         "latitude": null,
         "longitude": null,
         "normalization_confidence": "medium",
-        "endonym": "臺北市大安區民輝里",
+        "endonym": "臺北市大安區忠孝東路三段",
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市大安區忠孝東路三段1號",
+        "precision": "road"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-0146.png",
@@ -13518,7 +13956,7 @@
       "sender": null,
       "location": {
         "raw": "Linxing, Zhongzheng District",
-        "display": "臺北市中正區林興里",
+        "display": "臺北市中正區汀州路三段",
         "city": null,
         "district": null,
         "locality": null,
@@ -13529,11 +13967,14 @@
         "latitude": null,
         "longitude": null,
         "normalization_confidence": "medium",
-        "endonym": "臺北市中正區林興里",
+        "endonym": "臺北市中正區汀州路三段",
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市中正區汀州路三段2號",
+        "precision": "road"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-0147.png",
@@ -13632,7 +14073,10 @@
         "zh_tw": null,
         "language": "zh-Hant-TW",
         "name_status": "researched",
-        "name_confidence": "medium"
+        "name_confidence": "medium",
+        "country_endonym": "臺灣",
+        "address_local": "臺北市中正區梅花里",
+        "precision": "locality"
       },
       "asset": {
         "path": "/images/postcards/2026/05/pc-0148.png",

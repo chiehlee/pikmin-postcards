@@ -112,10 +112,13 @@ npm run check:duplicate -- \
 
 - `endonym`：研究確認的當地原名；日本用日文、臺灣／香港／澳門用繁體中文、韓國用韓文、美國用英文，其他地區依當地語言。
 - `zh_tw`：當 `endonym` 不是中文或日文時保存台灣慣用的繁體中文譯名；UI 組成 `原名（台灣繁中譯名）`。
+- `country_endonym`：當地語言的國家名。臺灣、日本以外的主標會在原名及繁中譯名最後附上國家。
+- `address_local`：研究能支持的最完整當地地址，提供地圖查詢；它可以比畫面主標更精確。
+- `precision`：目前可靠精度，例如 `district`、`locality`、`road` 或 `full_address`。
 - `language`：原名語言標籤；`name_status` 與 `name_confidence` 分別保存研究狀態及信心。
 - `display`：由上述欄位組成的快取，測試會確認它沒有與 `endonym`／`zh_tw` 分岔。
 
-地圖查詢使用 `endonym`，不把括號裡的譯名送進 Google。既有資料的可重跑回填入口是 `npm run backfill:location-names`；先 dry-run，確認覆蓋後再加 `-- --commit`。
+主標依收藏者的生活尺度統一：臺灣有證據時顯示到路／街及段，完整巷弄門牌只放 `address_local`；日本有證據時顯示到丁目・番・号；兩地若證據不足就依序退回町里、區市與都道府縣。其他地區顯示到可確認的城市內區域，並在末尾附當地語言國名；非中日文另附含國名的台灣繁中譯名。地圖查詢使用 `address_local`，不把括號譯名送進 Google。既有資料的可重跑回填入口是 `npm run backfill:location-names`；先 dry-run，確認覆蓋後再加 `-- --commit`。
 
 ## 資料結構
 

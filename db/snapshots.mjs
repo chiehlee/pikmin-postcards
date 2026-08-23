@@ -51,13 +51,14 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
       id, sort_order, record_type, poi_name, found_date, received_at, archived_on, sender,
       acquisition_type, sender_status, acquisition_confidence, acquisition_evidence_json,
       location_raw, location_display, location_endonym, location_zh_tw, location_language,
-      location_name_status, location_name_confidence, location_city, location_district, location_locality,
+      location_name_status, location_name_confidence, location_country_endonym,
+      location_address_local, location_precision, location_city, location_district, location_locality,
       location_region, location_county, location_country, location_country_code, latitude,
       longitude, location_confidence, asset_sha256, rating, rating_raw, rating_min, rating_max,
       recommendation, curation_status, personal_relevance, star_visible,
       deletion_toast_visible, research_status, research_confidence,
       research_confidence_label, research_summary, document_json
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const insertTag = database.prepare(
     "INSERT INTO postcard_tags (postcard_id, tag, sort_order) VALUES (?, ?, ?)",
@@ -156,6 +157,9 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
         record.location.language,
         record.location.name_status,
         record.location.name_confidence,
+        record.location.country_endonym,
+        record.location.address_local,
+        record.location.precision,
         record.location.city ?? null,
         record.location.district ?? null,
         record.location.locality ?? null,

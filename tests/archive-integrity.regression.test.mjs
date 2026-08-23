@@ -4,7 +4,12 @@ import path from "node:path";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { researchedLocationDisplay, validateLocationNaming } from "../lib/location-names.mjs";
+import {
+  locationNeedsZhTw,
+  researchedLocationDisplay,
+  researchedLocationQuery,
+  validateLocationNaming,
+} from "../lib/location-names.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const postcards = JSON.parse(await readFile(path.join(root, "data/postcards.json"), "utf8")).postcards;
@@ -22,21 +27,35 @@ test("researched locations preserve the game text and compose local names consis
     assert.ok(postcard.location.raw.trim(), `${postcard.id} lost its game-displayed location`);
     assert.deepEqual(validateLocationNaming(postcard.location), [], postcard.id);
     assert.equal(postcard.location.display, researchedLocationDisplay(postcard.location), postcard.id);
+    assert.ok(researchedLocationQuery(postcard.location), `${postcard.id} has no map query`);
+    if (!["TW", "JP"].includes(postcard.location.country_code)) {
+      assert.ok(postcard.location.display.includes(postcard.location.country_endonym), `${postcard.id} omits its local country name`);
+      if (locationNeedsZhTw(postcard.location.language)) {
+        assert.ok(postcard.location.display.includes(postcard.location.country), `${postcard.id} omits its zh-TW country name`);
+      }
+    }
   }
 
   const nasu = postcards.find((record) => record.id === "pc-0089");
   assert.equal(nasu.location.raw, "Nasu, Yumoto");
-  assert.equal(nasu.location.endonym, "栃木県那須町湯本");
+  assert.equal(nasu.location.endonym, "栃木県那須町湯本203");
   assert.equal(nasu.location.zh_tw, null);
-  assert.equal(nasu.location.display, "栃木県那須町湯本");
+  assert.equal(nasu.location.display, "栃木県那須町湯本203");
+  assert.equal(nasu.location.address_local, "栃木県那須郡那須町湯本203");
+  assert.equal(nasu.location.precision, "full_address");
+
+  const pyramid = postcards.find((record) => record.id === "pc-0020");
+  assert.equal(pyramid.location.display, "臺北市信義區松仁路");
+  assert.equal(pyramid.location.address_local, "臺北市信義區松仁路89號");
+  assert.equal(pyramid.location.precision, "road");
 
   const seoul = postcards.find((record) => record.id === "pc-0084");
   assert.equal(seoul.location.endonym, "서울특별시");
   assert.equal(seoul.location.zh_tw, "首爾特別市");
-  assert.equal(seoul.location.display, "서울특별시（首爾特別市）");
+  assert.equal(seoul.location.display, "서울특별시, 대한민국（首爾特別市，韓國）");
 
   const laramie = postcards.find((record) => record.id === "pc-0030");
-  assert.equal(laramie.location.display, "Laramie, Wyoming（懷俄明州拉勒米）");
+  assert.equal(laramie.location.display, "Laramie, Wyoming, United States（懷俄明州拉勒米，美國）");
 });
 
 test("all canonical assets exist and match their recorded SHA-256", async () => {

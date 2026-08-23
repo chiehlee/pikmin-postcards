@@ -42,13 +42,21 @@ test('date sorting distinguishes found date from the date added to the archive',
 test('researched locations use the local script while preserving the game text', async ({ page }) => {
   const nasuDialog = await openPostcard(page, '藤城清治美術館');
   const nasuLocation = nasuDialog.locator('.detail-location');
-  await expect(nasuLocation).toContainText('栃木県那須町湯本');
+  await expect(nasuLocation).toContainText('栃木県那須町湯本203');
   await expect(nasuLocation.locator('small')).toHaveText('遊戲顯示：Nasu, Yumoto');
+  await page.keyboard.press('Escape');
+
+  const taipeiDialog = await openPostcard(page, '金字塔2');
+  const taipeiLocation = taipeiDialog.locator('.detail-location');
+  await expect(taipeiLocation).toContainText('臺北市信義區松仁路');
+  await expect(taipeiLocation).not.toContainText('89號');
+  await expect(taipeiLocation.locator('small')).toHaveText('遊戲顯示：Ankang, Xinyi District');
+  await expect(taipeiDialog.locator('.location-map-heading')).toContainText('臺北市信義區松仁路89號');
   await page.keyboard.press('Escape');
 
   const seoulDialog = await openPostcard(page, '인공폭포');
   const seoulLocation = seoulDialog.locator('.detail-location');
-  await expect(seoulLocation).toContainText('서울특별시（首爾特別市）');
+  await expect(seoulLocation).toContainText('서울특별시, 대한민국（首爾特別市，韓國）');
   await expect(seoulLocation.locator('small')).toHaveText('遊戲顯示：Seoul');
 });
 

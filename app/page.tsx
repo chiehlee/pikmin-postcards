@@ -62,6 +62,9 @@ type Postcard = {
     name_confidence: 'high' | 'medium' | 'low';
     country: string | null;
     country_code: string | null;
+    country_endonym: string;
+    address_local: string;
+    precision: 'country' | 'region' | 'city' | 'district' | 'locality' | 'road' | 'full_address' | 'coordinates' | 'unknown';
     latitude?: number | null;
     longitude?: number | null;
   };
@@ -102,7 +105,7 @@ const postcards = archive.postcards as Postcard[];
 const researchedMapOverrides: Record<string, { query: string; label: string }> = {
   'pc-0020': {
     query: '壹號交易廣場, 台北市信義區松仁路89號',
-    label: '壹號交易廣場前庭（松仁路 89 號）',
+    label: '壹號交易廣場前庭・臺北市信義區松仁路89號',
   },
 };
 
@@ -163,7 +166,7 @@ function mapTargetFor(postcard: Postcard): MapTarget | null {
   const researchedLocation = researchedLocationQuery(postcard.location);
   return {
     query: [postcard.poi_name, researchedLocation].filter(Boolean).join(', '),
-    label: `${postcard.poi_name}・${researchedLocationDisplay(postcard.location)}`,
+    label: `${postcard.poi_name}・${researchedLocation}`,
     precision: 'researched_place_query',
   };
 }

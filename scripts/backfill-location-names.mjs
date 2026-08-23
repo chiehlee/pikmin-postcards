@@ -8,7 +8,7 @@ const archivePath = path.join(projectRoot, "data/postcards.json");
 const commit = process.argv.includes("--commit");
 
 const groups = [
-  group("zh-Hant-TW", "TW", "臺灣", [
+  group("zh-Hant-TW", "TW", "臺灣", "臺灣", "locality", [
     ["Aiguo, Zhongzheng District", "臺北市中正區愛國里"],
     ["Alian Village, Alian District", "高雄市阿蓮區阿蓮里"],
     ["Ankang, Xinyi District", "臺北市信義區安康里"],
@@ -55,7 +55,7 @@ const groups = [
     ["Zhoumei, Beitou District", "臺北市北投區洲美里"],
     ["Zhuangjing Village, Banqiao District", "新北市板橋區莊敬里"],
   ]),
-  group("zh-Hant-HK", "HK", "香港", [
+  group("zh-Hant-HK", "HK", "香港", "香港", "locality", [
     ["Causeway Bay", "銅鑼灣"],
     ["Jordan", "佐敦"],
     ["Kwun Tong", "觀塘"],
@@ -65,13 +65,13 @@ const groups = [
     ["Wan Chai", "灣仔"],
     ["Yau Ma Tei", "油麻地"],
   ]),
-  group("zh-Hant-MO", "MO", "澳門", [
-    ["Our Lady of Carmel, Taipa", "澳門氹仔嘉模堂區"],
+  group("zh-Hant-MO", "MO", "澳門", "澳門", "locality", [
+    ["Our Lady of Carmel, Taipa", "氹仔嘉模堂區"],
   ]),
-  group("zh-Hans-CN", "CN", "中國", [
+  group("zh-Hans-CN", "CN", "中國", "中国", "city", [
     ["Shenzhen", "深圳市"],
   ]),
-  group("ja", "JP", "日本", [
+  group("ja", "JP", "日本", "日本", "locality", [
     ["(35.6443480, 139.7052670)", "東京都目黒区中目黒二丁目"],
     ["Chuo, Nihombashi 3-Chōme", "東京都中央区日本橋三丁目"],
     ["Echizen, Komeno", "福井県丹生郡越前町米ノ"],
@@ -116,58 +116,77 @@ const groups = [
     ["Tsuruga, Kutsumi", "福井県敦賀市沓見"],
     ["Urayasu", "千葉県浦安市"],
   ]),
-  group("ko", "KR", "韓國", [
-    ["(36.6768750, 127.3937000)", "충청북도 청주시 가락리", "忠清北道清州市佳樂里"],
-    ["Seoul", "서울특별시", "首爾特別市"],
+  group("ko", "KR", "韓國", "대한민국", "city", [
+    ["(36.6768750, 127.3937000)", "충청북도 청주시 가락리", "忠清北道清州市佳樂里", "coordinates"],
+    ["Seoul", "서울특별시", "首爾特別市", "city"],
   ]),
-  group("ms", "MY", "馬來西亞", [
+  group("ms", "MY", "馬來西亞", "Malaysia", "city", [
     ["Kajang", "Kajang, Selangor", "雪蘭莪州加影"],
   ]),
-  group("id", "ID", "印尼", [
+  group("id", "ID", "印尼", "Indonesia", "locality", [
     ["Ubud, Gianyar", "Ubud, Kabupaten Gianyar", "峇里省吉安雅縣烏布"],
   ]),
-  group("en-US", "US", "美國", [
+  group("en-US", "US", "美國", "United States", "locality", [
     ["Downtown, Laramie", "Downtown Laramie, Wyoming", "懷俄明州拉勒米市中心"],
     ["Laramie", "Laramie, Wyoming", "懷俄明州拉勒米"],
   ]),
-  group("en-AU", "AU", "澳洲", [
+  group("en-AU", "AU", "澳洲", "Australia", "city", [
     ["Albion Park Rail", "Albion Park Rail, New South Wales", "新南威爾斯州阿爾比恩帕克雷爾"],
     ["Bowral", "Bowral, New South Wales", "新南威爾斯州鮑勒爾"],
     ["Bundanoon", "Bundanoon, New South Wales", "新南威爾斯州班達努"],
   ]),
-  group("en-CA", "CA", "加拿大", [
+  group("en-CA", "CA", "加拿大", "Canada", "locality", [
     ["Chinatown, Victoria", "Chinatown, Victoria, British Columbia", "卑詩省維多利亞華埠"],
   ]),
-  group("fr", "FR", "法國", [
+  group("fr", "FR", "法國", "France", "city", [
     ["Biarritz", "Biarritz", "比亞里茲"],
     ["Nantes", "Nantes", "南特"],
     ["Saint-Laurent-des-Autels, Orée d'Anjou", "Saint-Laurent-des-Autels, Orée-d’Anjou", "羅亞爾河地區奧雷當茹聖洛朗德索泰勒"],
   ]),
-  group("en-PH", "PH", "菲律賓", [
+  group("en-PH", "PH", "菲律賓", "Philippines", "locality", [
     ["San Francisco, General Trias", "San Francisco, General Trias, Cavite", "甲米地省將軍特里亞斯市聖弗朗西斯科"],
   ]),
-  group("sv", "SE", "瑞典", [
+  group("sv", "SE", "瑞典", "Sverige", "locality", [
     ["Ryd, Linköping", "Ryd, Linköping", "林雪平市里德"],
     ["Ullevi, Färjestaden", "Ullevi, Färjestaden", "費里耶斯塔登烏勒維"],
   ]),
-  group("nb", "NO", "挪威", [
+  group("nb", "NO", "挪威", "Norge", "locality", [
     ["Arna, Trengereid", "Trengereid, Arna, Bergen", "卑爾根市阿納區特倫厄雷德"],
   ]),
-  group("mn", "MN", "蒙古", [
+  group("mn", "MN", "蒙古", "Монгол Улс", "city", [
     ["Ulaanbaatar", "Улаанбаатар", "烏蘭巴托"],
   ]),
 ];
 
 const recordOverrides = {
-  "pc-0022": ["臺中市東勢區石城里石城街178號", null],
-  "pc-0033": ["新北市淡水區中山北路二段381巷2號", null],
-  "pc-0063": ["Corbett Gardens, Bowral, New South Wales", "新南威爾斯州鮑勒爾科貝特花園"],
-  "pc-0079": ["Rivulet Park, Bowral, New South Wales", "新南威爾斯州鮑勒爾里弗萊特公園"],
-  "pc-0099": ["臺北市北投區光明路157巷2弄光明橋", null],
-  "pc-0107": ["臺北市北投區大同街15號", null],
-  "pc-0109": ["東京都世田谷区駒沢一丁目2-33", null],
-  "pc-0121": ["東京都世田谷区駒沢一丁目2-33", null],
-  "pc-0123": ["臺北市北投區大同街15號", null],
+  "pc-0001": taiwanRoad("臺北市中正區汀州路三段", "臺北市中正區汀州路三段2號"),
+  "pc-0018": taiwanRoad("臺北市信義區光復南路", "臺北市信義區光復南路133號"),
+  "pc-0020": taiwanRoad("臺北市信義區松仁路", "臺北市信義區松仁路89號"),
+  "pc-0022": taiwanRoad("臺中市東勢區石城街", "臺中市東勢區石城街178號"),
+  "pc-0033": taiwanRoad("新北市淡水區中山北路二段", "新北市淡水區中山北路二段381巷2號"),
+  "pc-0041": taiwanRoad("臺北市中山區濱江街", "臺北市中山區濱江街5號"),
+  "pc-0054": taiwanRoad("臺北市大安區敦化南路二段", "臺北市大安區敦化南路二段201號"),
+  "pc-0063": externalPlace("Corbett Gardens, Bowral, New South Wales", "新南威爾斯州鮑勒爾科貝特花園"),
+  "pc-0072": japanAddress("東京都港区東新橋一丁目5−3"),
+  "pc-0079": externalPlace("Rivulet Park, Bowral, New South Wales", "新南威爾斯州鮑勒爾里弗萊特公園"),
+  "pc-0082": taiwanRoad("屏東縣潮州鎮信義路", "屏東縣潮州鎮信義路111號"),
+  "pc-0089": {
+    endonym: "栃木県那須町湯本203",
+    address_local: "栃木県那須郡那須町湯本203",
+    precision: "full_address",
+  },
+  "pc-0099": taiwanRoad("臺北市北投區光明路", "臺北市北投區光明路157巷2弄"),
+  "pc-0104": japanAddress("青森県田舎館村高樋字大曲63"),
+  "pc-0107": taiwanRoad("臺北市北投區大同街", "臺北市北投區大同街15號"),
+  "pc-0109": japanAddress("東京都世田谷区駒沢一丁目2−33"),
+  "pc-0116": japanAddress("東京都台東区池之端一丁目3−45"),
+  "pc-0121": japanAddress("東京都世田谷区駒沢一丁目2−33"),
+  "pc-0123": taiwanRoad("臺北市北投區大同街", "臺北市北投區大同街15號"),
+  "pc-0126": japanAddress("青森県田舎館村高樋字大曲63"),
+  "pc-0135": japanAddress("茨城県大洗町磯浜町8231−4"),
+  "pc-0142": taiwanRoad("臺北市北投區光明路", "臺北市北投區光明路1號"),
+  "pc-0146": taiwanRoad("臺北市大安區忠孝東路三段", "臺北市大安區忠孝東路三段1號"),
+  "pc-0147": taiwanRoad("臺北市中正區汀州路三段", "臺北市中正區汀州路三段2號"),
 };
 const highConfidenceIds = new Set(["pc-0089"]);
 
@@ -185,8 +204,8 @@ for (const postcard of archive.postcards) {
   const override = recordOverrides[postcard.id];
   const nextLocation = {
     ...postcard.location,
-    endonym: override?.[0] ?? naming.endonym,
-    zh_tw: override ? override[1] : naming.zh_tw,
+    endonym: override?.endonym ?? naming.endonym,
+    zh_tw: override && "zh_tw" in override ? override.zh_tw : naming.zh_tw,
     language: naming.language,
     name_status: postcard.research.sources?.length ? "researched" : "provisional",
     name_confidence: highConfidenceIds.has(postcard.id)
@@ -194,6 +213,9 @@ for (const postcard of archive.postcards) {
       : postcard.research.sources?.length ? "medium" : "low",
     country: naming.country,
     country_code: naming.country_code,
+    country_endonym: naming.country_endonym,
+    address_local: override?.address_local ?? naming.endonym,
+    precision: override?.precision ?? naming.precision,
     normalization_confidence: postcard.location.normalization_confidence === "unreviewed"
       ? "medium"
       : postcard.location.normalization_confidence,
@@ -207,7 +229,7 @@ for (const postcard of archive.postcards) {
 
 if (missing.length) throw new Error(`Missing location-name research:\n${missing.join("\n")}`);
 
-archive.schema_version = Math.max(archive.schema_version ?? 1, 4);
+archive.schema_version = Math.max(archive.schema_version ?? 1, 5);
 console.log(JSON.stringify({ records: archive.postcards.length, changed: changed.length, commit }, null, 2));
 
 if (commit) {
@@ -216,13 +238,27 @@ if (commit) {
   await rename(temporary, archivePath);
 }
 
-function group(language, countryCode, country, entries) {
-  return entries.map(([raw, endonym, zhTw = null]) => ({
+function group(language, countryCode, country, countryEndonym, defaultPrecision, entries) {
+  return entries.map(([raw, endonym, zhTw = null, precision = defaultPrecision]) => ({
     raw,
     endonym,
     zh_tw: zhTw,
     language,
     country_code: countryCode,
     country,
+    country_endonym: countryEndonym,
+    precision,
   }));
+}
+
+function taiwanRoad(endonym, addressLocal) {
+  return { endonym, address_local: addressLocal, zh_tw: null, precision: "road" };
+}
+
+function japanAddress(endonym) {
+  return { endonym, address_local: endonym, zh_tw: null, precision: "full_address" };
+}
+
+function externalPlace(endonym, zhTw) {
+  return { endonym, address_local: endonym, zh_tw: zhTw, precision: "locality" };
 }

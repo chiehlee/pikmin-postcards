@@ -65,6 +65,11 @@ try {
     .all("首爾特別市")
     .map((row) => row.detail)
     .join(" | ");
+  const addressLocationPlan = database
+    .prepare("EXPLAIN QUERY PLAN SELECT id FROM postcards WHERE location_address_local = ? LIMIT 16")
+    .all("栃木県那須郡那須町湯本203")
+    .map((row) => row.detail)
+    .join(" | ");
   const tagPlan = database
     .prepare("EXPLAIN QUERY PLAN SELECT postcard_id FROM postcard_tags WHERE tag = ? LIMIT 16")
     .all("商業景觀")
@@ -97,6 +102,7 @@ try {
   assert.match(displayLocationPlan, /idx_postcards_location_display/);
   assert.match(endonymLocationPlan, /idx_postcards_location_endonym/);
   assert.match(zhTwLocationPlan, /idx_postcards_location_zh_tw/);
+  assert.match(addressLocationPlan, /idx_postcards_location_address_local/);
   assert.match(tagPlan, /idx_postcard_tags_tag_postcard/);
   assert.match(sourcePlan, /idx_research_sources_url_postcard/);
   assert.match(coordinatePlan, /idx_postcards_coordinates/);
@@ -119,6 +125,7 @@ try {
           related_display_location_lookup: displayLocationPlan,
           related_endonym_location_lookup: endonymLocationPlan,
           related_zh_tw_location_lookup: zhTwLocationPlan,
+          related_researched_address_lookup: addressLocationPlan,
           related_tag_lookup: tagPlan,
           related_source_lookup: sourcePlan,
           related_coordinate_lookup: coordinatePlan,
