@@ -37,6 +37,7 @@ description: "接收新的 Pikmin Bloom 明信片圖片、聊天附件、本機�
 - 每次都把畫面可見 sender ID 與現有 friends／postcards 重新比對。不同字串預設為不同的 provisional player，即使 Mii、地點或時間看似相同也不自動建立 alias 或合併；只有使用者明確提出個案合併時才改 player identity。名稱改變本身不能證明是同一人。
 - `sender: null` 本身絕不等於未知寄件人。
 - raw location、研究後當地原名、台灣繁中譯名、完整地址、顯示精度、座標／地圖查詢與信心分開保存。`location.raw` 必須逐字保留遊戲畫面；`location.endonym` 使用當地原文，`location.address_local` 保存來源能支持的最完整當地地址，`location.precision` 明示可靠層級。臺灣主標有證據時到路／街及段，完整巷弄門牌留給 `address_local`；日本有證據時主標到丁目・番・号；兩地證據不足就由町里、區市、都道府縣逐級退回。臺灣、日本以外顯示城市內可確認區域，並在原文末尾附 `country_endonym`；非中日文另填 `zh_tw`，繁中括號內也在末尾附台灣譯名國家。中文或日文的 `zh_tw` 維持 null。`location.display` 只作為共用 formatter 組成的快取，地圖 query 使用 `address_local` 與必要的當地國名，不得拿 raw 或含括號譯名的 display 冒充研究定點。尚未研究完成時用 `language: und`、`name_status: provisional`、`precision: unknown` 與低信心，不假裝已確認。沒有可靠證據時，不把搜尋結果寫成精確地址或座標。
+- 明信片拍到紀念碑、遺址標、復刻物或移設物時，canonical `location` 定位畫面中的現物；所紀念事件、原建物或原物件的歷史位置另存於 research facts／inferences／unresolved questions，並分別表達精度與信心。不得把現物的精確地址或座標冒充歷史事件的精確位置，也不因歷史基址未定就降低現物定位的信心。
 - condensed `research.summary` 與 `research.detail` 分開。保存不到原長文時明確標示缺漏，不用後寫內容冒充原文。
 - 使用者要求補做 `not_recovered` 研究時，保留原缺漏的歷史 provenance，另用帶日期的新 research status 與新的 `research/raw/` 檔保存「本次重做」；不可覆寫成已復原舊文。批次補做要有 manifest 或等價的確定性輸入，先 dry-run 驗證目標集合完全相符，再以 regression test 鎖定覆蓋數、來源檔與零殘留 `not_recovered`。
 - 事實、推論與未解問題分欄；每項外部事實保存直接支持它的 URL。
@@ -116,6 +117,7 @@ npm run check:duplicate -- \
 - sources；每個 URL 必須實際打開並支持相鄰主張。
 - curation rating、recommendation、status 與 tags；不確定時用 `unreviewed`，不要為了完整而假造評分。
 - map query 或座標的依據。地名解析尚未人工確認時，明確維持 query-level precision。
+- 若 POI 是紀念物，分開交代「現物在哪裡」、「紀念什麼／原址在哪裡」及兩者的空間關係；只有來源能支持時才宣稱原址、同址或精確基址。
 
 保存完整研究到 `research/raw/`，並讓 `research.detail.source_path` 指向它。新研究可使用 `structured_preserved`；不得把新研究標成歷史原文。
 

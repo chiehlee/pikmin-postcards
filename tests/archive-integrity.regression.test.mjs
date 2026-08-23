@@ -175,6 +175,17 @@ test("research detail preserves available material and records gap re-research s
   }
 
   assert.equal(postcards.find((record) => record.id === "pc-0020").research.detail.status, "raw_preserved");
-  assert.equal(postcards.find((record) => record.id === "pc-0130").research.detail.status, "structured_preserved");
+  const tongmenghui = postcards.find((record) => record.id === "pc-0130");
+  assert.equal(tongmenghui.location.raw, "Minato, Toranomon 2-Chōme");
+  assert.equal(tongmenghui.location.address_local, "東京都港区虎ノ門二丁目10−4");
+  assert.equal(tongmenghui.location.precision, "full_address");
+  assert.equal(tongmenghui.location.latitude, null);
+  assert.equal(tongmenghui.location.longitude, null);
+  assert.equal(tongmenghui.research.status, "re-researched_2026-08-23");
+  assert.equal(tongmenghui.research.detail.status, "structured_preserved");
+  assert.equal(tongmenghui.research.detail.source_path, "research/raw/pc-0130-research-2026-08-23.md");
+  assert.ok(tongmenghui.research.detail.body.length > tongmenghui.research.summary.length * 4);
+  assert.ok(tongmenghui.research.unresolved_questions.length >= 3);
+  assert.ok(tongmenghui.research.sources.every((source) => !source.includes("utm_source=")));
   assert.equal(postcards.find((record) => record.id === "pc-0021").research.status, "re-researched_after_compaction_gap_2026-08-23");
 });
