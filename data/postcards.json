@@ -190,7 +190,7 @@
       "sender": "柳柳",
       "location": {
         "raw": "Kajang",
-        "display": "Kajang, Selangor, Malaysia（雪蘭莪州加影，馬來西亞）",
+        "display": "Kajang, Selangor, Malaysia（雪蘭莪州加影, 馬來西亞）",
         "city": "Kajang",
         "district": null,
         "locality": null,
@@ -357,7 +357,7 @@
       "sender": "りゅう",
       "location": {
         "raw": "Ubud, Gianyar",
-        "display": "Ubud, Kabupaten Gianyar, Indonesia（峇里省吉安雅縣烏布，印尼）",
+        "display": "Ubud, Kabupaten Gianyar, Indonesia（峇里省吉安雅縣烏布, 印尼）",
         "city": "Ubud",
         "district": null,
         "locality": null,
@@ -1883,7 +1883,7 @@
       "sender": "Sha",
       "location": {
         "raw": "Wan Chai",
-        "display": "灣仔，香港",
+        "display": "灣仔, 香港",
         "city": null,
         "district": null,
         "locality": null,
@@ -2452,7 +2452,7 @@
       "sender": "花花",
       "location": {
         "raw": "Telford Gardens, Kowloon Bay",
-        "display": "九龍灣德福花園，香港",
+        "display": "九龍灣德福花園, 香港",
         "city": null,
         "district": null,
         "locality": null,
@@ -2548,7 +2548,7 @@
       "sender": "Tribble Mountain Time",
       "location": {
         "raw": "Laramie",
-        "display": "Laramie, Wyoming, United States（懷俄明州拉勒米，美國）",
+        "display": "Laramie, Wyoming, United States（懷俄明州拉勒米, 美國）",
         "city": null,
         "district": null,
         "locality": null,
@@ -2739,7 +2739,7 @@
       "sender": "緑",
       "location": {
         "raw": "(36.6768750, 127.3937000)",
-        "display": "충청북도 청주시 가락리, 대한민국（忠清北道清州市佳樂里，韓國）",
+        "display": "충청북도 청주시 가락리, 대한민국（忠清北道清州市佳樂里, 韓國）",
         "city": null,
         "district": null,
         "locality": null,
@@ -3020,7 +3020,7 @@
       "sender": "花花",
       "location": {
         "raw": "Tsim Sha Tsui",
-        "display": "尖沙咀，香港",
+        "display": "尖沙咀, 香港",
         "city": null,
         "district": null,
         "locality": null,
@@ -3209,7 +3209,7 @@
       "sender": "Yumi",
       "location": {
         "raw": "Saint-Laurent-des-Autels, Orée d'Anjou",
-        "display": "Saint-Laurent-des-Autels, Orée-d’Anjou, France（羅亞爾河地區奧雷當茹聖洛朗德索泰勒，法國）",
+        "display": "Saint-Laurent-des-Autels, Orée-d’Anjou, France（羅亞爾河地區奧雷當茹聖洛朗德索泰勒, 法國）",
         "city": null,
         "district": null,
         "locality": null,
@@ -3680,7 +3680,7 @@
       "sender": "Tribble Mountain Time",
       "location": {
         "raw": "Downtown, Laramie",
-        "display": "Downtown Laramie, Wyoming, United States（懷俄明州拉勒米市中心，美國）",
+        "display": "Downtown Laramie, Wyoming, United States（懷俄明州拉勒米市中心, 美國）",
         "city": null,
         "district": null,
         "locality": null,
@@ -3776,7 +3776,7 @@
       "sender": "🍎Ching🍎",
       "location": {
         "raw": "Chinatown, Victoria",
-        "display": "Chinatown, Victoria, British Columbia, Canada（卑詩省維多利亞華埠，加拿大）",
+        "display": "Chinatown, Victoria, British Columbia, Canada（卑詩省維多利亞華埠, 加拿大）",
         "city": null,
         "district": null,
         "locality": null,
@@ -3869,7 +3869,7 @@
       "sender": "Sha",
       "location": {
         "raw": "Yau Ma Tei",
-        "display": "油麻地，香港",
+        "display": "油麻地, 香港",
         "city": null,
         "district": null,
         "locality": null,
@@ -4154,7 +4154,7 @@
       "sender": "花花",
       "location": {
         "raw": "Shenzhen",
-        "display": "深圳市，中国",
+        "display": "深圳市, 中国",
         "city": null,
         "district": null,
         "locality": null,
@@ -4247,7 +4247,7 @@
       "sender": "Yumi",
       "location": {
         "raw": "Nantes",
-        "display": "Nantes, France（南特，法國）",
+        "display": "Nantes, France（南特, 法國）",
         "city": null,
         "district": null,
         "locality": null,
@@ -4433,7 +4433,7 @@
       "sender": null,
       "location": {
         "raw": "Albion Park Rail",
-        "display": "Albion Park Rail, New South Wales, Australia（新南威爾斯州阿爾比恩帕克雷爾，澳洲）",
+        "display": "Albion Park Rail, New South Wales, Australia（新南威爾斯州阿爾比恩帕克雷爾, 澳洲）",
         "city": null,
         "district": null,
         "locality": null,
@@ -5096,7 +5096,7 @@
       "sender": null,
       "location": {
         "raw": "San Francisco, General Trias",
-        "display": "San Francisco, General Trias, Cavite, Philippines（甲米地省將軍特里亞斯市聖弗朗西斯科，菲律賓）",
+        "display": "San Francisco, General Trias, Cavite, Philippines（甲米地省將軍特里亞斯市聖弗朗西斯科, 菲律賓）",
         "city": null,
         "district": null,
         "locality": null,
@@ -5190,7 +5190,7 @@
       "sender": "Subway北投店老闆",
       "location": {
         "raw": "Ryd, Linköping",
-        "display": "Ryd, Linköping, Sverige（林雪平市里德，瑞典）",
+        "display": "Ryd, Linköping, Sverige（林雪平市里德, 瑞典）",
         "city": null,
         "district": null,
         "locality": null,
@@ -5470,7 +5470,7 @@
       "sender": null,
       "location": {
         "raw": "Bundanoon",
-        "display": "Bundanoon, New South Wales, Australia（新南威爾斯州班達努，澳洲）",
+        "display": "Bundanoon, New South Wales, Australia（新南威爾斯州班達努, 澳洲）",
         "city": null,
         "district": null,
         "locality": null,
@@ -5667,7 +5667,7 @@
       "sender": "Catlover:3",
       "location": {
         "raw": "Bowral",
-        "display": "Corbett Gardens, Bowral, New South Wales, Australia（新南威爾斯州鮑勒爾科貝特花園，澳洲）",
+        "display": "Corbett Gardens, Bowral, New South Wales, Australia（新南威爾斯州鮑勒爾科貝特花園, 澳洲）",
         "city": "Bowral",
         "district": null,
         "locality": null,
@@ -5761,7 +5761,7 @@
       "sender": "花花",
       "location": {
         "raw": "Kwun Tong",
-        "display": "觀塘，香港",
+        "display": "觀塘, 香港",
         "city": null,
         "district": null,
         "locality": null,
@@ -5947,7 +5947,7 @@
       "sender": "梨梨五",
       "location": {
         "raw": "Our Lady of Carmel, Taipa",
-        "display": "氹仔嘉模堂區，澳門",
+        "display": "氹仔嘉模堂區, 澳門",
         "city": null,
         "district": null,
         "locality": null,
@@ -6608,7 +6608,7 @@
       "sender": "Sha",
       "location": {
         "raw": "Jordan",
-        "display": "佐敦，香港",
+        "display": "佐敦, 香港",
         "city": null,
         "district": null,
         "locality": null,
@@ -6893,7 +6893,7 @@
       "sender": null,
       "location": {
         "raw": "Bundanoon",
-        "display": "Bundanoon, New South Wales, Australia（新南威爾斯州班達努，澳洲）",
+        "display": "Bundanoon, New South Wales, Australia（新南威爾斯州班達努, 澳洲）",
         "city": null,
         "district": null,
         "locality": null,
@@ -6994,7 +6994,7 @@
       "sender": "Lynn",
       "location": {
         "raw": "Arna, Trengereid",
-        "display": "Trengereid, Arna, Bergen, Norge（卑爾根市阿納區特倫厄雷德，挪威）",
+        "display": "Trengereid, Arna, Bergen, Norge（卑爾根市阿納區特倫厄雷德, 挪威）",
         "city": null,
         "district": null,
         "locality": null,
@@ -7198,7 +7198,7 @@
       "sender": "Catlover:3",
       "location": {
         "raw": "Bowral",
-        "display": "Rivulet Park, Bowral, New South Wales, Australia（新南威爾斯州鮑勒爾里弗萊特公園，澳洲）",
+        "display": "Rivulet Park, Bowral, New South Wales, Australia（新南威爾斯州鮑勒爾里弗萊特公園, 澳洲）",
         "city": "Bowral",
         "district": null,
         "locality": null,
@@ -7690,7 +7690,7 @@
       "sender": "유니",
       "location": {
         "raw": "Seoul",
-        "display": "서울특별시, 대한민국（首爾特別市，韓國）",
+        "display": "서울특별시, 대한민국（首爾特別市, 韓國）",
         "city": null,
         "district": null,
         "locality": null,
@@ -8546,7 +8546,7 @@
       "sender": "Yumi",
       "location": {
         "raw": "Ullevi, Färjestaden",
-        "display": "Ullevi, Färjestaden, Sverige（費里耶斯塔登烏勒維，瑞典）",
+        "display": "Ullevi, Färjestaden, Sverige（費里耶斯塔登烏勒維, 瑞典）",
         "city": null,
         "district": null,
         "locality": null,
@@ -8648,7 +8648,7 @@
       "sender": "Sha",
       "location": {
         "raw": "Causeway Bay",
-        "display": "銅鑼灣，香港",
+        "display": "銅鑼灣, 香港",
         "city": null,
         "district": null,
         "locality": null,
@@ -8939,7 +8939,7 @@
       "sender": "Yumi",
       "location": {
         "raw": "Ullevi, Färjestaden",
-        "display": "Ullevi, Färjestaden, Sverige（費里耶斯塔登烏勒維，瑞典）",
+        "display": "Ullevi, Färjestaden, Sverige（費里耶斯塔登烏勒維, 瑞典）",
         "city": null,
         "district": null,
         "locality": null,
@@ -9041,7 +9041,7 @@
       "sender": "花花",
       "location": {
         "raw": "Tsuen Wan",
-        "display": "荃灣，香港",
+        "display": "荃灣, 香港",
         "city": null,
         "district": null,
         "locality": null,
@@ -12103,7 +12103,7 @@
       "sender": "柳柳",
       "location": {
         "raw": "Ulaanbaatar",
-        "display": "Улаанбаатар, Монгол Улс（烏蘭巴托，蒙古）",
+        "display": "Улаанбаатар, Монгол Улс（烏蘭巴托, 蒙古）",
         "city": null,
         "district": null,
         "locality": null,
@@ -13167,7 +13167,7 @@
       "sender": null,
       "location": {
         "raw": "Biarritz",
-        "display": "Biarritz, France（比亞里茲，法國）",
+        "display": "Biarritz, France（比亞里茲, 法國）",
         "city": null,
         "district": null,
         "locality": null,

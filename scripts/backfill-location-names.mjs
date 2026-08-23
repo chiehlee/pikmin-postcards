@@ -183,12 +183,13 @@ const recordOverrides = {
   "pc-0121": japanAddress("東京都世田谷区駒沢一丁目2−33"),
   "pc-0123": taiwanRoad("臺北市北投區大同街", "臺北市北投區大同街15號"),
   "pc-0126": japanAddress("青森県田舎館村高樋字大曲63"),
+  "pc-0130": japanAddress("東京都港区虎ノ門二丁目10−4"),
   "pc-0135": japanAddress("茨城県大洗町磯浜町8231−4"),
   "pc-0142": taiwanRoad("臺北市北投區光明路", "臺北市北投區光明路1號"),
   "pc-0146": taiwanRoad("臺北市大安區忠孝東路三段", "臺北市大安區忠孝東路三段1號"),
   "pc-0147": taiwanRoad("臺北市中正區汀州路三段", "臺北市中正區汀州路三段2號"),
 };
-const highConfidenceIds = new Set(["pc-0089"]);
+const highConfidenceIds = new Set(["pc-0089", "pc-0130"]);
 
 const archive = JSON.parse(await readFile(archivePath, "utf8"));
 const registry = new Map(groups.flat().map((entry) => [entry.raw, entry]));

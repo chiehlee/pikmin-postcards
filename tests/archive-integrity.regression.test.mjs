@@ -52,10 +52,14 @@ test("researched locations preserve the game text and compose local names consis
   const seoul = postcards.find((record) => record.id === "pc-0084");
   assert.equal(seoul.location.endonym, "서울특별시");
   assert.equal(seoul.location.zh_tw, "首爾特別市");
-  assert.equal(seoul.location.display, "서울특별시, 대한민국（首爾特別市，韓國）");
+  assert.equal(seoul.location.display, "서울특별시, 대한민국（首爾特別市, 韓國）");
 
   const laramie = postcards.find((record) => record.id === "pc-0030");
-  assert.equal(laramie.location.display, "Laramie, Wyoming, United States（懷俄明州拉勒米，美國）");
+  assert.equal(laramie.location.display, "Laramie, Wyoming, United States（懷俄明州拉勒米, 美國）");
+
+  const jordan = postcards.find((record) => record.id === "pc-0073");
+  assert.equal(jordan.location.display, "佐敦, 香港");
+  assert.equal(jordan.location.raw, "Jordan");
 });
 
 test("all canonical assets exist and match their recorded SHA-256", async () => {

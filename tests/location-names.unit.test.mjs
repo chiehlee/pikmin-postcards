@@ -25,7 +25,7 @@ test("Chinese and Japanese researched names stay in their local script", () => {
 test("other local languages append the Taiwan Traditional Chinese name", () => {
   const location = {
     raw: "Seoul",
-    display: "서울특별시, 대한민국（首爾特別市，韓國）",
+    display: "서울특별시, 대한민국（首爾特別市, 韓國）",
     endonym: "서울특별시",
     zh_tw: "首爾特別市",
     language: "ko",
@@ -37,9 +37,34 @@ test("other local languages append the Taiwan Traditional Chinese name", () => {
     name_status: "researched",
     name_confidence: "high",
   };
-  assert.equal(researchedLocationDisplay(location), "서울특별시, 대한민국（首爾特別市，韓國）");
+  assert.equal(researchedLocationDisplay(location), "서울특별시, 대한민국（首爾特別市, 韓國）");
   assert.equal(researchedLocationQuery(location), "서울특별시, 대한민국");
   assert.deepEqual(validateLocationNaming(location), []);
+});
+
+test("all geographic levels use a half-width comma separator", () => {
+  const location = {
+    raw: "Jordan",
+    display: "佐敦, 香港",
+    endonym: "佐敦",
+    zh_tw: null,
+    language: "zh-Hant-HK",
+    country_code: "HK",
+    country: "香港",
+    country_endonym: "香港",
+    address_local: "佐敦",
+    precision: "locality",
+    name_status: "researched",
+    name_confidence: "medium",
+  };
+  assert.equal(researchedLocationDisplay(location), "佐敦, 香港");
+  assert.equal(researchedLocationQuery(location), "佐敦, 香港");
+  assert.deepEqual(validateLocationNaming(location), []);
+  assert.equal(researchedLocationDisplay({
+    ...location,
+    display: "佐敦，香港",
+    endonym: "佐敦，香港",
+  }), "佐敦, 香港");
 });
 
 test("validation rejects a translated language without zh-TW and a stale display cache", () => {

@@ -62,8 +62,15 @@ test('researched locations use the local script while preserving the game text',
 
   const seoulDialog = await openPostcard(page, '인공폭포');
   const seoulLocation = seoulDialog.locator('.detail-location');
-  await expect(seoulLocation).toContainText('서울특별시, 대한민국（首爾特別市，韓國）');
+  await expect(seoulLocation).toContainText('서울특별시, 대한민국（首爾特別市, 韓國）');
   await expect(seoulLocation.locator('small')).toHaveText('遊戲顯示：Seoul');
+  await page.keyboard.press('Escape');
+
+  const jordanDialog = await openPostcard(page, '廟街牌坊');
+  const jordanLocation = jordanDialog.locator('.detail-location');
+  await expect(jordanLocation).toContainText('佐敦, 香港');
+  await expect(jordanLocation).not.toContainText('佐敦，香港');
+  await expect(jordanLocation.locator('small')).toHaveText('遊戲顯示：Jordan');
 });
 
 test('long-form research uses an independently scrollable modal and restores focus', async ({ page }) => {
