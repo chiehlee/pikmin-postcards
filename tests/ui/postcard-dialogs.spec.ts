@@ -14,6 +14,12 @@ async function openPostcard(page: Page, name = postcardName) {
   return dialog;
 }
 
+test('homepage uses a functional Pikmin postcard title', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('heading', { level: 1, name: /Pikmin 明信片\s*收藏研究庫/ })).toBeVisible();
+  await expect(page).toHaveTitle('Pikmin 明信片收藏研究庫');
+});
+
 test('date sorting distinguishes found date from the date added to the archive', async ({ page }) => {
   await page.goto('/');
   const sortField = page.getByLabel('排序依據');

@@ -402,7 +402,7 @@ export default function Home() {
       <section className="hero" id="top">
         <div className="hero-copy">
           <p className="eyebrow">COLLECTION 01 · 2026</p>
-          <h1>把一張明信片，<br />讀成一個地方的故事。</h1>
+          <h1>Pikmin 明信片<br />收藏研究庫</h1>
           <p className="hero-lede">
             保存原始畫面、地方研究與收藏判斷；朋友據點只在證據足夠時才成立。
           </p>

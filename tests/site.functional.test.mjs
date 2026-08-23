@@ -30,7 +30,7 @@ test("production site serves dialogs, keyless maps, and canonical assets", { tim
     const home = await waitForResponse(`${origin}/`, server, () => serverOutput);
     const html = await home.text();
     assert.match(home.headers.get("content-type") ?? "", /text\/html/);
-    assert.match(html, /<title>Pikmin Postcard Archive<\/title>/);
+    assert.match(html, /<title>Pikmin 明信片收藏研究庫<\/title>/);
 
     const clientPaths = [...html.matchAll(/(?:src|href)="([^"]+\.js)"/g)]
       .map((match) => match[1]);
