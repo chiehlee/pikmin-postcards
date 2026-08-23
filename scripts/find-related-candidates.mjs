@@ -45,9 +45,10 @@ try {
   };
 
   for (const row of database.prepare(`
-    SELECT related_postcard_id AS id, relationship, note
-    FROM postcard_relations
-    WHERE postcard_id = ?
+    SELECT relation.related_postcard_id AS id, relation.relationship, relation.note
+    FROM postcard_relations AS relation
+    JOIN postcards AS candidate ON candidate.id = relation.related_postcard_id
+    WHERE relation.postcard_id = ? AND candidate.deleted_at IS NULL
     ORDER BY related_postcard_id
     LIMIT ?
   `).all(source.id, perSignalLimit)) {
@@ -68,7 +69,7 @@ try {
     const rows = database.prepare(`
       SELECT id, found_date
       FROM postcards
-      WHERE sender = ? AND id <> ?
+      WHERE sender = ? AND id <> ? AND deleted_at IS NULL
       ORDER BY found_date DESC, id
       LIMIT ?
     `).all(source.sender, source.id, perSignalLimit);
@@ -84,7 +85,9 @@ try {
     SELECT candidate.postcard_id AS id, candidate.tag
     FROM postcard_tags AS source_tag
     JOIN postcard_tags AS candidate ON candidate.tag = source_tag.tag
+    JOIN postcards AS candidate_postcard ON candidate_postcard.id = candidate.postcard_id
     WHERE source_tag.postcard_id = ? AND candidate.postcard_id <> ?
+      AND candidate_postcard.deleted_at IS NULL
     ORDER BY candidate.tag, candidate.postcard_id
     LIMIT ?
   `).all(source.id, source.id, perSignalLimit)) {
@@ -95,7 +98,9 @@ try {
     SELECT candidate.postcard_id AS id, candidate.url
     FROM research_sources AS source_url
     JOIN research_sources AS candidate ON candidate.url = source_url.url
+    JOIN postcards AS candidate_postcard ON candidate_postcard.id = candidate.postcard_id
     WHERE source_url.postcard_id = ? AND candidate.postcard_id <> ?
+      AND candidate_postcard.deleted_at IS NULL
     ORDER BY candidate.url, candidate.postcard_id
     LIMIT ?
   `).all(source.id, source.id, perSignalLimit)) {
@@ -112,6 +117,7 @@ try {
         AND latitude BETWEEN ? AND ?
         AND longitude BETWEEN ? AND ?
         AND id <> ?
+        AND deleted_at IS NULL
       ORDER BY abs(latitude - ?) + abs(longitude - ?), id
       LIMIT ?
     `).all(
@@ -179,7 +185,7 @@ function addExactMatches(database, source, column, type, points, rowLimit, addSi
   const rows = database.prepare(`
     SELECT id
     FROM postcards
-    WHERE ${column} = ? AND id <> ?
+    WHERE ${column} = ? AND id <> ? AND deleted_at IS NULL
     ORDER BY found_date DESC, id
     LIMIT ?
   `).all(value, source.id, rowLimit);
@@ -193,7 +199,7 @@ function loadCandidateDetails(database, ids) {
     SELECT id, poi_name, found_date, sender, location_raw, location_display,
       location_endonym, location_zh_tw, location_address_local, latitude, longitude
     FROM postcards
-    WHERE id IN (${placeholders})
+    WHERE id IN (${placeholders}) AND deleted_at IS NULL
   `).all(...ids);
 }
 

@@ -40,6 +40,11 @@ button { color: inherit; }
 .view-switch button.active { background: var(--green); color: white; }
 .archive-state { justify-self: end; display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
 .archive-state span { width: 8px; height: 8px; border-radius: 50%; background: #4f9d67; box-shadow: 0 0 0 4px rgba(79,157,103,.13); }
+.header-management { justify-self: end; display: flex; align-items: center; gap: 16px; }
+.add-postcard-button { padding: 9px 13px; border: 1px solid var(--green); border-radius: 999px; background: var(--green); color: white; cursor: pointer; font-size: 11px; font-weight: 800; }
+.add-postcard-button:hover { background: #174832; }
+.management-notice { position: fixed; top: 88px; right: 22px; z-index: 240; display: flex; align-items: start; gap: 18px; max-width: min(460px, calc(100vw - 44px)); padding: 13px 15px; border: 1px solid rgba(35,91,67,.28); border-radius: 7px; background: #fffef9; box-shadow: 0 16px 48px rgba(17,34,24,.18); color: #435047; font-size: 12px; line-height: 1.55; }
+.management-notice button { flex: 0 0 auto; padding: 0; border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 19px; line-height: 1; }
 
 .hero {
   display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(380px, .8fr); gap: clamp(40px, 7vw, 110px); align-items: end;
@@ -167,6 +172,21 @@ footer p { margin: 0; color: var(--ink); font-family: Georgia, serif; }
 .detail-facts span { color: var(--muted); font-size: 9px; }
 .detail-facts strong { margin-top: 3px; font-size: 12px; }
 .detail-facts small { display: block; margin-top: 4px; color: var(--muted); font-size: 9px; }
+.postcard-management { position: relative; display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center; margin: -6px 0 28px; padding: 15px; border: 1px solid rgba(35,91,67,.18); border-radius: 6px; background: rgba(220,233,223,.38); }
+.postcard-management .eyebrow { margin-bottom: 4px; font-size: 8px; }
+.postcard-management > div:first-child > strong, .postcard-management > div:first-child > small { display: block; }
+.postcard-management > div:first-child > strong { font-size: 12px; }
+.postcard-management > div:first-child > small { max-width: 330px; margin-top: 3px; color: var(--muted); font-size: 9px; line-height: 1.5; }
+.postcard-management-actions { display: flex; gap: 7px; }
+.postcard-management-actions button { min-width: 74px; padding: 9px 11px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 800; }
+.postcard-management-actions button:disabled { cursor: wait; opacity: .58; }
+.research-action { border: 1px solid var(--green); background: var(--green); color: white; }
+.delete-action { border: 1px solid #c86858; background: transparent; color: #a64435; }
+.delete-confirmation { grid-column: 1 / -1; padding-top: 12px; border-top: 1px solid rgba(31,48,38,.1); }
+.delete-confirmation p { margin: 0; color: #6e433b; font-size: 10px; line-height: 1.6; }
+.delete-confirmation > div { display: flex; justify-content: flex-end; gap: 7px; margin-top: 10px; }
+.delete-confirmation button { padding: 8px 10px; border: 1px solid var(--line); border-radius: 4px; background: white; cursor: pointer; font-size: 10px; font-weight: 800; }
+.delete-confirmation .confirm-delete { border-color: #a64435; background: #a64435; color: white; }
 .location-map { margin: 28px 0; padding: 18px; border: 1px solid var(--line); background: #f8f6ef; }
 .location-map-heading { display: flex; justify-content: space-between; align-items: start; gap: 18px; margin-bottom: 15px; }
 .location-map-heading .eyebrow { margin-bottom: 5px; }
@@ -189,6 +209,38 @@ footer p { margin: 0; color: var(--ink); font-family: Georgia, serif; }
 .research-note-action { flex: 0 0 auto; color: var(--green); font-size: 10px; font-weight: 800; letter-spacing: .04em; }
 .research-note-action::after { content: ' ↗'; }
 .research-summary-copy { display: block; margin-top: 8px; color: #435047; font: 16px/1.8 Georgia, "Noto Serif TC", serif; }
+.management-modal-backdrop { position: fixed; inset: 0; z-index: 210; display: grid; place-items: center; padding: 24px; background: rgba(10,18,13,.78); backdrop-filter: blur(10px); }
+.management-modal { position: relative; width: min(600px, calc(100vw - 48px)); max-height: 92dvh; overflow-y: auto; padding: clamp(28px, 5vw, 48px); border-radius: 12px; background: var(--card); box-shadow: 0 35px 110px rgba(0,0,0,.42); }
+.management-modal-close { position: absolute; top: 16px; right: 16px; display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--green); color: white; cursor: pointer; font-size: 23px; }
+.management-modal h2 { margin: 0; padding-right: 45px; font: 500 clamp(32px, 6vw, 48px)/1.1 Georgia, "Noto Serif TC", serif; }
+.management-modal-lede { margin: 17px 0 26px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.add-postcard-form { display: flex; flex-direction: column; gap: 17px; }
+.add-postcard-form label { display: flex; flex-direction: column; gap: 7px; }
+.add-postcard-form label > span { font-size: 11px; font-weight: 800; }
+.add-postcard-form label > small { color: var(--muted); font-size: 9px; }
+.add-postcard-form input, .add-postcard-form textarea { width: 100%; padding: 11px 12px; border: 1px solid var(--line); border-radius: 5px; outline: none; background: #faf8f1; color: var(--ink); font-family: inherit; font-size: 12px; line-height: 1.5; }
+.add-postcard-form input[type="file"] { padding: 9px; }
+.add-postcard-form input:focus, .add-postcard-form textarea:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(35,91,67,.1); }
+.form-divider { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 9px; }
+.form-divider::before, .form-divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.api-configuration-state { display: flex; gap: 8px; align-items: start; padding: 10px 11px; border-radius: 4px; background: #f4ead7; color: #755c2e; font-size: 10px; line-height: 1.5; }
+.api-configuration-state > span { flex: 0 0 auto; width: 7px; height: 7px; margin-top: 4px; border-radius: 50%; background: #c38b2b; }
+.api-configuration-state.configured { background: var(--green-light); color: var(--green); }
+.api-configuration-state.configured > span { background: #4f9d67; }
+.submit-add { height: 44px; border: 0; border-radius: 5px; background: var(--green); color: white; cursor: pointer; font-size: 11px; font-weight: 800; }
+.submit-add:disabled { cursor: wait; opacity: .62; }
+.job-tray { position: fixed; right: 22px; bottom: 22px; z-index: 230; display: flex; width: min(360px, calc(100vw - 44px)); flex-direction: column; gap: 8px; }
+.job-card { padding: 13px 14px; border: 1px solid rgba(35,91,67,.24); border-radius: 7px; background: #fffef9; box-shadow: 0 16px 45px rgba(17,34,24,.2); }
+.job-card-heading { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; }
+.job-card-heading strong, .job-card-heading small { display: block; }
+.job-card-heading strong { font-size: 11px; }
+.job-card-heading small { margin-top: 2px; color: var(--muted); font: 9px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.job-card-heading button { padding: 0; border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 20px; }
+.job-card > p { margin: 9px 0 0 24px; color: #9b3f2c; font-size: 10px; line-height: 1.5; }
+.job-spinner { width: 14px; height: 14px; border: 2px solid rgba(35,91,67,.18); border-top-color: var(--green); border-radius: 50%; animation: management-spin .85s linear infinite; }
+.job-completed .job-spinner { border: 0; background: #4f9d67; animation: none; }
+.job-failed .job-spinner { border: 0; background: #b85644; animation: none; }
+@keyframes management-spin { to { transform: rotate(360deg); } }
 .research-modal-backdrop { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 24px; background: rgba(10,18,13,.82); backdrop-filter: blur(11px); }
 .research-modal { display: flex; width: min(860px, calc(100vw - 48px)); max-height: min(90vh, 920px); overflow: hidden; flex-direction: column; border: 1px solid rgba(255,255,255,.18); border-radius: 12px; background: var(--card); box-shadow: 0 40px 120px rgba(0,0,0,.5); }
 .research-modal-header { display: flex; flex: 0 0 auto; justify-content: space-between; align-items: start; gap: 30px; padding: 25px 28px 22px; border-bottom: 1px solid var(--line); background: #f3f1e9; }
@@ -242,6 +294,7 @@ footer p { margin: 0; color: var(--ink); font-family: Georgia, serif; }
   .view-switch { grid-column: 1 / -1; grid-row: 2; justify-content: center; margin-top: 9px; }
   .view-switch button { flex: 1; }
   .archive-state { display: none; }
+  .header-management { gap: 0; }
   .hero { grid-template-columns: 1fr; padding-top: 64px; }
   .hero h1 { font-size: clamp(43px, 12vw, 74px); }
   .postcard-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -251,10 +304,13 @@ footer p { margin: 0; color: var(--ink); font-family: Georgia, serif; }
   .detail-modal { grid-template-columns: 1fr; grid-template-rows: auto auto; height: 96dvh; max-height: 96dvh; overflow-y: auto; }
   .modal-image-panel { height: auto; min-height: 58vh; overflow: visible; }
   .modal-copy { height: auto; overflow: visible; }
+  .postcard-management { grid-template-columns: 1fr; }
+  .postcard-management-actions { justify-content: flex-start; }
 }
 @media (max-width: 560px) {
   .site-header { padding: 10px 14px; }
   .brand small { display: none; }
+  .add-postcard-button { padding: 8px 10px; font-size: 10px; }
   .hero { padding: 52px 18px 58px; }
   .hero h1 { font-size: 44px; }
   .hero h1 br { display: none; }
@@ -281,6 +337,10 @@ footer p { margin: 0; color: var(--ink); font-family: Georgia, serif; }
   .research-modal { width: 100%; max-height: 94dvh; border-radius: 14px 14px 0 0; }
   .research-modal-header { padding: 21px 20px 18px; }
   .research-modal-scroll { padding: 25px 20px 36px; }
+  .management-modal-backdrop { align-items: end; padding: 0; }
+  .management-modal { width: 100%; max-height: 94dvh; padding: 31px 20px 38px; border-radius: 14px 14px 0 0; }
+  .management-notice { top: 78px; right: 12px; max-width: calc(100vw - 24px); }
+  .job-tray { right: 12px; bottom: 12px; width: calc(100vw - 24px); }
   .research-detail-stats { grid-template-columns: 1fr; border-top: 0; }
   .research-detail-stats span:first-child { border-top: 1px solid var(--line); }
   footer { flex-direction: column; }

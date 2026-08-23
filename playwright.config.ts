@@ -32,5 +32,6 @@ export default defineConfig({
     timeout: 120_000,
     stdout: 'pipe',
     stderr: 'pipe',
+    env: { ...process.env, OPENAI_API_KEY: '' },
   },
 });

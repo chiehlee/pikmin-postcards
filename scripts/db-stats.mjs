@@ -10,6 +10,8 @@ try {
   const scalar = (table) => database.prepare(`SELECT count(*) AS count FROM ${table}`).get().count;
   const stats = {
     postcards: scalar("postcards"),
+    active_postcards: database.prepare("SELECT count(*) AS count FROM postcards WHERE deleted_at IS NULL").get().count,
+    soft_deleted_postcards: database.prepare("SELECT count(*) AS count FROM postcards WHERE deleted_at IS NOT NULL").get().count,
     assets: scalar("assets"),
     friends: scalar("friends"),
     imports: scalar("imports"),
@@ -25,6 +27,10 @@ try {
     image_intake_sources: scalar("image_intake_sources"),
     image_intake_by_status: database
       .prepare("SELECT status, count(*) AS count FROM image_intake GROUP BY status ORDER BY status")
+      .all(),
+    ai_jobs: scalar("ai_jobs"),
+    ai_jobs_by_status: database
+      .prepare("SELECT status, count(*) AS count FROM ai_jobs GROUP BY status ORDER BY status")
       .all(),
     by_acquisition_type: database
       .prepare("SELECT acquisition_type AS type, count(*) AS count FROM postcards GROUP BY acquisition_type ORDER BY type")

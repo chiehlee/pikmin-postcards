@@ -38,6 +38,22 @@ type MapTarget = {
   label: string;
   precision: 'coordinates' | 'researched_place_query';
 };
+type ArchiveCapabilities = {
+  management: boolean;
+  ai_configured: boolean;
+  model: string;
+};
+type ManagementJob = {
+  id: string;
+  kind: 'add' | 'reresearch';
+  status: 'queued' | 'in_progress' | 'applying' | 'completed' | 'failed';
+  postcard_id: string | null;
+  created_at: string;
+  started_at: string | null;
+  completed_at: string | null;
+  error: string | null;
+  result?: { exact_duplicate?: boolean; postcard_id?: string } | null;
+};
 
 type Postcard = {
   id: string;
@@ -99,9 +115,14 @@ type Postcard = {
     relationship: string;
     note?: string;
   }[];
+  lifecycle?: {
+    status: 'active' | 'deleted';
+    deleted_at: string | null;
+    deleted_reason: string | null;
+  };
 };
 
-const postcards = archive.postcards as Postcard[];
+const initialPostcards = (archive.postcards as Postcard[]).filter((postcard) => !postcard.lifecycle?.deleted_at);
 const researchedMapOverrides: Record<string, { query: string; label: string }> = {
   'pc-0020': {
     query: '壹號交易廣場, 台北市信義區松仁路89號',
@@ -198,7 +219,32 @@ function trapDialogFocus(event: ReactKeyboardEvent<HTMLElement>) {
   }
 }
 
+function managementStatusLabel(status: ManagementJob['status']) {
+  if (status === 'queued') return '等待 AI';
+  if (status === 'in_progress') return 'AI 研究中';
+  if (status === 'applying') return '更新資料庫';
+  if (status === 'completed') return '已完成';
+  return '失敗';
+}
+
+function elapsedLabel(job: ManagementJob, now: number) {
+  const start = new Date(job.started_at ?? job.created_at).getTime();
+  const end = job.completed_at ? new Date(job.completed_at).getTime() : now;
+  const seconds = Math.max(0, Math.floor((end - start) / 1000));
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainder = seconds % 60;
+  return [hours, minutes, remainder].map((value) => String(value).padStart(2, '0')).join(':');
+}
+
+async function responseJson<T>(response: Response): Promise<T> {
+  const payload = await response.json().catch(() => ({})) as { error?: string } & T;
+  if (!response.ok) throw new Error(payload.error ?? `HTTP ${response.status}`);
+  return payload as T;
+}
+
 export default function Home() {
+  const [postcards, setPostcards] = useState<Postcard[]>(initialPostcards);
   const [view, setView] = useState<'archive' | 'friends'>('archive');
   const [query, setQuery] = useState('');
   const [senderFilter, setSenderFilter] = useState('all');
@@ -215,17 +261,102 @@ export default function Home() {
   const [active, setActive] = useState<Postcard | null>(null);
   const [mapLoadedFor, setMapLoadedFor] = useState<string | null>(null);
   const [researchOpen, setResearchOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [capabilities, setCapabilities] = useState<ArchiveCapabilities>({
+    management: true,
+    ai_configured: false,
+    model: 'gpt-5.6',
+  });
+  const [jobs, setJobs] = useState<ManagementJob[]>([]);
+  const [clock, setClock] = useState(() => Date.now());
   const researchTriggerRef = useRef<HTMLButtonElement | null>(null);
+
+  const refreshArchive = useCallback(async (focusId: string | null = null) => {
+    const payload = await responseJson<{
+      postcards: Postcard[];
+      capabilities: ArchiveCapabilities;
+      jobs?: ManagementJob[];
+    }>(await fetch('/api/archive', { cache: 'no-store' }));
+    setPostcards(payload.postcards);
+    setCapabilities(payload.capabilities);
+    setJobs((current) => current.length ? current : payload.jobs ?? []);
+    if (focusId) {
+      const refreshed = payload.postcards.find((postcard) => postcard.id === focusId) ?? null;
+      setActive(refreshed);
+    }
+    return payload.postcards;
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      refreshArchive().catch(() => {
+        setNotice('目前使用內建快照；無法連線到管理 API。');
+      });
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [refreshArchive]);
+
+  useEffect(() => {
+    if (!jobs.some((job) => !['completed', 'failed'].includes(job.status))) return;
+    const timer = window.setInterval(() => setClock(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [jobs]);
+
+  useEffect(() => {
+    const running = jobs.filter((job) => !['completed', 'failed'].includes(job.status));
+    if (!running.length) return;
+    let cancelled = false;
+    const poll = async () => {
+      for (const current of running) {
+        try {
+          const payload = await responseJson<{ job: ManagementJob }>(await fetch(`/api/jobs/${encodeURIComponent(current.id)}`, { cache: 'no-store' }));
+          if (cancelled) return;
+          setJobs((items) => items.map((item) => item.id === payload.job.id ? payload.job : item));
+          if (payload.job.status === 'completed') {
+            const updated = await refreshArchive(active?.id === payload.job.postcard_id ? payload.job.postcard_id : null);
+            if (payload.job.kind === 'add' && payload.job.postcard_id) {
+              const added = updated.find((postcard) => postcard.id === payload.job.postcard_id);
+              if (added) {
+                setAddOpen(false);
+                setActive(added);
+              }
+            }
+            setNotice(payload.job.result?.exact_duplicate
+              ? `圖片已存在，對應 ${payload.job.postcard_id}。`
+              : `${payload.job.kind === 'add' ? '明信片新增' : '再研究'}完成，網站資料已更新。`);
+          } else if (payload.job.status === 'failed') {
+            setNotice(payload.job.error || 'AI 工作失敗。');
+          }
+        } catch (error) {
+          if (!cancelled) setNotice(error instanceof Error ? error.message : '讀取工作狀態失敗。');
+        }
+      }
+    };
+    void poll();
+    const timer = window.setInterval(poll, 2000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  // The compact status key intentionally restarts polling only when job membership/status changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobs.map((job) => `${job.id}:${job.status}`).join('|'), refreshArchive, active?.id]);
 
   function openPostcard(postcard: Postcard) {
     setMapLoadedFor(null);
     setResearchOpen(false);
+    setDeleteConfirm(false);
     setActive(postcard);
   }
 
   const closePostcard = useCallback(() => {
     setMapLoadedFor(null);
     setResearchOpen(false);
+    setDeleteConfirm(false);
     setActive(null);
   }, []);
 
@@ -233,6 +364,69 @@ export default function Home() {
     setResearchOpen(false);
     window.requestAnimationFrame(() => researchTriggerRef.current?.focus());
   }, []);
+
+  async function startReresearch() {
+    if (!active) return;
+    setNotice(null);
+    try {
+      const payload = await responseJson<{ job: ManagementJob }>(await fetch(
+        `/api/postcards/${encodeURIComponent(active.id)}/research`,
+        { method: 'POST' },
+      ));
+      setJobs((items) => [...items.filter((job) => job.id !== payload.job.id), payload.job]);
+      setClock(Date.now());
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : '無法開始再研究。');
+    }
+  }
+
+  async function confirmDelete() {
+    if (!active) return;
+    setDeleting(true);
+    setNotice(null);
+    try {
+      await responseJson(await fetch(`/api/postcards/${encodeURIComponent(active.id)}`, {
+        method: 'DELETE',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ reason: '使用者由網站移除疑似重複明信片' }),
+      }));
+      const deletedId = active.id;
+      setPostcards((items) => items.filter((postcard) => postcard.id !== deletedId));
+      closePostcard();
+      setNotice(`${deletedId} 已 soft delete；原圖、研究、DB 與關聯資料均保留。`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : '刪除失敗。');
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  async function submitAdd(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setAdding(true);
+    setNotice(null);
+    try {
+      const payload = await responseJson<{ job: ManagementJob }>(await fetch('/api/postcards', {
+        method: 'POST',
+        body: new FormData(event.currentTarget),
+      }));
+      setJobs((items) => [...items.filter((job) => job.id !== payload.job.id), payload.job]);
+      setClock(Date.now());
+      if (payload.job.status === 'completed') {
+        const updated = await refreshArchive();
+        const duplicate = updated.find((postcard) => postcard.id === payload.job.postcard_id);
+        setAddOpen(false);
+        if (duplicate) setActive(duplicate);
+        setNotice(duplicate
+          ? `這份圖片已存在，已開啟 ${payload.job.postcard_id}。`
+          : `這份圖片已存在於 ${payload.job.postcard_id}；該 record 目前可能已 soft delete，因此未建立新 ID。`);
+      }
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : '新增明信片失敗。');
+    } finally {
+      setAdding(false);
+    }
+  }
 
   function requestDeviceLocation() {
     if (typeof window === 'undefined' || !window.isSecureContext) {
@@ -299,11 +493,11 @@ export default function Home() {
 
   const senders = useMemo(
     () => [...new Set(postcards.map((postcard) => postcard.sender).filter(Boolean))] as string[],
-    [],
+    [postcards],
   );
   const countries = useMemo(
     () => [...new Set(postcards.map((postcard) => postcard.location.country ?? '未正規化'))],
-    [],
+    [postcards],
   );
 
   const filtered = useMemo(() => {
@@ -342,7 +536,7 @@ export default function Home() {
       direction: sortDirection,
       origin: distanceOrigin,
     });
-  }, [country, distanceOrigin, query, senderFilter, sortDirection, sortField, status]);
+  }, [country, distanceOrigin, postcards, query, senderFilter, sortDirection, sortField, status]);
 
   const friendGroups = useMemo(() => {
     return friendProfiles.map((profile) => ({
@@ -356,19 +550,23 @@ export default function Home() {
       note: profile.likely_base.reason,
       avoid: profile.avoid_send.areas.length ? profile.avoid_send.areas.join('、') : '無正式建議',
     }));
-  }, []);
+  }, [postcards]);
   const activeMapTarget = active ? mapTargetFor(active) : null;
   const activeMapIsLoaded = !!active && mapLoadedFor === active.id;
   const chronologicalSort = sortField === 'found_date' || sortField === 'archived_on';
   const filteredCoordinateCount = filtered.filter((postcard) => postcardCoordinates(postcard)).length;
   const pagination = paginateRecords(filtered, page, postcardsPerPage);
+  const activeJob = active
+    ? jobs.find((job) => job.kind === 'reresearch' && job.postcard_id === active.id && !['completed', 'failed'].includes(job.status))
+    : null;
 
   useEffect(() => {
-    if (!active) return;
+    if (!active && !addOpen) return;
     const close = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       if (researchOpen) closeResearch();
-      else closePostcard();
+      else if (active) closePostcard();
+      else setAddOpen(false);
     };
     document.body.classList.add('modal-open');
     window.addEventListener('keydown', close);
@@ -376,7 +574,7 @@ export default function Home() {
       document.body.classList.remove('modal-open');
       window.removeEventListener('keydown', close);
     };
-  }, [active, closePostcard, closeResearch, researchOpen]);
+  }, [active, addOpen, closePostcard, closeResearch, researchOpen]);
 
   return (
     <main>
@@ -396,8 +594,20 @@ export default function Home() {
             朋友足跡
           </button>
         </nav>
-        <div className="archive-state"><span />本機資料庫</div>
+        <div className="header-management">
+          <button type="button" className="add-postcard-button" onClick={() => { setAddOpen(true); setNotice(null); }}>
+            ＋ 新增明信片
+          </button>
+          <div className="archive-state"><span />本機資料庫</div>
+        </div>
       </header>
+
+      {notice && (
+        <div className="management-notice" role="status" aria-live="polite">
+          <span>{notice}</span>
+          <button type="button" onClick={() => setNotice(null)} aria-label="關閉通知">×</button>
+        </div>
+      )}
 
       <section className="hero" id="top">
         <div className="hero-copy">
@@ -659,6 +869,36 @@ export default function Home() {
                 <div><span>收藏評分</span><strong>{active.curation.rating == null ? '未評分' : `${active.curation.rating.toFixed(1)} / 5`}</strong></div>
                 <div><span>建議</span><strong>{active.curation.recommendation ?? '尚未整理'}</strong></div>
               </div>
+              <section className="postcard-management" aria-label="明信片管理">
+                <div>
+                  <p className="eyebrow">MANAGEMENT</p>
+                  <strong>資料操作</strong>
+                  <small>
+                    {capabilities.ai_configured
+                      ? `再研究使用 ${capabilities.model}，工作會在背景持續。`
+                      : 'AI 尚未設定；soft delete 仍可使用。'}
+                  </small>
+                </div>
+                <div className="postcard-management-actions">
+                  <button type="button" className="research-action" onClick={startReresearch} disabled={Boolean(activeJob)}>
+                    {activeJob ? `${managementStatusLabel(activeJob.status)} · ${elapsedLabel(activeJob, clock)}` : '再研究'}
+                  </button>
+                  <button type="button" className="delete-action" onClick={() => setDeleteConfirm(true)} disabled={deleting}>
+                    刪除
+                  </button>
+                </div>
+                {deleteConfirm && (
+                  <div className="delete-confirmation" role="alertdialog" aria-label={`確認刪除 ${active.poi_name}`}>
+                    <p>只 soft delete 這一張；原圖、研究、DB 與其他相關明信片都會保留。</p>
+                    <div>
+                      <button type="button" onClick={() => setDeleteConfirm(false)} disabled={deleting}>取消</button>
+                      <button type="button" className="confirm-delete" onClick={confirmDelete} disabled={deleting}>
+                        {deleting ? '刪除中…' : '確認 soft delete'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </section>
               <section className="detail-story">
                 <button
                   ref={researchTriggerRef}
@@ -829,6 +1069,62 @@ export default function Home() {
             </div>
           )}
         </>
+      )}
+
+      {addOpen && !active && (
+        <div className="management-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !adding) setAddOpen(false); }}>
+          <section className="management-modal" role="dialog" aria-modal="true" aria-labelledby="add-postcard-title" onKeyDown={trapDialogFocus}>
+            <button type="button" className="management-modal-close" onClick={() => setAddOpen(false)} aria-label="關閉新增明信片" disabled={adding}>×</button>
+            <p className="eyebrow">NEW POSTCARD</p>
+            <h2 id="add-postcard-title">新增明信片</h2>
+            <p className="management-modal-lede">圖片會先原樣保存在本機，再由專案 SKILL 進行畫面判讀、研究、有限關聯檢查及 DB 更新。</p>
+            <form className="add-postcard-form" onSubmit={submitAdd}>
+              <label>
+                <span>本機圖片</span>
+                <input type="file" name="image" accept="image/png,image/jpeg,image/webp,image/gif,image/heic,image/heif" disabled={adding} />
+                <small>PNG、JPEG、WebP、GIF 或 HEIC，最多 100 MiB。</small>
+              </label>
+              <div className="form-divider"><span>或</span></div>
+              <label>
+                <span>圖片網址</span>
+                <input type="url" name="source_url" placeholder="https://…（支援 Dropbox）" disabled={adding} />
+              </label>
+              <label>
+                <span>給研究流程的備註（選填）</span>
+                <textarea name="note" rows={4} placeholder="例如：這張可能和某位朋友、某個系列或既有卡有關。" disabled={adding} />
+              </label>
+              <div className={`api-configuration-state ${capabilities.ai_configured ? 'configured' : ''}`}>
+                <span aria-hidden="true" />
+                {capabilities.ai_configured
+                  ? `AI 已連線 · ${capabilities.model}`
+                  : 'AI 尚未設定；送出後圖片仍會先保存在本機，但需設定 API key 才能完成分析。'}
+              </div>
+              <button type="submit" className="submit-add" disabled={adding}>
+                {adding ? '保存圖片並建立工作…' : '保存並開始研究'}
+              </button>
+            </form>
+          </section>
+        </div>
+      )}
+
+      {!!jobs.length && (
+        <aside className="job-tray" aria-label="背景工作">
+          {jobs.slice(-3).reverse().map((job) => (
+            <article className={`job-card job-${job.status}`} key={job.id}>
+              <div className="job-card-heading">
+                <span className="job-spinner" aria-hidden="true" />
+                <div>
+                  <strong>{job.kind === 'add' ? '新增明信片' : `再研究 · ${job.postcard_id}`}</strong>
+                  <small>{managementStatusLabel(job.status)} · {elapsedLabel(job, clock)}</small>
+                </div>
+                {['completed', 'failed'].includes(job.status) && (
+                  <button type="button" onClick={() => setJobs((items) => items.filter((item) => item.id !== job.id))} aria-label="關閉工作狀態">×</button>
+                )}
+              </div>
+              {job.error && <p>{job.error}</p>}
+            </article>
+          ))}
+        </aside>
       )}
     </main>
   );

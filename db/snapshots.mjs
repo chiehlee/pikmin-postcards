@@ -57,8 +57,8 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
       longitude, location_confidence, asset_sha256, rating, rating_raw, rating_min, rating_max,
       recommendation, curation_status, personal_relevance, star_visible,
       deletion_toast_visible, research_status, research_confidence,
-      research_confidence_label, research_summary, document_json
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      research_confidence_label, research_summary, deleted_at, deleted_reason, document_json
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const insertTag = database.prepare(
     "INSERT INTO postcard_tags (postcard_id, tag, sort_order) VALUES (?, ?, ?)",
@@ -184,6 +184,8 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
         record.research.confidence,
         record.research.confidence_label,
         record.research.summary,
+        record.lifecycle?.deleted_at ?? null,
+        record.lifecycle?.deleted_reason ?? null,
         JSON.stringify(record),
       );
       insertResearchDetail.run(

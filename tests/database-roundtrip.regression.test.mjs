@@ -19,7 +19,18 @@ test("SQLite migration preserves every snapshot field exactly", async () => {
 
   try {
     replaceDatabaseFromSnapshots(database, snapshots);
+    database.prepare(`
+      INSERT INTO ai_jobs (
+        id, kind, status, postcard_id, model, skill_path, skill_sha256, prompt,
+        created_at, updated_at
+      ) VALUES ('job-roundtrip', 'reresearch', 'queued', 'pc-0001', 'test-model',
+        '.agents/skills/pikmin-postcard-intake/SKILL.md', 'abc123', 'test prompt',
+        '2026-08-23T00:00:00.000Z', '2026-08-23T00:00:00.000Z')
+    `).run();
+    replaceDatabaseFromSnapshots(database, snapshots);
     assert.deepEqual(exportSnapshots(database), snapshots);
+    assert.equal(database.prepare("SELECT count(*) AS count FROM ai_jobs WHERE id = 'job-roundtrip'").get().count, 1);
+    assert.ok(database.prepare("PRAGMA table_info(postcards)").all().some((column) => column.name === "deleted_at"));
     assert.equal(
       database.prepare(`
         SELECT note FROM postcard_relations

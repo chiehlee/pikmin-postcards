@@ -45,6 +45,30 @@ test("related postcard discovery returns a bounded indexed shortlist", async () 
     assert.ok(result.candidates[0].signals.some((signal) => signal.type === "same-raw-location"));
     assert.equal(result.candidates[0].existing_relation.relationship, "same-metadata-different-image");
     assert.equal("research_summary" in result.candidates[0], false);
+
+    const updateDatabase = await openDatabase(databasePath);
+    try {
+      updateDatabase.prepare("UPDATE postcards SET deleted_at = ? WHERE id = ?")
+        .run("2026-08-23T00:00:00.000Z", "pc-0112");
+    } finally {
+      updateDatabase.close();
+    }
+    const { stdout: afterDeleteOutput } = await execFileAsync(
+      process.execPath,
+      [
+        "--disable-warning=ExperimentalWarning",
+        "scripts/find-related-candidates.mjs",
+        "--database",
+        databasePath,
+        "--id",
+        "pc-0111",
+        "--limit",
+        "4",
+      ],
+      { cwd: projectRoot },
+    );
+    const afterDelete = JSON.parse(afterDeleteOutput);
+    assert.ok(!afterDelete.candidates.some((candidate) => candidate.id === "pc-0112"));
   } finally {
     await rm(temporaryDirectory, { recursive: true, force: true });
   }

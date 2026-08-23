@@ -113,6 +113,7 @@ npm run check:duplicate -- \
 - 研究地名的 `endonym`、`address_local`、`precision`、`country_endonym`、BCP-47 風格 `language`、必要時的台灣繁中 `zh_tw`，以及 name status/confidence；先依臺灣道路／日本丁目番號／其他地區城市內區域＋國名的層級取可由來源支持的最深精度，再逐級 fallback。相同 raw location 可先查既有命名 registry/索引再研究，避免逐張重做。研究結果不得覆寫 `raw`。
 - condensed summary，供列表與 modal 快速閱讀。
 - preserved detail，須可不依賴 condensed summary 獨立理解研究對象；有足夠材料時用清楚的小節依序交代時間線、行動者、空間證據、歷史影響與仍不能確定之處，避免只把 summary 擴寫成一段長文。
+- 對證據充足且具有歷史、文化或空間考證價值的題材，長版研究以約 1,500–4,000 個繁中文字元作為「非常長」的目標區間；4,000 是一般 UI 研究的軟上限，不是每張都要填滿的最低要求。題材或證據較少時應按比例縮短，不用泛論、重複摘要或無來源敘事湊字數；若確有必要超過上限，先在工作回饋說明新增篇幅回答了什麼問題。
 - confirmed facts、inferences、unresolved questions。
 - sources；每個 URL 必須實際打開並支持相鄰主張。
 - curation rating、recommendation、status 與 tags；不確定時用 `unreviewed`，不要為了完整而假造評分。
@@ -162,6 +163,18 @@ npm run friends:avatars -- --commit
 - 失敗時不刪除 intake 原圖，不留下指向不存在檔案的 DB record。
 
 網站原則上直接讀 snapshots；只有新增欄位或互動需要時才修改 UI。任何資料模型改動使用新的 migration，不改寫已套用的 migration。Map iframe 維持使用者點擊後才載入，不能讓新增資料導致首頁一次載入多張地圖。
+
+### 6A. 網站內新增、soft delete 與再研究
+
+網站管理操作與 CLI 收錄共用本 Skill 的證據、圖片、定位、研究、duplicate 及 relation 規則，不建立較寬鬆的第二套捷徑：
+
+1. **新增**：先把上傳檔或遠端 URL 落地 `var/image-inbox/`、驗證格式／大小並計算 SHA-256，再判斷 exact duplicate。即使 `OPENAI_API_KEY` 尚未設定，已驗證的圖片仍保留在 intake；不得因 AI 無法啟動而遺失來源。Exact duplicate 不再呼叫 AI，也不建立新的 postcard ID；非 exact duplicate 才建立背景研究工作。
+2. **Soft delete**：只在被操作的 postcard 寫入 lifecycle／`deleted_at` 與原因，正常列表與查詢預設隱藏該 record。不得連帶刪除、隱藏或改寫 related postcards、朋友證據、原圖、研究檔、來源、provenance 或 DB row；已使用的 postcard ID 永不回收。若未來加入 restore，應清除 lifecycle 而不是複製舊 record。
+3. **再研究**：畫面可見 metadata、`location.raw`、asset checksum、原始研究檔與既有 provenance 都是不可靜默覆寫的證據。新結果使用帶日期的新 research status 與新的 `research/raw/` 檔，新增 provenance 指回再研究前的 detail path；只有通過 schema、location、acquisition、source URL 與 relation candidate 驗證後才更新 canonical snapshot／DB。
+4. **有限關聯**：送給模型的 related candidates 必須來自 SQLite 索引的有限集合（預設最多 8），不得把整個 archive 或全部長版研究塞進 prompt。模型只能從候選集合選 relation；寫入時再次檢查 ID、未刪除狀態、一句具體 note 與雙向一致性。
+5. **非同步工作**：每個 add／reresearch job 保存 kind、status、建立／開始／完成時間、model、完整自動 prompt、SKILL path／SHA-256、OpenAI response ID、結果或錯誤。狀態依序為 queued／in_progress／applying／completed 或 failed；UI 每秒顯示 elapsed time，定期 poll，reload 後也要從 DB 恢復未完成工作。只有 validated result 能進入 applying；失敗保留 job 與 intake，不留下半套 canonical record。
+6. **API key 與網路邊界**：`OPENAI_API_KEY` 只能由 server process 的環境變數讀取，不得送進 client bundle、API response、snapshot、SQLite、prompt、log 或 Git。瀏覽器只讀取 `ai_configured` 布林狀態。寫入 endpoint 至少驗證 same-origin；目前仍只在可信任 LAN／VPN 開放，若改為多人或公開網路，先加入身分驗證、授權、rate limit 與支出限制。
+7. **原子更新與回饋**：OpenAI background response 完成不等於資料已寫入；必須先進入 applying，保存新的 research raw file，備份 DB，驗證 snapshot ↔ SQLite round-trip，再標 completed。任何可重複出現的 schema、prompt、研究或 UI 問題都回到本 Skill、自動 prompt builder 與對應 test 一起修正。
 
 ### 7. 測試、驗證與交付
 

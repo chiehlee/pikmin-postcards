@@ -28,6 +28,23 @@ mise exec node@22.23.2 -- npm run dev:lan
 
 目前沒有登入機制。只應在可信任的區網或 VPN 上開放，並由主機防火牆限制可連線來源。
 
+## 網站內管理與 AI 再研究
+
+首頁右上角的「新增明信片」可上傳本機圖片或提供 HTTP(S)／Dropbox 圖片網址。圖片會先通過格式、100 MiB 上限與 SHA-256 檢查，原樣保存到本機 intake；若不是 exact duplicate，才依 [專案收錄 SKILL](.agents/skills/pikmin-postcard-intake/SKILL.md) 自動建立研究 prompt、呼叫 web search，並在驗證結構化結果後同步 `research/raw/`、JSON snapshot 與 SQLite。
+
+每張明信片視窗另有兩個管理操作：
+
+- 「再研究」：建立 OpenAI background job；UI 顯示 queued／研究中／更新資料庫／完成或失敗，以及持續時間。重新載入頁面會從 SQLite 找回未完成工作並繼續 polling；遠端 response 完成後仍要等本機驗證與 applying 成功，才算網站已更新。
+- 「刪除」：需再次確認，只 soft delete 當前 postcard。正常列表會隱藏它，但原圖、研究檔、SQLite row、provenance、關聯及其他疑似重複明信片都保留，ID 不回收。
+
+AI key 只由 server process 讀取，瀏覽器只會收到「是否已設定」的布林值。先從範本建立不進 Git 的本機環境檔：
+
+```bash
+cp .env.example .env.local
+```
+
+再把 `OPENAI_API_KEY` 填入 `.env.local`，重啟 server。不要使用 `NEXT_PUBLIC_` 前綴，也不要把真正的 key 貼進程式、snapshot、SQLite 或 commit。這個 repository 目前刻意不含任何 API key；功能與測試完成後再一起做實際設定。
+
 正式建置與啟動：
 
 ```bash
@@ -54,7 +71,7 @@ npm run verify
 - `test:unit`：純函式與領域規則，包含 line 95%、branch 80%、function 95% 的 coverage gate。
 - `test:regression`：canonical 圖片、資料筆數、來源分類、雙向關聯、JSON ↔ SQLite round-trip 與既有 bug cases。
 - `test:functional`：先 production build，再從外部邊界測試圖片 intake、關聯候選 CLI、HTTP 網站與 canonical 圖片。
-- `test:ui`：以 Playwright Chromium 在桌面與手機 viewport 操作 production UI；涵蓋 modal 捲動、鍵盤／焦點、背景關閉與 Google Map 延遲載入。失敗時保留 screenshot、trace 與 video。
+- `test:ui`：以 Playwright Chromium 在桌面與手機 viewport 操作 production UI；涵蓋 modal 捲動、鍵盤／焦點、背景關閉、Google Map 延遲載入，以及新增、soft delete、再研究進度與完成後 UI 更新。失敗時保留 screenshot、trace 與 video。
 - `test:quick`：開發中快速執行 unit + regression。
 - `test:watch`：修改程式時持續重跑 unit + regression，提供即時回饋。
 - 第一次在新電腦執行 UI test 前先跑 `npx playwright install chromium`。`npm test` 等同完整的 `test:all`；`npm run verify` 再加上 lint、TypeScript、DB integrity/query plans 與資料統計，是 commit 前固定入口。
@@ -125,6 +142,7 @@ npm run check:duplicate -- \
 - `var/pikmin-postcards.sqlite3`：本機 SQLite operational database（不進 Git）。
 - `var/image-inbox/`：尚未 canonicalize 的本機圖片 intake（以 SHA-256 命名，不進 Git）。
 - `db/migrations/`：可版控、依序執行的資料庫 schema migrations。
+- `ai_jobs`（SQLite）：保存 UI 新增／再研究工作的 prompt、SKILL checksum、OpenAI response ID、狀態、時間、結果或錯誤；不保存 API key。
 - `public/images/postcards/`：不可變更的原始截圖。
 - `data/postcards.json`：網站使用、可攜且可版控的 canonical postcard snapshot。
 - `data/friends.json`：由已確認寄件人觀察形成的保守推論。
