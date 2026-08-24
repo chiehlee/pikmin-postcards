@@ -13,9 +13,12 @@ const outputDirectory = path.join(projectRoot, "public/images/friends");
 const shouldCommit = process.argv.includes("--commit");
 
 // These screenshots were captured with the postcard sheet scrolled lower than usual.
-const shiftedPostcardIds = new Set(["pc-0082", "pc-0084", "pc-0137"]);
+const shiftedPostcardIds = new Set(["pc-0082", "pc-0084", "pc-0137", "pc-0150"]);
 const defaultCrop = { centerX: 0.69, centerY: 0.373, size: 0.13 };
 const shiftedCrop = { ...defaultCrop, centerY: 0.675 };
+const cropOverrides = new Map([
+  ["pc-0150", { ...shiftedCrop, centerX: 0.675 }],
+]);
 
 const postcardArchive = JSON.parse(await readFile(postcardsPath, "utf8"));
 const friendArchive = JSON.parse(await readFile(friendsPath, "utf8"));
@@ -42,7 +45,8 @@ for (const profile of friendArchive.profiles) {
   );
 
   const source = candidates[0];
-  const cropRatio = shiftedPostcardIds.has(source.postcard.id) ? shiftedCrop : defaultCrop;
+  const cropRatio = cropOverrides.get(source.postcard.id)
+    ?? (shiftedPostcardIds.has(source.postcard.id) ? shiftedCrop : defaultCrop);
   const size = Math.round(source.width * cropRatio.size);
   const x = clamp(Math.round(source.width * cropRatio.centerX - size / 2), 0, source.width - size);
   const y = clamp(Math.round(source.height * cropRatio.centerY - size / 2), 0, source.height - size);
