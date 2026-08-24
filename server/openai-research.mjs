@@ -35,6 +35,7 @@ export function buildResearchPrompt({ kind, postcard = null, intakeNote = "", us
     operation,
     "請使用 web search，實際開啟每個採用的來源。summary 是精簡版；detail_body 是可獨立閱讀的繁體中文長版研究，不得只是摘要換句話說。",
     "所有來源、事實、推論與未解問題要分開。找不到可靠證據時降低信心，不補造地址、座標、寄件人或故事。",
+    "若畫面有已確認寄件人的圓形 Mii avatar，回傳只包住 avatar 的方形 sender_avatar_crop：center_x、center_y、size 都是相對整張原始截圖寬高的 0–1 數值，confidence 使用 high／medium／low。看不清、被切掉、不是寄件人或無法可靠定位時，三個數值一律 null，不可猜測。這只提供原圖裁切框，不得生成或重畫人物。",
     "每次都要順便研究 POI／現物的實際地址，不限國家：先以官方或可靠來源嘗試 full_address；無法證實才依 full_address → road → locality → district → city → region → country → unknown 逐級退回。address_local 必須保存來源支持的最深層級，precision 必須與它一致；在 confirmed_facts 說明地址依據，若只能退回較粗層級則在 unresolved_questions 說明缺少什麼證據。不得從遊戲顯示地名或地圖搜尋結果猜門牌。",
     "若實際開啟的研究來源中有能直接說明該地點、現物或故事的圖片，可在 reference_images 提議 1–3 張；每張的 source_page_url 必須同時列在 research.sources，image_url 必須是可下載的直接 HTTP(S) 圖片網址，並提供繁體中文 caption、alt 與可確認的 credit。沒有可靠圖片就回傳空陣列，不用湊數、不得虛構或只放裝飾圖。",
     "related_postcards 只能從下列有限候選中選；只有能用一句具體理由連起來時才回傳，弱候選直接略過。",
@@ -49,6 +50,7 @@ export function buildMetadataPrompt({ intakeNote = "" } = {}) {
   return [
     "這是快速建檔，不是地方研究。只讀取這張 Pikmin Bloom 截圖中直接可見的文字與介面證據，不使用 web search，也不推論地點故事、地址、座標、收藏評分或其他明信片關聯。",
     "辨識 POI 名稱、遊戲顯示地點、見つけた日、寄件人文字，以及フレンドに送る按鈕／寄件人區域是否可見。見つけた日是 found_date，不是寄送日期。",
+    "若畫面有已確認寄件人的圓形 Mii avatar，回傳只包住 avatar 的方形 sender_avatar_crop：center_x、center_y、size 都是相對整張原始截圖寬高的 0–1 數值，confidence 使用 high／medium／low。看不清、被切掉、不是寄件人或無法可靠定位時，三個數值一律 null，不可猜測。",
     "保留畫面原文與原字體語言；看不清楚時使用 null、空字串或 screenshot_notes 說明，不要把檔名、常識或猜測補成正式 metadata。",
     intakeNote ? `使用者備註：${intakeNote}` : null,
   ].filter(Boolean).join("\n\n");
@@ -174,6 +176,12 @@ const requiredObject = (properties) => ({
   properties,
   required: Object.keys(properties),
 });
+const avatarCropSchema = requiredObject({
+  center_x: nullableNumber,
+  center_y: nullableNumber,
+  size: nullableNumber,
+  confidence: { type: "string", enum: ["high", "medium", "low"] },
+});
 
 export const metadataSchema = requiredObject({
   visible: requiredObject({
@@ -184,6 +192,7 @@ export const metadataSchema = requiredObject({
     send_to_friend_visible: { type: ["boolean", "null"] },
     sender_panel_visible: { type: ["boolean", "null"] },
     sender_area_blank: { type: ["boolean", "null"] },
+    sender_avatar_crop: avatarCropSchema,
     screenshot_notes: { type: "array", items: { type: "string" } },
   }),
 });
@@ -195,6 +204,7 @@ export const researchSchema = requiredObject({
     found_date: { type: ["string", "null"], pattern: "^\\d{4}-\\d{2}-\\d{2}$" },
     sender: nullableString,
     send_to_friend_visible: { type: ["boolean", "null"] },
+    sender_avatar_crop: avatarCropSchema,
     screenshot_notes: { type: "array", items: { type: "string" } },
   }),
   acquisition: requiredObject({

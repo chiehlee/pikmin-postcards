@@ -159,13 +159,15 @@ npm run related:candidates -- --id pc-XXXX --limit 8
 
 自動據點只建立保守的 `early-signal`：同一天不論有幾張都只算一個日期；同一地理層級至少 3 個不同 `found_date`、首末跨至少 14 天、占該玩家全部有效日期至少 60%，而且不能與同層候選並列第一。優先使用可反覆比較的行政區／城市層級，不用單一 POI 或完整門牌當生活據點。未達門檻時維持 low confidence／needs-review，14 天內的多日集中只標成 possible trip cluster。既有人工判斷在至少 2 個日期仍支持且沒有更強矛盾時保留；不同 sender 字串仍是不同玩家。每次分析保存 evidence postcard IDs、規則版本與只含 sender、日期、正規化地點／座標的 fingerprint，讓不相關的研究文字更新不會造成重算。
 
-Friends 頁面的 Mii avatar 使用最高品質、可確認寄件人的證據截圖產生：
+Friends 頁面的 Mii avatar 使用最高品質、可確認寄件人的證據截圖產生。這是 backend intake／再研究完成流程的一部分，不得依賴維護者事後手動補圖：同一次 AI 畫面判讀應在 `visible.sender_avatar_crop` 回傳方形框的 `center_x`、`center_y`、`size`（相對原始截圖的 0–1 座標）與 confidence；看不清時回傳 null，不可猜測。Backend 只接受 confirmed sender、high／medium confidence 且完全在圖片邊界內的框，再以 ImageMagick 做原圖像素裁切、原子寫入朋友 avatar metadata 與 DB。avatar 失敗不得回滾已成功的 postcard，但必須在 friend profile 保存 `avatar_generation` 狀態，下一次有效證據變動時自動重試。
+
+下列指令只作既有資料 repair／backfill，不是正常新增流程的必要步驟：
 
 ```bash
 npm run friends:avatars -- --commit
 ```
 
-這是可丟棄後重建的 derived asset，不是身份證明。每次加入同一名稱的新證據，都比較來源像素尺寸與實際清晰度；更好的候選應更新 avatar path／checksum／crop provenance，但保留原始 postcard assets。不同 sender ID 的 Mii 看似相同時仍維持兩個 profile，等待使用者個案合併指示。
+這是可丟棄後重建的 derived asset，不是身份證明。每次加入同一名稱的新證據，都比較實際 crop 像素尺寸與判讀信心；更好的候選應由 backend 自動更新 avatar path／checksum／crop provenance，但保留原始 postcard assets。不同 sender ID 的 Mii 看似相同時仍維持兩個 profile，等待使用者個案合併指示。
 
 ### 6. Canonicalize 並同步網站／DB
 

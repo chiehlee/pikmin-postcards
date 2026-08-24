@@ -1,4 +1,5 @@
 import { acquisitionFromEvidence } from "../lib/acquisition.mjs";
+import { normalizeAvatarCropHint } from "./friend-avatars.mjs";
 
 export const pendingResearchSummary = "目前只完成明信片畫面資訊的快速建檔，尚未進行地點、故事、地址、評分或關聯研究；可隨時使用「再研究」補完。";
 
@@ -14,6 +15,9 @@ export function metadataIntakeFields(result) {
     visible,
     acquisition,
     location: provisionalLocation(visible.game_location),
+    avatarCrop: acquisition.sender_status === "confirmed"
+      ? normalizeAvatarCropHint(visible.sender_avatar_crop)
+      : null,
   };
 }
 
@@ -58,6 +62,7 @@ function normalizeVisibleMetadata(result) {
     send_to_friend_visible: nullableBoolean(visible.send_to_friend_visible),
     sender_panel_visible: nullableBoolean(visible.sender_panel_visible),
     sender_area_blank: nullableBoolean(visible.sender_area_blank),
+    sender_avatar_crop: normalizeAvatarCropHint(visible.sender_avatar_crop),
     screenshot_notes: uniqueStrings(visible.screenshot_notes),
   };
 }

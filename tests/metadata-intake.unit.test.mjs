@@ -16,6 +16,7 @@ function result(overrides = {}) {
       send_to_friend_visible: true,
       sender_panel_visible: null,
       sender_area_blank: null,
+      sender_avatar_crop: { center_x: null, center_y: null, size: null, confidence: "low" },
       screenshot_notes: ["按鈕清楚", "按鈕清楚", ""],
       ...overrides,
     },
@@ -46,10 +47,12 @@ test("quick intake preserves confirmed sender text without inventing research", 
     sender: " V ",
     send_to_friend_visible: false,
     sender_panel_visible: true,
+    sender_avatar_crop: { center_x: 0.7, center_y: 0.4, size: 0.1, confidence: "high" },
   }));
   assert.equal(fields.visible.sender, "V");
   assert.equal(fields.acquisition.type, "received");
   assert.equal(fields.acquisition.sender_status, "confirmed");
+  assert.deepEqual(fields.avatarCrop, { center_x: 0.7, center_y: 0.4, size: 0.1, confidence: "high" });
   const research = pendingResearch("research/raw/pc-test-fast.md");
   assert.equal(research.status, "metadata_only_pending_research");
   assert.equal(research.summary, pendingResearchSummary);

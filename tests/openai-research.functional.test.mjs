@@ -56,8 +56,10 @@ test("quick metadata request uses GPT-5.6's lowest supported reasoning and no we
     assert.match(prompt, /不是地方研究/);
     assert.match(prompt, /不使用 web search/);
     assert.match(prompt, /批次旅行/);
+    assert.match(prompt, /sender_avatar_crop/);
     assert.deepEqual(metadataSchema.required, ["visible"]);
     assert.ok(metadataSchema.properties.visible.required.includes("sender_area_blank"));
+    assert.ok(metadataSchema.properties.visible.required.includes("sender_avatar_crop"));
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -108,7 +110,9 @@ test("research request uses server authorization, background mode, web search, i
     assert.match(prompt, /北投教會就在我經營的 Subway/);
     assert.match(prompt, /第一手／使用者提供內容/);
     assert.match(prompt, /不得冒充外部已證實事實/);
+    assert.match(prompt, /不得生成或重畫人物/);
     assert.ok(researchSchema.required.includes("reference_images"));
+    assert.ok(researchSchema.properties.visible.required.includes("sender_avatar_crop"));
     assert.match(researchSchema.properties.location.properties.address_local.description, /所有國家都先嘗試實際完整地址/);
     assert.equal(researchSchema.properties.reference_images.maxItems, 3);
     assert.deepEqual(

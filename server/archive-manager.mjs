@@ -10,6 +10,7 @@ import { resolveStoredLocalPath } from "../db/asset-paths.mjs";
 import { backupDatabase, defaultDatabasePath, openDatabase, projectRoot } from "../db/database.mjs";
 import { exportSnapshots, loadSnapshots, replaceDatabaseFromSnapshots, writeSnapshots } from "../db/snapshots.mjs";
 import { readUploadSource, stageImage } from "./image-intake.mjs";
+import { ensureFriendAvatars, normalizeAvatarCropHint } from "./friend-avatars.mjs";
 import { metadataIntakeFields, pendingResearch } from "./metadata-intake.mjs";
 import { runLocalCodexMetadata, runLocalCodexResearch } from "./local-codex.mjs";
 import { preserveResearchImages, safeRemoteLocator } from "./research-images.mjs";
@@ -506,6 +507,7 @@ async function applyReresearch(snapshots, job, result) {
   const record = snapshots.postcards.postcards.find((item) => item.id === job.postcard_id);
   if (!record || record.lifecycle?.deleted_at) throw new Error("再研究目標已不存在或已刪除");
   const previousFriendEvidence = JSON.stringify(friendEvidenceForPostcard(record));
+  const previousAvatarCrop = JSON.stringify(record.visual?.sender_avatar_crop ?? null);
   const location = normalizedLocation(result.location, record.location.raw);
   validateResult(result, location);
   const allowedCandidates = relatedCandidatesFromSnapshots(snapshots, record);
@@ -525,6 +527,13 @@ async function applyReresearch(snapshots, job, result) {
   record.location = location;
   record.research = normalizedResearch(result.research, sourcePath, researchImages);
   record.research.status = `ui-reresearched-${localDate()}`;
+  const avatarCrop = result.visible.sender === record.sender
+    ? normalizeAvatarCropHint(result.visible.sender_avatar_crop)
+    : null;
+  record.visual = {
+    ...(record.visual ?? {}),
+    sender_avatar_crop: avatarCrop ?? record.visual?.sender_avatar_crop ?? null,
+  };
   record.curation = {
     ...record.curation,
     rating: result.curation.rating,
@@ -552,18 +561,20 @@ async function applyReresearch(snapshots, job, result) {
     user_note: userNote,
   });
   applyRelations(snapshots.postcards.postcards, record, result.related_postcards, allowedCandidates);
-  if (
-    record.sender
-    && record.acquisition?.sender_status === "confirmed"
-    && JSON.stringify(friendEvidenceForPostcard(record)) !== previousFriendEvidence
-  ) {
-    updateFriendProfilesForEvidenceChange(snapshots, [record.sender]);
+  if (record.sender && record.acquisition?.sender_status === "confirmed") {
+    const evidenceChanged = JSON.stringify(friendEvidenceForPostcard(record)) !== previousFriendEvidence;
+    const avatarEvidenceChanged = JSON.stringify(record.visual.sender_avatar_crop) !== previousAvatarCrop;
+    const profile = snapshots.friends.profiles.find((item) => item.name === record.sender);
+    if (evidenceChanged) updateFriendProfilesForEvidenceChange(snapshots, [record.sender]);
+    if (evidenceChanged || avatarEvidenceChanged || !profile?.avatar) {
+      result.avatar_generation = await ensureFriendAvatars(snapshots, { affectedNames: [record.sender] });
+    }
   }
   return record;
 }
 
 async function applyMetadataAdd(snapshots, job, result) {
-  const { visible, acquisition, location } = metadataIntakeFields(result);
+  const { visible, acquisition, location, avatarCrop } = metadataIntakeFields(result);
   const intake = await intakeForJob(job);
   const promoted = await promoteIntakeAsset(snapshots, job, intake, visible.found_date);
   validateAcquisition({ id: promoted.id, sender: visible.sender, acquisition });
@@ -595,11 +606,13 @@ async function applyMetadataAdd(snapshots, job, result) {
     }],
     related_postcards: [],
     acquisition,
+    visual: { sender_avatar_crop: avatarCrop },
   };
   const matches = metadataMatches(snapshots.postcards.postcards, record);
   snapshots.postcards.postcards.push(record);
   if (record.sender && record.acquisition.sender_status === "confirmed") {
     updateFriendProfilesForEvidenceChange(snapshots, [record.sender]);
+    result.avatar_generation = await ensureFriendAvatars(snapshots, { affectedNames: [record.sender] });
   }
   for (const match of matches) addSymmetricRelation(record, match, {
     relationship: "same-metadata-different-image",
@@ -653,11 +666,17 @@ async function applyAdd(snapshots, job, result) {
     }],
     related_postcards: [],
     acquisition,
+    visual: {
+      sender_avatar_crop: acquisition.sender_status === "confirmed"
+        ? normalizeAvatarCropHint(result.visible.sender_avatar_crop)
+        : null,
+    },
   };
   const matches = metadataMatches(snapshots.postcards.postcards, record);
   snapshots.postcards.postcards.push(record);
   if (record.sender && record.acquisition.sender_status === "confirmed") {
     updateFriendProfilesForEvidenceChange(snapshots, [record.sender]);
+    result.avatar_generation = await ensureFriendAvatars(snapshots, { affectedNames: [record.sender] });
   }
   for (const match of matches) addSymmetricRelation(record, match, {
     relationship: "same-metadata-different-image",

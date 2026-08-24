@@ -85,6 +85,11 @@ for (const profile of friendArchive.profiles) {
       source_height: source.height,
       crop: { x, y, width: size, height: size },
     };
+    profile.avatar_generation = {
+      version: 1,
+      status: "repair-backfill",
+      source_postcard_id: source.postcard.id,
+    };
   }
   report.push(result);
 }

@@ -46,7 +46,13 @@ npm run docs:screenshots
 
 ## 五分鐘本機安裝
 
-需要 macOS、Git 與 Node.js 22.13 以上；專案的 `.node-version` 固定為 22.23.2。第一次安裝：
+需要 macOS、Git、ImageMagick 與 Node.js 22.13 以上；專案的 `.node-version` 固定為 22.23.2。先安裝圖片裁切工具：
+
+```bash
+brew install imagemagick
+```
+
+再安裝專案：
 
 ```bash
 git clone git@github.com-chiehlee:chiehlee/pikmin-postcards.git
@@ -224,6 +230,8 @@ npm run check:duplicate -- \
 ## 朋友足跡
 
 朋友卡預設只顯示 Mii avatar 與寄件人／遊戲 ID，讓同一個螢幕容納更多玩家；若有保守推測的據點，會在 ID 同一排顯示「可能據點」。信心、觀察數、避免寄送、研究說明與明信片收進「展開資料與明信片」。每位朋友展開後最多直接顯示 5 張明信片；超過時顯示「更多」與剩餘張數。點擊後會開啟獨立、可捲動的完整清單 popup，可用鍵盤循環焦點、Esc 或背景點擊關閉，也能從清單繼續開啟單張明信片。
+
+新增或再研究完成時，同一次 AI 畫面判讀會提供已確認寄件人 Mii 的正規化裁切框；backend 驗證信心與邊界後，自動以原圖像素產生 WebP avatar，並將來源 postcard、來源 checksum、crop box 與生成狀態寫回朋友資料和 SQLite。後續同名玩家出現更高實際 crop 像素的可靠截圖時會自動替換；ImageMagick 暫時不可用或畫面無法可靠定位時不會回滾 postcard，而會保存失敗／等待證據狀態，於下一次有效證據變動自動重試。`npm run friends:avatars -- --commit` 只保留作舊資料 repair／backfill，不是正常流程。
 
 據點分析不是按日排程。新增已確認寄件人的明信片，或再研究真的改變該玩家的日期／研究定位證據時，系統只重算受影響的玩家；批次匯入則每位玩家最多重算一次。自動早期訊號需要同一區域至少 3 個不同日期、跨 14 天並占全部有效日期至少 60%；同日多張只算一次，短期集中另視為可能旅遊群集。Soft delete 仍保留既有朋友證據，不會因清理疑似重複明信片而扭曲玩家足跡。
 
