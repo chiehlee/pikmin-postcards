@@ -7,6 +7,7 @@ export type SortablePostcard = {
   id: string;
   found_date: string | null;
   archived_on: string | null;
+  archived_at?: string | null;
   curation: {
     rating: number | null;
   };
@@ -34,6 +35,7 @@ export type PaginationResult<T> = {
 };
 
 export function postcardCoordinates(record: Pick<SortablePostcard, 'location'>): Coordinates | null;
+export function archiveTimestamp(record: Pick<SortablePostcard, 'archived_on' | 'archived_at'>): string | null;
 export function distanceKilometers(
   record: Pick<SortablePostcard, 'location'>,
   origin: Coordinates | null,

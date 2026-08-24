@@ -253,7 +253,12 @@ function group(language, countryCode, country, countryEndonym, defaultPrecision,
 }
 
 function taiwanRoad(endonym, addressLocal) {
-  return { endonym, address_local: addressLocal, zh_tw: null, precision: "road" };
+  return {
+    endonym,
+    address_local: addressLocal,
+    zh_tw: null,
+    precision: addressLocal.includes("號") ? "full_address" : "road",
+  };
 }
 
 function japanAddress(endonym) {

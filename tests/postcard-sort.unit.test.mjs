@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  archiveTimestamp,
   distanceKilometers,
   paginateRecords,
   postcardCoordinates,
@@ -8,8 +9,8 @@ import {
 } from "../lib/postcard-sort.mjs";
 
 const records = [
-  postcard("a", 4, "2026-05-03", "2026-08-01", 0, 1),
-  postcard("b", 2, "2026-05-01", "2026-08-03", 0, 2),
+  postcard("a", 4, "2026-05-03", "2026-08-01", 0, 1, "2026-08-01T01:02:03Z"),
+  postcard("b", 2, "2026-05-01", "2026-08-03", 0, 2, "2026-08-03T03:02:01Z"),
   postcard("c", null, null, null, null, null),
   postcard("d", 4, "2026-05-02", "2026-08-02", 0, 3),
 ];
@@ -21,6 +22,17 @@ test("rating, found date, and archive date sorting support both directions while
   assert.deepEqual(ids(sortPostcards(records, { field: "found_date", direction: "asc" })), ["b", "d", "a", "c"]);
   assert.deepEqual(ids(sortPostcards(records, { field: "archived_on", direction: "desc" })), ["b", "d", "a", "c"]);
   assert.deepEqual(ids(sortPostcards(records, { field: "archived_on", direction: "asc" })), ["a", "d", "b", "c"]);
+});
+
+test("archive sorting uses the second-precision timestamp and falls back to the legacy date", () => {
+  const sameDay = [
+    postcard("early", 1, null, "2026-08-23", null, null, "2026-08-23T00:00:01Z"),
+    postcard("legacy", 1, null, "2026-08-23", null, null),
+    postcard("late", 1, null, "2026-08-23", null, null, "2026-08-23T00:00:02Z"),
+  ];
+  assert.deepEqual(ids(sortPostcards(sameDay, { field: "archived_on", direction: "desc" })), ["late", "early", "legacy"]);
+  assert.equal(archiveTimestamp(sameDay[0]), "2026-08-23T00:00:01Z");
+  assert.equal(archiveTimestamp(sameDay[1]), "2026-08-23");
 });
 
 test("distance sorting supports nearest and farthest with ungeocoded records last", () => {
@@ -59,11 +71,12 @@ test("pagination slices the globally sorted collection into 60-card pages", () =
   );
 });
 
-function postcard(id, rating, foundDate, archivedOn, latitude, longitude) {
+function postcard(id, rating, foundDate, archivedOn, latitude, longitude, archivedAt = null) {
   return {
     id,
     found_date: foundDate,
     archived_on: archivedOn,
+    archived_at: archivedAt,
     curation: { rating },
     location: { raw: `${latitude}, ${longitude}`, latitude, longitude },
   };

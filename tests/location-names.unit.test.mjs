@@ -87,10 +87,10 @@ test("validation rejects a translated language without zh-TW and a stale display
   ]);
 });
 
-test("Taiwan keeps a road-level display while the map query uses the full address", () => {
+test("Taiwan displays the fullest researched address when evidence supports it", () => {
   const location = {
     raw: "Ankang, Xinyi District",
-    display: "臺北市信義區松仁路",
+    display: "臺北市信義區松仁路89號",
     endonym: "臺北市信義區松仁路",
     zh_tw: null,
     language: "zh-Hant-TW",
@@ -98,11 +98,11 @@ test("Taiwan keeps a road-level display while the map query uses the full addres
     country: "臺灣",
     country_endonym: "臺灣",
     address_local: "臺北市信義區松仁路89號",
-    precision: "road",
+    precision: "full_address",
     name_status: "researched",
     name_confidence: "high",
   };
-  assert.equal(researchedLocationDisplay(location), "臺北市信義區松仁路");
+  assert.equal(researchedLocationDisplay(location), "臺北市信義區松仁路89號");
   assert.equal(researchedLocationQuery(location), "臺北市信義區松仁路89號");
   assert.deepEqual(validateLocationNaming(location), []);
 });
