@@ -48,7 +48,7 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
   `);
   const insertPostcard = database.prepare(`
     INSERT INTO postcards (
-      id, sort_order, record_type, poi_name, found_date, received_at, archived_on, sender,
+      id, sort_order, record_type, poi_name, found_date, received_at, archived_on, archived_at, sender,
       acquisition_type, sender_status, acquisition_confidence, acquisition_evidence_json,
       location_raw, location_display, location_endonym, location_zh_tw, location_language,
       location_name_status, location_name_confidence, location_country_endonym,
@@ -58,7 +58,7 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
       recommendation, curation_status, personal_relevance, star_visible,
       deletion_toast_visible, research_status, research_confidence,
       research_confidence_label, research_summary, deleted_at, deleted_reason, document_json
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const insertTag = database.prepare(
     "INSERT INTO postcard_tags (postcard_id, tag, sort_order) VALUES (?, ?, ?)",
@@ -78,8 +78,8 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
     INSERT INTO postcard_provenance (
       postcard_id, sort_order, source_session, source_sequence, source_bundle,
       source_bundle_sha256, source_screenshot, original_filename,
-      byte_identical_occurrence_group_json, screenshot_notes, research_status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      byte_identical_occurrence_group_json, screenshot_notes, research_status, user_note
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const insertRelation = database.prepare(`
     INSERT INTO postcard_relations (postcard_id, related_postcard_id, relationship, note)
@@ -145,6 +145,7 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
         record.found_date,
         record.received_at,
         record.archived_on,
+        record.archived_at ?? null,
         record.sender,
         acquisition.type,
         acquisition.sender_status,
@@ -221,6 +222,7 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
             : JSON.stringify(provenance.byte_identical_occurrence_group),
           provenance.screenshot_notes ?? null,
           provenance.research_status ?? null,
+          provenance.user_note ?? null,
         ),
       );
     });

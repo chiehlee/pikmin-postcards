@@ -11,6 +11,26 @@ test("SQLite migration preserves every snapshot field exactly", async () => {
   const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "pikmin-db-test-"));
   const databasePath = path.join(temporaryDirectory, "archive.sqlite3");
   const snapshots = await loadSnapshots();
+  snapshots.postcards.postcards[0].research.images = [{
+    path: "/images/research/pc-0001/job-test-1-abc123.png",
+    sha256: "a".repeat(64),
+    bytes: 1234,
+    media_type: "image/png",
+    source_page_url: "https://example.com/story",
+    source_page_url_sha256: "b".repeat(64),
+    source_image_url: "https://example.com/photo.png",
+    source_image_url_sha256: "c".repeat(64),
+    caption: "研究故事的參考圖片",
+    alt: "測試地點的外觀",
+    credit: "Example Museum",
+  }];
+  snapshots.postcards.postcards[0].user_contributions = [{
+    kind: "reresearch_note",
+    body: "我親身到過這裡。",
+    recorded_at: "2026-08-23T01:02:03.000Z",
+    job_id: "job-roundtrip",
+  }];
+  snapshots.postcards.postcards[0].provenance[0].user_note = "我親身到過這裡。";
   for (const postcardId of ["pc-0111", "pc-0112"]) {
     const postcard = snapshots.postcards.postcards.find((record) => record.id === postcardId);
     postcard.related_postcards[0].note = "相同 POI、日期與地點的兩張獨立遊戲截圖。";
@@ -21,16 +41,21 @@ test("SQLite migration preserves every snapshot field exactly", async () => {
     replaceDatabaseFromSnapshots(database, snapshots);
     database.prepare(`
       INSERT INTO ai_jobs (
-        id, kind, status, postcard_id, model, skill_path, skill_sha256, prompt,
+        id, kind, status, postcard_id, user_note, model, skill_path, skill_sha256, prompt,
         created_at, updated_at
-      ) VALUES ('job-roundtrip', 'reresearch', 'queued', 'pc-0001', 'test-model',
+      ) VALUES ('job-roundtrip', 'reresearch', 'queued', 'pc-0001', '我親身到過這裡。', 'test-model',
         '.agents/skills/pikmin-postcard-intake/SKILL.md', 'abc123', 'test prompt',
         '2026-08-23T00:00:00.000Z', '2026-08-23T00:00:00.000Z')
     `).run();
     replaceDatabaseFromSnapshots(database, snapshots);
     assert.deepEqual(exportSnapshots(database), snapshots);
     assert.equal(database.prepare("SELECT count(*) AS count FROM ai_jobs WHERE id = 'job-roundtrip'").get().count, 1);
+    assert.equal(database.prepare("SELECT provider FROM ai_jobs WHERE id = 'job-roundtrip'").get().provider, "openai_api");
+    assert.equal(database.prepare("SELECT reasoning_effort FROM ai_jobs WHERE id = 'job-roundtrip'").get().reasoning_effort, "high");
+    assert.equal(database.prepare("SELECT user_note FROM ai_jobs WHERE id = 'job-roundtrip'").get().user_note, "我親身到過這裡。");
+    assert.equal(database.prepare("SELECT user_note FROM postcard_provenance WHERE postcard_id = 'pc-0001' AND sort_order = 0").get().user_note, "我親身到過這裡。");
     assert.ok(database.prepare("PRAGMA table_info(postcards)").all().some((column) => column.name === "deleted_at"));
+    assert.ok(database.prepare("PRAGMA table_info(postcards)").all().some((column) => column.name === "archived_at"));
     assert.equal(
       database.prepare(`
         SELECT note FROM postcard_relations
@@ -40,20 +65,27 @@ test("SQLite migration preserves every snapshot field exactly", async () => {
     );
     assert.equal(database.prepare("PRAGMA integrity_check").get().integrity_check, "ok");
     assert.deepEqual(database.prepare("PRAGMA foreign_key_check").all(), []);
-    assert.equal(database.prepare("SELECT count(*) AS count FROM postcards").get().count, 148);
-    assert.equal(database.prepare("SELECT count(*) AS count FROM research_details").get().count, 148);
+    const postcardCount = snapshots.postcards.postcards.length;
+    assert.equal(database.prepare("SELECT count(*) AS count FROM postcards").get().count, postcardCount);
+    assert.equal(database.prepare("SELECT count(*) AS count FROM research_details").get().count, postcardCount);
+    const expectedResearchStatuses = Object.entries(
+      snapshots.postcards.postcards.reduce((counts, postcard) => {
+        const status = postcard.research.detail.status;
+        counts[status] = (counts[status] ?? 0) + 1;
+        return counts;
+      }, {}),
+    )
+      .map(([status, count]) => ({ status, count }))
+      .sort((left, right) => left.status.localeCompare(right.status));
     assert.deepEqual(
       database
         .prepare("SELECT status, count(*) AS count FROM research_details GROUP BY status ORDER BY status")
         .all()
         .map((row) => ({ ...row })),
-      [
-        { status: "raw_preserved", count: 20 },
-        { status: "structured_preserved", count: 128 },
-      ],
+      expectedResearchStatuses,
     );
     const assets = database.prepare("SELECT local_path FROM assets").all();
-    assert.equal(assets.length, 149);
+    assert.equal(assets.length, postcardCount + snapshots.context.records.length);
     assert.ok(assets.every((asset) => asset.local_path.startsWith("public/images/")));
     assert.ok(assets.every((asset) => path.isAbsolute(resolveStoredLocalPath(asset.local_path))));
 

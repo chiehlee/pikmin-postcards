@@ -22,8 +22,13 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
   try {
     assertSameOrigin(request);
-    const body = await request.json() as { api_key?: string; model?: string };
-    return jsonResponse(await saveSettings({ apiKey: body.api_key, model: body.model }, {
+    const body = await request.json() as { api_key?: string; model?: string; provider?: 'openai_api' | 'local_codex'; reasoning_effort?: string };
+    return jsonResponse(await saveSettings({
+      apiKey: body.api_key,
+      model: body.model,
+      provider: body.provider,
+      reasoningEffort: body.reasoning_effort,
+    }, {
       secretWriteAllowed: isLoopbackRequest(request),
     }));
   } catch (error) {

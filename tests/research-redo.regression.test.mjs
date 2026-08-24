@@ -13,7 +13,7 @@ import {
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const postcards = JSON.parse(await readFile(path.join(root, "data/postcards.json"), "utf8")).postcards;
 
-test("compaction-gap research redo has exact, unique coverage", () => {
+test("compaction-gap research redo remains preserved or is traceably superseded", () => {
   assert.equal(targetIds.length, 107);
   assert.equal(new Set(targetIds).size, 107);
   const byId = new Map(postcards.map((record) => [record.id, record]));
@@ -21,11 +21,18 @@ test("compaction-gap research redo has exact, unique coverage", () => {
   for (const id of targetIds) {
     const record = byId.get(id);
     assert.ok(record, `${id} is missing from the archive`);
-    assert.equal(record.research.status, "re-researched_after_compaction_gap_2026-08-23");
     assert.equal(record.research.detail.status, "structured_preserved");
-    assert.equal(record.research.detail.source_path, recoverySourcePath);
     assert.equal(record.research.detail.preservation_note, null);
-    assert.match(record.research.detail.body, /本輪重做研究；不是遺失原文的復原/);
+    if (record.research.status === "re-researched_after_compaction_gap_2026-08-23") {
+      assert.equal(record.research.detail.source_path, recoverySourcePath);
+      assert.match(record.research.detail.body, /本輪重做研究；不是遺失原文的復原/);
+    } else {
+      assert.match(record.research.status, /^ui-reresearched-/);
+      assert.ok(
+        record.provenance.some((entry) => entry.screenshot_notes?.includes(recoverySourcePath)),
+        `${id} superseded the recovery research without preserving its source path`,
+      );
+    }
     assert.doesNotMatch(record.research.summary, /full prior assistant research text/);
     assert.ok(record.research.confirmed_facts.length > 0, `${id} has no confirmed observations`);
     assert.ok(record.location.country_code, `${id} has no normalized country`);

@@ -45,9 +45,9 @@ test("researched locations preserve the game text and compose local names consis
   assert.equal(nasu.location.precision, "full_address");
 
   const pyramid = postcards.find((record) => record.id === "pc-0020");
-  assert.equal(pyramid.location.display, "臺北市信義區松仁路");
+  assert.equal(pyramid.location.display, "臺北市信義區松仁路89號");
   assert.equal(pyramid.location.address_local, "臺北市信義區松仁路89號");
-  assert.equal(pyramid.location.precision, "road");
+  assert.equal(pyramid.location.precision, "full_address");
 
   const seoul = postcards.find((record) => record.id === "pc-0084");
   assert.equal(seoul.location.endonym, "서울특별시");
@@ -67,6 +67,27 @@ test("all canonical assets exist and match their recorded SHA-256", async () => 
     const bytes = await readFile(path.join(root, "public", record.asset.path));
     const actual = createHash("sha256").update(bytes).digest("hex");
     assert.equal(actual, record.asset.sha256, `${record.id} checksum mismatch`);
+  }
+});
+
+test("research image galleries stay local, bounded, attributable, and checksum-valid", async () => {
+  for (const record of postcards) {
+    const images = record.research.images ?? [];
+    assert.ok(images.length <= 3, `${record.id} has more than 3 research images`);
+    for (const image of images) {
+      assert.match(image.path, new RegExp(`^/images/research/${record.id}/`));
+      assert.ok(image.caption.trim(), `${record.id} research image lacks a caption`);
+      assert.ok(image.alt.trim(), `${record.id} research image lacks alt text`);
+      for (const locator of [image.source_page_url, image.source_image_url]) {
+        const url = new URL(locator);
+        assert.ok(["http:", "https:"].includes(url.protocol));
+        assert.equal(url.search, "", `${record.id} research image locator leaked a query string`);
+        assert.equal(url.hash, "", `${record.id} research image locator leaked a fragment`);
+      }
+      const bytes = await readFile(path.join(root, "public", image.path));
+      assert.equal(bytes.length, image.bytes, `${record.id} research image byte count mismatch`);
+      assert.equal(createHash("sha256").update(bytes).digest("hex"), image.sha256, `${record.id} research image checksum mismatch`);
+    }
   }
 });
 
@@ -130,11 +151,17 @@ test("friend Mii crops are local, traceable derivatives of canonical screenshots
 });
 
 test("sender absence is separated from self-found and truly unknown senders", () => {
-  assert.equal(postcards.filter((record) => record.acquisition.type === "self_found").length, 68);
-  assert.equal(postcards.filter((record) => record.acquisition.type === "received").length, 80);
-  assert.equal(postcards.filter((record) => record.acquisition.type === "unknown").length, 0);
-  assert.equal(postcards.filter((record) => record.acquisition.sender_status === "confirmed").length, 77);
-  assert.equal(postcards.filter((record) => record.acquisition.sender_status === "not_applicable").length, 68);
+  const selfFound = postcards.filter((record) => record.acquisition.type === "self_found");
+  const received = postcards.filter((record) => record.acquisition.type === "received");
+  const unknownOrigin = postcards.filter((record) => record.acquisition.type === "unknown");
+  assert.equal(selfFound.length + received.length + unknownOrigin.length, postcards.length);
+  assert.ok(selfFound.length >= 69, "bootstrap self-found evidence was lost");
+  assert.ok(received.length >= 81, "bootstrap received evidence was lost");
+  assert.ok(selfFound.every((record) => record.sender == null && record.acquisition.sender_status === "not_applicable"));
+  assert.ok(received.every((record) => (
+    (record.acquisition.sender_status === "confirmed" && record.sender)
+    || (record.acquisition.sender_status === "unknown" && record.sender == null)
+  )));
   assert.deepEqual(
     postcards
       .filter((record) => record.acquisition.sender_status === "unknown")
@@ -147,10 +174,13 @@ test("sender absence is separated from self-found and truly unknown senders", ()
 });
 
 test("merged archive has the expected preservation totals", () => {
-  assert.equal(postcards.length, 148);
+  assert.ok(postcards.length >= 150, "the 150-card bootstrap archive must remain preserved");
+  for (let index = 1; index <= 150; index += 1) {
+    assert.ok(postcards.some((record) => record.id === `pc-${String(index).padStart(4, "0")}`));
+  }
   assert.equal(contexts.length, 1);
-  assert.equal(friends.length, 29);
-  assert.equal(postcards.filter((record) => record.provenance.length > 1).length, 2);
+  assert.ok(friends.length >= 30);
+  assert.ok(postcards.filter((record) => record.provenance.length > 1).length >= 2);
 });
 
 test("research detail preserves available material and records gap re-research separately", async () => {
@@ -160,11 +190,12 @@ test("research detail preserves available material and records gap re-research s
       postcards.filter((record) => record.research.detail.status === status).length,
     ]),
   );
-  assert.deepEqual(byStatus, {
-    raw_preserved: 20,
-    structured_preserved: 128,
-    not_recovered: 0,
-  });
+  assert.equal(byStatus.not_recovered, 0);
+  assert.equal(
+    byStatus.raw_preserved + byStatus.structured_preserved,
+    postcards.length,
+    "every postcard must retain either raw or structured research detail",
+  );
 
   for (const record of postcards) {
     const detail = record.research.detail;

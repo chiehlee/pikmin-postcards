@@ -13,15 +13,21 @@ const commit = process.argv.includes("--commit");
 const snapshots = await loadSnapshots();
 const before = snapshots.postcards.postcards;
 const byId = new Map(before.map((record) => [record.id, record]));
+const isTraceablySuperseded = (record) => (
+  /^ui-reresearched-/.test(record?.research?.status ?? "")
+  && record.provenance.some((entry) => entry.screenshot_notes?.includes(recoverySourcePath))
+);
 const unexpectedGaps = before
   .filter((record) => record.research.detail.status === "not_recovered")
   .map((record) => record.id)
   .filter((id) => !targetIds.includes(id));
 const missingTargets = targetIds.filter((id) => !byId.has(id));
 const invalidTargets = targetIds.filter((id) => {
-  const status = byId.get(id)?.research.status;
+  const record = byId.get(id);
+  const status = record?.research.status;
   return status !== "prior_research_not_recovered_from_compacted_context"
-    && status !== "re-researched_after_compaction_gap_2026-08-23";
+    && status !== "re-researched_after_compaction_gap_2026-08-23"
+    && !isTraceablySuperseded(record);
 });
 if (unexpectedGaps.length || missingTargets.length || invalidTargets.length) {
   throw new Error([
@@ -37,6 +43,7 @@ const pendingCount = targetIds.filter(
 
 const postcards = before.map((source) => {
   if (!targetIds.includes(source.id)) return source;
+  if (isTraceablySuperseded(source)) return source;
   const record = structuredClone(source);
   const redo = buildResearchRedo(record);
   record.location = { ...record.location, ...redo.location };
@@ -57,6 +64,7 @@ const report = {
   target_count: targetIds.length,
   pending_count: pendingCount,
   already_applied_count: targetIds.length - pendingCount,
+  superseded_count: targetIds.filter((id) => isTraceablySuperseded(byId.get(id))).length,
   updated_count: postcards.filter(
     (record) => record.research.status === "re-researched_after_compaction_gap_2026-08-23",
   ).length,
