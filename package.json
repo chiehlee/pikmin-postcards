@@ -6,11 +6,14 @@
     "node": ">=22.13.0"
   },
   "scripts": {
+    "setup:local": "node scripts/local-environment.mjs setup",
+    "local": "node scripts/local-environment.mjs start",
+    "local:status": "node scripts/local-environment.mjs status",
     "dev": "vinext dev",
-    "dev:lan": "vinext dev --host 0.0.0.0",
+    "dev:lan": "vinext dev --hostname 0.0.0.0",
     "build": "vinext build",
     "start": "vinext start",
-    "start:lan": "vinext start --host 0.0.0.0",
+    "start:lan": "vinext start --hostname 0.0.0.0",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "normalize:bootstrap": "node scripts/normalize-current-session.mjs",
     "backfill:acquisition": "node --disable-warning=ExperimentalWarning scripts/backfill-acquisition.mjs",

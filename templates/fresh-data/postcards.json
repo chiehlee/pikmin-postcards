@@ -1,0 +1,12 @@
+{
+  "schema_version": 5,
+  "archive_name": "Pikmin Postcard Archive",
+  "source_principles": {
+    "found_date_is_sent_date": false,
+    "preserve_originals": true,
+    "unknown_sender_must_remain_null": true,
+    "null_sender_does_not_imply_unknown": true,
+    "send_to_friend_button_confirms_self_found": true
+  },
+  "postcards": []
+}

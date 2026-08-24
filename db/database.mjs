@@ -1,10 +1,33 @@
 import { DatabaseSync } from "node:sqlite";
 import { copyFile, mkdir, readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { createArchiveBackup, resolveArchiveDataRoot } from "./archive-backup.mjs";
 
-export const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-export const defaultDatabasePath = path.join(projectRoot, "var/pikmin-postcards.sqlite3");
+export function resolveProjectRoot({
+  environment = process.env,
+  workingDirectory = process.cwd(),
+} = {}) {
+  const configuredRoot = environment.PIKMIN_PROJECT_ROOT?.trim();
+  return path.resolve(configuredRoot || workingDirectory);
+}
+
+// Resolve this at server startup. Using import.meta.url here lets the production
+// bundler bake the build machine's absolute source path into the server bundle,
+// which breaks mutations after the project directory is moved.
+export const projectRoot = resolveProjectRoot();
+export function resolveDatabasePath({
+  environment = process.env,
+  root = projectRoot,
+} = {}) {
+  const driver = environment.PIKMIN_DB_DRIVER?.trim() || "sqlite";
+  if (driver !== "sqlite") {
+    throw new Error(`Unsupported PIKMIN_DB_DRIVER: ${driver}. This server currently supports sqlite.`);
+  }
+  const configuredPath = environment.PIKMIN_DATABASE_PATH?.trim();
+  return path.resolve(configuredPath || path.join(root, "var/pikmin-postcards.sqlite3"));
+}
+
+export const defaultDatabasePath = resolveDatabasePath();
 
 export async function backupDatabase(databasePath = defaultDatabasePath) {
   try {
@@ -15,9 +38,24 @@ export async function backupDatabase(databasePath = defaultDatabasePath) {
     throw error;
   }
 
+  const shouldCreateArchive = path.resolve(databasePath) === path.resolve(defaultDatabasePath)
+    || Boolean(process.env.PIKMIN_DATA_ROOT?.trim())
+    || path.basename(path.dirname(databasePath)) === "runtime";
+  if (shouldCreateArchive) {
+    const dataRoot = await resolveArchiveDataRoot({
+      databasePath,
+      configuredDataRoot: process.env.PIKMIN_DATA_ROOT,
+    });
+    const backup = await createArchiveBackup({ databasePath, dataRoot });
+    return backup?.databasePath ?? null;
+  }
+
   const checkpoint = new DatabaseSync(databasePath);
-  checkpoint.exec("PRAGMA wal_checkpoint(TRUNCATE)");
-  checkpoint.close();
+  try {
+    checkpoint.exec("PRAGMA wal_checkpoint(TRUNCATE)");
+  } finally {
+    checkpoint.close();
+  }
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
   const backupDir = path.resolve(databasePath) === path.resolve(defaultDatabasePath)
     ? path.join(projectRoot, "var/backups")

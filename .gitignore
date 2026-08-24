@@ -33,6 +33,7 @@ yarn-error.log*
 # local environment
 .env*
 !.env.example
+/.pikmin-local.json
 
 # deployment and generated files
 .vercel
@@ -42,8 +43,11 @@ next-env.d.ts
 /outputs/
 /work/
 
-# local SQLite runtime and recoverable backups
-/var/*.sqlite3
-/var/*.sqlite3-*
-/var/backups/
-/var/image-inbox/
+# Personal archive data lives beside the repository. `npm run setup:local`
+# migrates these paths and reconnects them as ignored symlinks.
+/data
+/public/images
+/research/raw
+/imports/source-bundles
+/var
+/.wrangler/logs

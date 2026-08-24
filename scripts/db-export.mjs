@@ -1,6 +1,6 @@
-import { copyFile, mkdir } from "node:fs/promises";
+import { mkdir } from "node:fs/promises";
 import path from "node:path";
-import { defaultDatabasePath, openDatabase, projectRoot } from "../db/database.mjs";
+import { backupDatabase, defaultDatabasePath, openDatabase, projectRoot } from "../db/database.mjs";
 import { exportSnapshots, writeSnapshots } from "../db/snapshots.mjs";
 
 const databasePath = argument("--database")
@@ -10,21 +10,19 @@ const outputDirectory = argument("--output-dir")
   ? path.resolve(argument("--output-dir"))
   : path.join(projectRoot, "data");
 
-if (outputDirectory === path.join(projectRoot, "data")) {
-  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const backupDir = path.join(projectRoot, "var/backups", `snapshots-${stamp}`);
-  await mkdir(backupDir, { recursive: true });
-  for (const file of ["postcards.json", "friends.json", "imports.json", "context.json"]) {
-    await copyFile(path.join(projectRoot, "data", file), path.join(backupDir, file));
-  }
-}
+const backupPath = outputDirectory === path.join(projectRoot, "data")
+  ? await backupDatabase(databasePath)
+  : null;
 
 await mkdir(outputDirectory, { recursive: true });
 const database = await openDatabase(databasePath);
 try {
   const snapshots = exportSnapshots(database);
   await writeSnapshots(snapshots, outputDirectory);
-  console.log(`Exported SQLite snapshots to ${outputDirectory}`);
+  console.log(JSON.stringify({
+    output: outputDirectory,
+    archive_backup_database: backupPath,
+  }, null, 2));
 } finally {
   database.close();
 }
