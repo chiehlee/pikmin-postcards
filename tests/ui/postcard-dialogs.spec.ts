@@ -3,10 +3,12 @@ import { expect, type Page, test } from '@playwright/test';
 const postcardName = 'One Grantai Fontain';
 const tallPostcardName = 'CK124蒸汽火車特色郵筒';
 
-async function openPostcard(page: Page, name = postcardName) {
+async function openPostcard(page: Page, name = postcardName, postcardId: string | null = null) {
   await page.goto('/');
   await page.getByPlaceholder('名稱、地點、故事或標籤').fill(name);
-  const card = page.locator('.postcard-card').filter({ hasText: name });
+  const card = postcardId
+    ? page.locator(`.postcard-card[data-postcard-id="${postcardId}"]`)
+    : page.locator('.postcard-card').filter({ hasText: name });
   await expect(card).toHaveCount(1);
   await card.getByRole('button', { name: `查看 ${name}` }).click();
   const dialog = page.locator('.detail-modal');
@@ -20,17 +22,31 @@ test('homepage uses a functional Pikmin postcard title', async ({ page }) => {
   await expect(page).toHaveTitle('Pikmin 明信片收藏研究庫');
 });
 
-test('date sorting distinguishes found date from the date added to the archive', async ({ page }) => {
+test('archive controls distinguish both dates and restore every dropdown default without a notification', async ({ page }) => {
   await page.goto('/');
-  const sortField = page.getByLabel('排序依據');
+  const senderFilter = page.locator('.filters label').filter({ hasText: /^來源／寄件人/ }).locator('select');
+  const countryFilter = page.locator('.filters label').filter({ hasText: /^國家／地區/ }).locator('select');
+  const statusFilter = page.locator('.filters label').filter({ hasText: /^收藏判斷/ }).locator('select');
+  const sortField = page.getByLabel('排序', { exact: true });
   const sortDirection = page.getByLabel('排序方向');
+  const restoreDefaults = page.getByRole('button', { name: '恢復預設：來源、國家、收藏判斷與排序' });
 
   await expect(sortField.locator('option')).toHaveText([
-    '評分優先',
-    '發現日期優先',
-    '加入系統日期優先',
-    '距離優先',
+    '評分',
+    '發現日期',
+    '加入系統時間',
+    '距離',
   ]);
+  await expect(sortField).toHaveValue('archived_on');
+  await expect(sortDirection).toHaveValue('desc');
+  await expect(senderFilter).toHaveValue('all');
+  await expect(countryFilter).toHaveValue('all');
+  await expect(statusFilter).toHaveValue('all');
+  await expect(restoreDefaults).toBeEnabled();
+  await restoreDefaults.click();
+  await expect(page.locator('.management-notice')).toHaveCount(0);
+  await expect(page.locator('.postcard-card time').first()).toContainText('加入系統');
+  await expect(page.locator('.postcard-card time').first()).toContainText(/\d{2}:\d{2}:\d{2}/);
 
   await sortField.selectOption('found_date');
   await sortDirection.selectOption('asc');
@@ -42,7 +58,20 @@ test('date sorting distinguishes found date from the date added to the archive',
 
   await sortField.selectOption('archived_on');
   await expect(page.locator('.postcard-card time').first()).toContainText('加入系統');
-  await expect(page.locator('.postcard-card time').first()).toHaveAttribute('datetime', '2026-08-23');
+  await expect(page.locator('.postcard-card time').first()).toHaveAttribute('datetime', /T\d{2}:\d{2}:\d{2}Z$/);
+
+  await senderFilter.selectOption('self-found');
+  await countryFilter.selectOption({ label: '日本' });
+  await statusFilter.selectOption('candidate');
+  await sortDirection.selectOption('asc');
+  await restoreDefaults.click();
+  await expect(senderFilter).toHaveValue('all');
+  await expect(countryFilter).toHaveValue('all');
+  await expect(statusFilter).toHaveValue('all');
+  await expect(sortField).toHaveValue('archived_on');
+  await expect(sortDirection).toHaveValue('desc');
+  await expect(restoreDefaults).toBeEnabled();
+  await expect(page.locator('.management-notice')).toHaveCount(0);
 });
 
 test('researched locations use the local script while preserving the game text', async ({ page }) => {
@@ -52,18 +81,19 @@ test('researched locations use the local script while preserving the game text',
   await expect(nasuLocation.locator('small')).toHaveText('遊戲顯示：Nasu, Yumoto');
   await page.keyboard.press('Escape');
 
-  const taipeiDialog = await openPostcard(page, '金字塔2');
+  const taipeiDialog = await openPostcard(page, '金字塔2', 'pc-0020');
   const taipeiLocation = taipeiDialog.locator('.detail-location');
-  await expect(taipeiLocation).toContainText('臺北市信義區松仁路');
-  await expect(taipeiLocation).not.toContainText('89號');
+  await expect(taipeiLocation).toContainText('臺北市信義區松仁路89號');
   await expect(taipeiLocation.locator('small')).toHaveText('遊戲顯示：Ankang, Xinyi District');
   await expect(taipeiDialog.locator('.location-map-heading')).toContainText('臺北市信義區松仁路89號');
+  await expect(taipeiDialog.locator('.location-map-precision')).toContainText('地址精度：完整地址');
   await page.keyboard.press('Escape');
 
   const seoulDialog = await openPostcard(page, '인공폭포');
   const seoulLocation = seoulDialog.locator('.detail-location');
   await expect(seoulLocation).toContainText('서울특별시, 대한민국（首爾特別市, 韓國）');
   await expect(seoulLocation.locator('small')).toHaveText('遊戲顯示：Seoul');
+  await expect(seoulDialog.locator('.location-map-precision')).toContainText('地址精度：城市');
   await page.keyboard.press('Escape');
 
   const jordanDialog = await openPostcard(page, '廟街牌坊');
@@ -166,9 +196,14 @@ test('postcard details scroll independently while the image panel stays fixed', 
 test('Google Map stays lazy, then loads a working keyless embed', async ({ page }) => {
   const postcardDialog = await openPostcard(page);
   const map = postcardDialog.locator('.location-map');
+  const management = postcardDialog.locator('.postcard-management');
   const iframe = map.getByTitle(`${postcardName} 的 Google Maps 研究定位`);
 
   await expect(map).toBeVisible();
+  await expect(management).toBeVisible();
+  expect(await map.evaluate((element, managementElement) => Boolean(
+    element.compareDocumentPosition(managementElement as Node) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ), await management.elementHandle())).toBe(true);
   await expect(iframe).toHaveCount(0);
 
   const googleRequest = page.waitForRequest((request) => {
@@ -191,4 +226,63 @@ test('Google Map stays lazy, then loads a working keyless embed', async ({ page 
     () => page.frames().some((frame) => frame.url().includes('google.com/maps/embed')),
     { timeout: 15_000 },
   ).toBe(true);
+});
+
+test('locally preserved research images appear below the map and above management', async ({ page }) => {
+  await page.route('**/api/archive', async (route) => {
+    const response = await route.fetch();
+    const payload = await response.json();
+    const postcard = payload.postcards.find((item: { poi_name: string }) => item.poi_name === postcardName);
+    postcard.research.images = [
+      {
+        path: '/images/postcards/2026/05/pc-020.png',
+        sha256: 'a'.repeat(64),
+        bytes: 123,
+        media_type: 'image/png',
+        source_page_url: 'https://example.com/story-one',
+        source_page_url_sha256: 'b'.repeat(64),
+        source_image_url: 'https://images.example.com/story-one.png',
+        source_image_url_sha256: 'c'.repeat(64),
+        caption: '噴泉入口的建築外觀',
+        alt: 'One Grantai Fontain 入口與噴泉',
+        credit: 'Example Archive',
+      },
+      {
+        path: '/images/postcards/2026/03/pc-0044.png',
+        sha256: 'd'.repeat(64),
+        bytes: 456,
+        media_type: 'image/png',
+        source_page_url: 'https://example.org/story-two',
+        source_page_url_sha256: 'e'.repeat(64),
+        source_image_url: 'https://images.example.org/story-two.png',
+        source_image_url_sha256: 'f'.repeat(64),
+        caption: '場館周邊的空間線索',
+        alt: '場館周邊環境',
+        credit: null,
+      },
+    ];
+    await route.fulfill({ response, json: payload });
+  });
+
+  const postcardDialog = await openPostcard(page);
+  const gallery = postcardDialog.locator('.research-image-gallery');
+  await expect(gallery).toBeVisible();
+  await expect(gallery.getByRole('heading', { name: '故事參考圖片' })).toBeVisible();
+  await expect(gallery.locator('figure')).toHaveCount(2);
+  await expect(gallery.locator('img').first()).toHaveAttribute('src', /^\/images\//);
+  await expect(gallery.locator('img').first()).toHaveAttribute('loading', 'lazy');
+  await expect(gallery.locator('img').first()).toHaveAttribute('alt', 'One Grantai Fontain 入口與噴泉');
+  await expect(gallery.getByText('圖片：Example Archive')).toBeVisible();
+  await expect(gallery.getByRole('link', { name: '查看圖片來源 ↗' }).first()).toHaveAttribute('href', 'https://example.com/story-one');
+
+  const order = await postcardDialog.evaluate((element) => {
+    const mapElement = element.querySelector('.location-map');
+    const galleryElement = element.querySelector('.research-image-gallery');
+    const managementElement = element.querySelector('.postcard-management');
+    return {
+      mapBeforeGallery: Boolean(mapElement && galleryElement && mapElement.compareDocumentPosition(galleryElement) & Node.DOCUMENT_POSITION_FOLLOWING),
+      galleryBeforeManagement: Boolean(galleryElement && managementElement && galleryElement.compareDocumentPosition(managementElement) & Node.DOCUMENT_POSITION_FOLLOWING),
+    };
+  });
+  expect(order).toEqual({ mapBeforeGallery: true, galleryBeforeManagement: true });
 });
