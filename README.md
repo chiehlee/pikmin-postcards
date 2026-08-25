@@ -221,11 +221,15 @@ npm run check:duplicate -- \
 
 `research.images` 保存故事參考圖片的本機 path、bytes、media type、SHA-256、來源頁、直接圖片來源的安全 locator／hash、繁中 caption／alt 與 credit。網站不 hotlink 外部圖片；單張最多 10 MiB、每次研究最多採用 3 張，沒有足夠關聯的圖片時保持空陣列。再研究若沒有任何新圖片成功落地，會保留既有圖集與所有舊檔。
 
-## Google Maps 研究定位
+## 研究定位、座標與距離
 
 有保存研究內容的明信片會顯示「研究定位」。外部 Google Maps 搜尋連結與內嵌地圖都不需要本機 API key；內嵌使用 Google Maps 的分享式地圖網址，並且只在使用者按下「載入 Google Map」後建立單一 iframe，不會在首頁或開啟明信片視窗時預先載入。若 Google 日後變更分享式嵌入行為，右上角的外部 Google Maps 連結仍可作為 fallback。
 
-定位資料遵守兩個層級：明信片或 DB 有經緯度時直接用該座標；只有研究地名時以明確的查詢字串交給 Google 解析，UI 會標示「尚非人工確認座標」，不把搜尋結果冒充精確位置。
+Google 地圖與收藏座標是兩條獨立資料路徑：地圖只收到正規化後的 `address_local`／POI 查詢字串，由 Google 自行解析 marker；距離排序只讀取 DB 已保存的緯度、經度，不拿 Google iframe 的結果回寫 DB。這避免把第三方永久座標混成 Google Maps 內容，也讓距離計算不必載入任何地圖。
+
+完整研究先保存來源能支持的最深地址，再由 server-side geocoder 解析座標。預設使用 OpenStreetMap Nominatim，並保存 provider、實際 query、matched label/type、地址精度、座標解析精度、信心、解析時間、OSM object URL 與 `© OpenStreetMap contributors` attribution。公共 Nominatim 的批次工具遵守單執行緒、每秒不超過一次、具識別 User-Agent、cache 與可續跑報告；詳見 [Nominatim Usage Policy](https://operations.osmfoundation.org/policies/nominatim/) 與 [OpenStreetMap copyright/ODbL](https://www.openstreetmap.org/copyright)。Google Geocoding API 的 latitude/longitude 依現行條款只能暫存 30 天，因此不作為永久 archive 的預設資料來源；詳見 [Google Maps Service Specific Terms](https://cloud.google.com/maps-platform/terms/maps-service-terms)。
+
+距離排序使用目前裝置 geolocation，或使用者自行輸入的緯度／經度，套用 Haversine 球面距離比較每張卡保存的座標。若門牌無法由 geocoder 精確解析，系統會按 road → locality → district → city → region → country 逐級退回；研究地址本身仍保留原證據精度，另以 `location.geocode.precision` 說明距離座標實際精度，不把路段或城市中心冒充門牌。沒有座標的卡固定排在有座標資料之後。
 
 ## 朋友足跡
 
@@ -245,9 +249,19 @@ npm run check:duplicate -- \
 - `address_local`：不分國家，先研究 POI／現物的實際完整地址；保存可靠來源能支持的最深層級並提供地圖查詢。臺灣也直接用它組成畫面主標。
 - `precision`：目前可靠精度，例如 `district`、`locality`、`road` 或 `full_address`。
 - `language`：原名語言標籤；`name_status` 與 `name_confidence` 分別保存研究狀態及信心。
-- `display`：由上述欄位組成的快取；臺灣優先使用 `address_local`，其他地區依 `endonym`／`zh_tw` 組成。
+- `display`：由上述欄位組成的快取；所有地區都優先顯示最深的 `address_local`，必要時附 `zh_tw`。卡片以兩行省略和完整 title 控制長度，研究視窗則折行顯示完整地址。
 
-地址研究一律先嘗試 `full_address`；無法證實才按 `road → locality → district → city → region → country → unknown` 逐級退回，`precision` 要反映真正的證據解析度。主標則依收藏者的生活尺度統一：臺灣有可靠證據時顯示最完整的地址，包含段、巷、弄與門牌；日本有證據時顯示到丁目・番・号；其他地區即使已在 `address_local` 保存完整地址，主標仍顯示到可確認的城市內區域並附當地語言國名，非中日文另附含國名的台灣繁中譯名。地圖查詢使用最完整的 `address_local`，不把括號譯名送進 Google。既有資料的可重跑回填入口是 `npm run backfill:location-names`；先 dry-run，確認覆蓋後再加 `-- --commit`。
+地址研究一律先嘗試 `full_address`；無法證實才按 `road → locality → district → city → region → country → unknown` 逐級退回，`precision` 要反映真正的證據解析度。臺灣與日本不附國名並按當地習慣連寫；其他國家按當地地址順序使用半形逗號並把當地國名放在最後。非中日文另保存相同精度、按臺灣繁中閱讀順序且含國名的 `zh_tw`。所有國家只要有可靠完整地址，主標就顯示完整地址，不再因國家而刻意降低解析度。
+
+既有地址名稱的舊工具是 `npm run backfill:location-names`。地址正規化與永久座標的一次性／repair 工具是：
+
+```bash
+# dry-run：可續跑 cache 與報告都放在 Git 忽略的 var/
+npm run backfill:location-geocodes
+
+# dry-run、snapshot → SQLite 驗證都通過後才正式寫入；會先建立完整 archive backup
+npm run backfill:location-geocodes -- --commit
+```
 
 ## 資料結構
 

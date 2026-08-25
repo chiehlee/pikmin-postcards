@@ -38,7 +38,7 @@ description: "接收單張或批次 Pikmin Bloom 明信片圖片、聊天附件�
 - 已確認 `○○ より` 才能把姓名存成 sender。收到但名稱留白可標成 `received + unknown`；UI 證據不足則維持 acquisition `unknown`。
 - 每次都把畫面可見 sender ID 與現有 friends／postcards 重新比對。不同字串預設為不同的 provisional player，即使 Mii、地點或時間看似相同也不自動建立 alias 或合併；只有使用者明確提出個案合併時才改 player identity。名稱改變本身不能證明是同一人。
 - `sender: null` 本身絕不等於未知寄件人。
-- raw location、研究後當地原名、台灣繁中譯名、完整地址、顯示精度、座標／地圖查詢與信心分開保存。`location.raw` 必須逐字保留遊戲畫面；`location.endonym` 使用當地原文。每個國家都先以官方場館、政府、營運者或其他可靠來源尋找 POI／現物的實際完整地址，`location.address_local` 保存來源能支持的最深層級，`location.precision` 必須與該層級一致；無法證實時才按 `full_address → road → locality → district → city → region → country → unknown` 逐級退回，並在 unresolved questions 記錄缺少的證據，不得從 raw location、郵遞區號片段或地圖搜尋結果猜門牌。臺灣有可靠證據時主標直接使用最完整的 `address_local`，包含段、巷、弄與門牌；日本有證據時主標到丁目・番・号。臺灣、日本以外仍以城市內可確認區域＋`country_endonym` 作為易讀主標，但完整地址若已確認仍要保存在 `address_local` 並用於地圖；非中日文另填 `zh_tw`，繁中括號內也在末尾附台灣譯名國家。所有地名層級與國家之間統一用半形逗號加空格 `, `，包括中文 endonym 與括號內繁中譯名；不得產生全形逗號分隔。中文或日文的 `zh_tw` 維持 null。`location.display` 只作為共用 formatter 組成的快取；臺灣由 `address_local` 組成，其他地區依 endonym／zh_tw 規則組成。地圖 query 使用 `address_local` 與必要的當地國名，不得拿 raw 或含括號譯名的 display 冒充研究定點。尚未研究完成時用 `language: und`、`name_status: provisional`、`precision: unknown` 與低信心，不假裝已確認。沒有可靠證據時，不把搜尋結果寫成精確地址或座標。
+- raw location、研究後當地原名、台灣繁中譯名、完整地址、顯示精度、座標／地圖查詢與信心分開保存。`location.raw` 必須逐字保留遊戲畫面；`location.endonym` 使用當地原文。每個國家都先以官方場館、政府、營運者或其他可靠來源尋找 POI／現物的實際完整地址，`location.address_local` 保存來源能支持的最深層級，`location.precision` 必須與該層級一致；無法證實時才按 `full_address → road → locality → district → city → region → country → unknown` 逐級退回，並在 unresolved questions 記錄缺少的證據，不得從 raw location、郵遞區號片段或地圖搜尋結果猜門牌。臺灣與日本依當地習慣連寫地址、不附國名；其他國家依當地習慣排列、只用半形逗號加空格 `, `，並把當地語言國名放在最後。非中文、日文地點的 `zh_tw` 必須翻譯到與 `address_local` 相同精度，依臺灣繁中地址順序排列並包含國名；中文或日文的 `zh_tw` 維持 null。`location.display` 只作為共用 formatter 組成的快取，所有國家都優先顯示最深的 `address_local`，過長交由 UI 折行／省略而不是丟失地址。Google Map query 使用 `address_local` 與必要的當地國名，由 Google 獨立解析 marker；不得拿 raw、括號譯名或永久座標冒充 Google 解析結果。尚未研究完成時用 `language: und`、`name_status: provisional`、`precision: unknown` 與低信心，不假裝已確認。沒有可靠證據時，不把搜尋結果寫成精確地址或座標。
 - 明信片拍到紀念碑、遺址標、復刻物或移設物時，canonical `location` 定位畫面中的現物；所紀念事件、原建物或原物件的歷史位置另存於 research facts／inferences／unresolved questions，並分別表達精度與信心。不得把現物的精確地址或座標冒充歷史事件的精確位置，也不因歷史基址未定就降低現物定位的信心。
 - condensed `research.summary` 與 `research.detail` 分開。`research.detail` 必須是可獨立閱讀的研究稿，不是摘要換句話說；對具有歷史、文化或空間考證價值的題材，依證據涵蓋現物身分、事件時間線、人物／組織、時代與地點脈絡、來源衝突或限制、後續發展／紀念方式，以及這張卡的收藏解讀。沒有證據的面向直接省略，不以泛論灌水。保存不到原長文時明確標示缺漏，不用後寫內容冒充原文。
 - 使用者要求補做 `not_recovered` 研究時，保留原缺漏的歷史 provenance，另用帶日期的新 research status 與新的 `research/raw/` 檔保存「本次重做」；不可覆寫成已復原舊文。批次補做要有 manifest 或等價的確定性輸入，先 dry-run 驗證目標集合完全相符，再以 regression test 鎖定覆蓋數、來源檔與零殘留 `not_recovered`。
@@ -121,7 +121,7 @@ npm run check:duplicate -- \
 
 研究輸出至少包含：
 
-- normalized location 與 confidence；可靠時才填 latitude/longitude。
+- normalized location 與 confidence；可靠來源直接提供座標時才填 latitude／longitude，並同時填可追溯且列入 research sources 的 `coordinate_source_url`、`coordinate_source_label` 與 `coordinate_confidence`。否則座標與來源欄位留空，由 backend 對 final address 執行可稽核 geocoding；AI 不得猜測。
 - 研究地名的 `endonym`、`address_local`、`precision`、`country_endonym`、BCP-47 風格 `language`、必要時的台灣繁中 `zh_tw`，以及 name status/confidence；不分國家先查實際完整地址，再按 `full_address → road → locality → district → city → region → country → unknown` 停在來源實際支持的最深精度。confirmed facts 必須交代地址依據；若 fallback，unresolved questions 必須說明仍缺少哪項地址證據。相同 raw location 可先查既有命名 registry/索引再研究，避免逐張重做。研究結果不得覆寫 `raw`。
 - condensed summary，供列表與 modal 快速閱讀。
 - preserved detail，須可不依賴 condensed summary 獨立理解研究對象；有足夠材料時用清楚的小節依序交代時間線、行動者、空間證據、歷史影響與仍不能確定之處，避免只把 summary 擴寫成一段長文。
@@ -130,7 +130,7 @@ npm run check:duplicate -- \
 - sources；每個 URL 必須實際打開並支持相鄰主張。
 - 0–3 張「故事參考圖片」候選；只採用能直接說明已確認地點、現物、人物或歷史故事的圖片，官方／第一方來源優先，沒有可靠候選時維持 0 張，不用裝飾圖湊數。每張都要保存已實際開啟且同時列在 sources 的 `source_page_url`、可下載的直接 `image_url`、繁體中文 caption／alt，以及能確認時的 credit；不得把搜尋結果縮圖、未開啟頁面或圖片本身當成額外事實證據。
 - curation rating、recommendation、status 與 tags；不確定時用 `unreviewed`，不要為了完整而假造評分。
-- map query 或座標的依據。地名解析尚未人工確認時，明確維持 query-level precision。
+- map query 或座標的依據。地址先正規化成該國慣用格式，再由 backend 保存 geocoder provider、實際 query、match label/type、解析時間、地址精度、座標解析精度、信心、source object 與 attribution。AI 直接提供座標時，URL、label、confidence 缺一不可且 URL 必須列在 research sources；否則由 backend 解析 final address。永久 archive 不把受 30 天暫存限制的 Google Geocoding 結果當預設座標來源；Google Maps 只接收地址文字並獨立顯示。預設持久 provider 是 Nominatim；公共 endpoint 必須單執行緒、每秒最多一次、提供識別 User-Agent、cache 與 attribution。若門牌無法解析，座標可按 road → locality → district → city → region → country 退回，但不得降低或覆寫已有來源支持的 `address_local`；以 `location.geocode.precision` 明確保存距離座標實際精度。既有可見座標或舊座標不得靜默覆寫，先標記 `visible_coordinates`／`legacy` provenance，待個別再研究補強。
 - 若 POI 是紀念物，分開交代「現物在哪裡」、「紀念什麼／原址在哪裡」及兩者的空間關係；只有來源能支持時才宣稱原址、同址或精確基址。
 
 保存完整研究到 `research/raw/`，並讓 `research.detail.source_path` 指向它。新研究可使用 `structured_preserved`；不得把新研究標成歷史原文。
@@ -165,7 +165,11 @@ Friends 頁面的 Mii avatar 使用最高品質、可確認寄件人的證據截
 
 ```bash
 npm run friends:avatars -- --commit
+npm run backfill:location-geocodes
+npm run backfill:location-geocodes -- --commit
 ```
+
+位置回填預設是 dry-run，以 `var/location-geocode-cache.json` 續跑並輸出 `var/location-backfill-report.json`；只有 166/166 之類的目標集合全部解析、地址格式 validation、snapshot → SQLite round-trip 與 integrity check 通過後才可 `--commit`。正式寫入前必須建立完整 archive backup。候選 POI 只有正規化名稱嚴格相符且地址解析度更深時才能提升地址；翻譯查詢必須回到同一 provider object ID，不能因同名或泛稱換成另一個地點。
 
 這是可丟棄後重建的 derived asset，不是身份證明。每次加入同一名稱的新證據，都比較實際 crop 像素尺寸與判讀信心；更好的候選應由 backend 自動更新 avatar path／checksum／crop provenance，但保留原始 postcard assets。不同 sender ID 的 Mii 看似相同時仍維持兩個 profile，等待使用者個案合併指示。
 
