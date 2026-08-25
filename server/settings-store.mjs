@@ -3,7 +3,6 @@ import { chmod, mkdir, readFile, rename, unlink, writeFile } from "node:fs/promi
 import path from "node:path";
 import { projectRoot } from "../db/database.mjs";
 import {
-  defaultCodexCommand,
   defaultCodexResearchModel,
   localCodexStatus,
   verifyLocalCodexConnection,
@@ -51,8 +50,8 @@ export async function settingsStatus({
     || defaultReasoningEffort);
   const codexCommand = runtimeEnv.PIKMIN_CODEX_COMMAND?.trim()
     || fileValues.PIKMIN_CODEX_COMMAND?.trim()
-    || defaultCodexCommand;
-  const codex = await codexStatusImpl({ command: codexCommand });
+    || null;
+  const codex = await codexStatusImpl(codexCommand ? { command: codexCommand } : {});
   const model = provider === "local_codex" ? codexModel : openaiModel;
   const reasoningEffort = provider === "local_codex" ? codexReasoningEffort : openaiReasoningEffort;
   return {
@@ -163,9 +162,11 @@ export async function testSettingsConnection({ apiKey = null, model = null, prov
       : runtimeEnv.PIKMIN_OPENAI_REASONING_EFFORT || fileValues.PIKMIN_OPENAI_REASONING_EFFORT || defaultReasoningEffort
   ));
   if (effectiveProvider === "local_codex") {
-    const command = runtimeEnv.PIKMIN_CODEX_COMMAND?.trim()
+    const configuredCommand = runtimeEnv.PIKMIN_CODEX_COMMAND?.trim()
       || fileValues.PIKMIN_CODEX_COMMAND?.trim()
-      || defaultCodexCommand;
+      || null;
+    const detected = await codexStatusImpl(configuredCommand ? { command: configuredCommand } : {});
+    const command = configuredCommand || detected.command;
     const connection = await verifyLocalCodexConnectionImpl({
       command,
       model: effectiveModel,

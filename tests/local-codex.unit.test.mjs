@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   buildCodexExecArgs,
   conciseCodexFailure,
+  defaultCodexCommandCandidates,
   localCodexStatus,
 } from "../server/local-codex.mjs";
 
@@ -31,6 +32,29 @@ test("local Codex status detects the CLI and ChatGPT authentication without expo
     version: "codex-cli 0.test",
     auth_status: "Logged in using ChatGPT",
   });
+});
+
+test("local Codex status falls back to the standalone install when the service PATH is stale", async () => {
+  const commands = [];
+  const status = await localCodexStatus({
+    commandCandidates: ["codex", "/Users/test/.local/bin/codex"],
+    execFileImpl: async (command, args) => {
+      commands.push(command);
+      if (command === "codex") throw Object.assign(new Error("spawn codex ENOENT"), { code: "ENOENT" });
+      return args[0] === "--version"
+        ? { stdout: "codex-cli 0.149.0\n", stderr: "" }
+        : { stdout: "Logged in using ChatGPT\n", stderr: "" };
+    },
+  });
+
+  assert.deepEqual(commands, ["codex", "/Users/test/.local/bin/codex", "/Users/test/.local/bin/codex"]);
+  assert.equal(status.available, true);
+  assert.equal(status.command, "/Users/test/.local/bin/codex");
+  assert.deepEqual(defaultCodexCommandCandidates({ home: "/Users/test" }), [
+    "codex",
+    "/Users/test/.local/bin/codex",
+    "/Users/test/.codex/packages/standalone/current/bin/codex",
+  ]);
 });
 
 test("Codex research command is ephemeral, read-only, schema constrained, and image aware", () => {

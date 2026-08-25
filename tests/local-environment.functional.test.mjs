@@ -87,7 +87,7 @@ test("fresh local setup moves mutable data outside the repository and is idempot
       "import fs from 'node:fs';",
       "import path from 'node:path';",
       "export async function startProdServer(options) {",
-      "  fs.writeFileSync(path.join(process.env.PIKMIN_DATA_ROOT, 'start-probe.json'), JSON.stringify({ options, project: process.env.PIKMIN_PROJECT_ROOT }));",
+      "  fs.writeFileSync(path.join(process.env.PIKMIN_DATA_ROOT, 'start-probe.json'), JSON.stringify({ options, project: process.env.PIKMIN_PROJECT_ROOT, path: process.env.PATH }));",
       "}",
     ].join("\n"));
     await execFileAsync(process.execPath, [
@@ -98,6 +98,7 @@ test("fresh local setup moves mutable data outside the repository and is idempot
     const probe = JSON.parse(await readFile(path.join(archive, "start-probe.json"), "utf8"));
     assert.deepEqual(probe.options, { host: "0.0.0.0", port: 4317, outDir: path.join(project, "dist") });
     assert.equal(probe.project, project);
+    assert.ok(probe.path.split(path.delimiter).includes(path.join(os.homedir(), ".local/bin")));
   } finally {
     await rm(temporaryDirectory, { recursive: true, force: true });
   }

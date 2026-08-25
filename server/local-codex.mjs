@@ -14,56 +14,72 @@ export const defaultCodexResearchModel = "gpt-5.6-sol";
 export const defaultCodexReasoningEffort = "high";
 
 export async function localCodexStatus({
-  command = process.env.PIKMIN_CODEX_COMMAND?.trim() || defaultCodexCommand,
+  command = process.env.PIKMIN_CODEX_COMMAND?.trim() || null,
+  commandCandidates = defaultCodexCommandCandidates(),
   execFileImpl = execFileAsync,
 } = {}) {
-  try {
-    const versionResult = await execFileImpl(command, ["--version"], commandOptions(8_000));
-    const version = firstLine(versionResult.stdout || versionResult.stderr);
-    let login;
+  const candidates = command ? [command] : commandCandidates;
+  let lastError = null;
+  for (const candidate of candidates) {
     try {
-      login = await execFileImpl(command, ["login", "status"], commandOptions(12_000));
-    } catch (error) {
+      const versionResult = await execFileImpl(candidate, ["--version"], commandOptions(8_000));
+      const version = firstLine(versionResult.stdout || versionResult.stderr);
+      let login;
+      try {
+        login = await execFileImpl(candidate, ["login", "status"], commandOptions(12_000));
+      } catch (error) {
+        return {
+          installed: true,
+          authenticated: false,
+          available: false,
+          command: candidate,
+          version,
+          auth_status: sanitizedMessage(error) || "尚未登入",
+        };
+      }
+      const authStatus = firstLine(login.stdout || login.stderr) || "登入狀態未知";
+      const authenticated = /logged in/i.test(authStatus);
       return {
         installed: true,
-        authenticated: false,
-        available: false,
-        command,
+        authenticated,
+        available: authenticated,
+        command: candidate,
         version,
-        auth_status: sanitizedMessage(error) || "尚未登入",
+        auth_status: authStatus,
       };
+    } catch (error) {
+      lastError = error;
+      if (error?.code !== "ENOENT") break;
     }
-    const authStatus = firstLine(login.stdout || login.stderr) || "登入狀態未知";
-    const authenticated = /logged in/i.test(authStatus);
-    return {
-      installed: true,
-      authenticated,
-      available: authenticated,
-      command,
-      version,
-      auth_status: authStatus,
-    };
-  } catch (error) {
-    return {
-      installed: false,
-      authenticated: false,
-      available: false,
-      command,
-      version: null,
-      auth_status: error?.code === "ENOENT" ? "找不到 Codex CLI" : sanitizedMessage(error),
-    };
   }
+  return {
+    installed: false,
+    authenticated: false,
+    available: false,
+    command: command || defaultCodexCommand,
+    version: null,
+    auth_status: lastError?.code === "ENOENT" ? "找不到 Codex CLI" : sanitizedMessage(lastError),
+  };
+}
+
+export function defaultCodexCommandCandidates({ home = os.homedir() } = {}) {
+  return [...new Set([
+    defaultCodexCommand,
+    path.join(home, ".local/bin/codex"),
+    path.join(home, ".codex/packages/standalone/current/bin/codex"),
+  ])];
 }
 
 export async function verifyLocalCodexConnection({
-  command = process.env.PIKMIN_CODEX_COMMAND?.trim() || defaultCodexCommand,
+  command = process.env.PIKMIN_CODEX_COMMAND?.trim() || null,
   model = process.env.PIKMIN_CODEX_MODEL?.trim() || defaultCodexResearchModel,
   reasoningEffort = process.env.PIKMIN_CODEX_REASONING_EFFORT?.trim() || defaultCodexReasoningEffort,
   workingDirectory = projectRoot,
   statusImpl = localCodexStatus,
   runCommand = runCodexCommand,
 } = {}) {
-  const status = await statusImpl({ command });
+  const status = await statusImpl(command ? { command } : {});
+  const resolvedCommand = status.command || command || defaultCodexCommand;
   if (!status.installed) throw httpError(503, "找不到 Codex CLI；請先依設定頁指令安裝");
   if (!status.authenticated) throw httpError(503, "Codex CLI 尚未登入；請先執行 codex login");
 
@@ -77,7 +93,7 @@ export async function verifyLocalCodexConnection({
     required: ["ok", "message"],
   };
   const probe = await runStructuredCodex({
-    command,
+    command: resolvedCommand,
     model,
     reasoningEffort,
     workingDirectory,

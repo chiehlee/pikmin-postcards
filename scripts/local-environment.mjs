@@ -14,6 +14,7 @@ import {
   symlink,
   writeFile,
 } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -122,12 +123,21 @@ async function start() {
     {
       env: {
         ...process.env,
+        PATH: serviceExecutablePath(process.env.PATH),
         PIKMIN_PROJECT_ROOT: projectRoot,
         PIKMIN_DATA_ROOT: dataRoot,
         WRANGLER_LOG_PATH: path.join(dataRoot, "logs/wrangler"),
       },
     },
   );
+}
+
+function serviceExecutablePath(currentPath = "") {
+  return [...new Set([
+    path.join(os.homedir(), ".local/bin"),
+    path.dirname(process.execPath),
+    ...currentPath.split(path.delimiter).filter(Boolean),
+  ])].join(path.delimiter);
 }
 
 async function status() {
