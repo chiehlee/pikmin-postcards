@@ -54,11 +54,14 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
       location_name_status, location_name_confidence, location_country_endonym,
       location_address_local, location_precision, location_city, location_district, location_locality,
       location_region, location_county, location_country, location_country_code, latitude,
-      longitude, location_confidence, asset_sha256, rating, rating_raw, rating_min, rating_max,
+      longitude, location_confidence, location_geocode_status, location_geocode_provider,
+      location_geocode_query, location_geocode_precision, location_geocode_confidence,
+      location_geocode_resolved_at, location_geocode_attribution, location_geocode_document_json,
+      asset_sha256, rating, rating_raw, rating_min, rating_max,
       recommendation, curation_status, personal_relevance, star_visible,
       deletion_toast_visible, research_status, research_confidence,
       research_confidence_label, research_summary, deleted_at, deleted_reason, document_json
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const insertTag = database.prepare(
     "INSERT INTO postcard_tags (postcard_id, tag, sort_order) VALUES (?, ?, ?)",
@@ -137,6 +140,7 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
     snapshots.postcards.postcards.forEach((record, recordIndex) => {
       const acquisition = validateAcquisition(record);
       const researchDetail = validateResearchDetail(record);
+      const geocode = normalizedGeocode(record.location);
       insertPostcard.run(
         record.id,
         recordIndex,
@@ -171,6 +175,14 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
         record.location.latitude ?? null,
         record.location.longitude ?? null,
         record.location.normalization_confidence ?? null,
+        geocode.status,
+        geocode.provider,
+        geocode.query,
+        geocode.precision,
+        geocode.confidence,
+        geocode.resolved_at,
+        geocode.attribution,
+        JSON.stringify(geocode),
         record.asset.sha256,
         record.curation.rating,
         record.curation.rating_raw ?? null,
@@ -357,6 +369,26 @@ function insertResearchNotes(statement, postcardId, kind, values = []) {
 function nullableBoolean(value) {
   if (value == null) return null;
   return value ? 1 : 0;
+}
+
+function normalizedGeocode(location) {
+  if (location?.geocode) return location.geocode;
+  const hasCoordinates = Number.isFinite(location?.latitude) && Number.isFinite(location?.longitude);
+  return {
+    status: hasCoordinates ? "resolved" : "unresolved",
+    provider: hasCoordinates ? "legacy" : null,
+    query: location?.address_local ?? location?.endonym ?? location?.raw ?? null,
+    matched_label: null,
+    matched_type: null,
+    precision: location?.precision ?? "unknown",
+    confidence: hasCoordinates ? "low" : "low",
+    resolved_at: null,
+    attribution: null,
+    source_url: null,
+    osm_type: null,
+    osm_id: null,
+    error: hasCoordinates ? "Legacy coordinate without structured provenance" : "Coordinates not resolved",
+  };
 }
 
 function validateSnapshots(snapshots) {

@@ -14,6 +14,22 @@ export type LocationNaming = {
 };
 
 export function locationNeedsZhTw(language?: string | null): boolean;
+export function normalizeLocalAddress(
+  address?: string | null,
+  countryCode?: string | null,
+  countryEndonym?: string | null,
+): string | null;
+export function normalizeZhTwAddress(
+  address?: string | null,
+  countryCode?: string | null,
+  countryZhTw?: string | null,
+): string | null;
+export function normalizeResearchedLocation<T extends LocationNaming>(location: T): T & {
+  display: string;
+  address_local: string | null;
+  zh_tw: string | null;
+};
+export function canonicalCountryZhTw(countryCode?: string | null, fallback?: string | null): string | null;
 export function researchedLocationDisplay(location?: LocationNaming | null): string;
 export function researchedLocationQuery(location?: LocationNaming | null): string | null;
 export function validateLocationNaming(location?: LocationNaming | null): string[];

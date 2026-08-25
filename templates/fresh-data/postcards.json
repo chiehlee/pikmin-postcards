@@ -1,5 +1,5 @@
 {
-  "schema_version": 5,
+  "schema_version": 6,
   "archive_name": "Pikmin Postcard Archive",
   "source_principles": {
     "found_date_is_sent_date": false,

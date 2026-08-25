@@ -42,6 +42,9 @@ test("GPT-5.6 job migrations preserve old jobs and accept new reasoning and canc
         input_label TEXT,
         user_note TEXT
       ) STRICT;
+      CREATE TABLE postcards (
+        id TEXT PRIMARY KEY
+      ) STRICT;
       INSERT INTO ai_jobs (
         id, kind, status, model, skill_path, skill_sha256, prompt, created_at,
         updated_at, provider, reasoning_effort, workflow
@@ -85,6 +88,10 @@ test("GPT-5.6 job migrations preserve old jobs and accept new reasoning and canc
     assert.ok(database.prepare("PRAGMA index_list(ai_jobs)").all().some((index) => index.name === "idx_ai_jobs_reasoning_created"));
     assert.equal(database.prepare("SELECT prompt FROM ai_jobs WHERE id = 'cancelled-job'").get().prompt, "preserved prompt");
     assert.ok(database.prepare("SELECT 1 FROM schema_migrations WHERE version = 15").get());
+    assert.ok(database.prepare("SELECT 1 FROM schema_migrations WHERE version = 16").get());
+    const postcardColumns = new Set(database.prepare("PRAGMA table_info(postcards)").all().map((column) => column.name));
+    assert.ok(postcardColumns.has("location_geocode_status"));
+    assert.ok(postcardColumns.has("location_geocode_document_json"));
     assert.equal(database.prepare("PRAGMA integrity_check").get().integrity_check, "ok");
   } finally {
     database.close();

@@ -19,6 +19,17 @@ try {
   assert.deepEqual(exportSnapshots(database), expected);
   const localAssetCount = await verifyLocalImages(database);
   const researchDetailCount = await verifyResearchDetails(database);
+  const missingResearchedCoordinates = database.prepare(`
+    SELECT count(*) AS count FROM postcards
+    WHERE deleted_at IS NULL
+      AND research_status <> 'metadata_only_pending_research'
+      AND (
+        location_geocode_status <> 'resolved'
+        OR latitude IS NULL
+        OR longitude IS NULL
+      )
+  `).get().count;
+  assert.equal(missingResearchedCoordinates, 0, "Every fully researched active postcard must have persisted coordinates");
 
   const senderPlan = database
     .prepare("EXPLAIN QUERY PLAN SELECT id FROM postcards WHERE sender = ? ORDER BY found_date DESC")
@@ -93,6 +104,11 @@ try {
     .all(24, 26, 120, 122)
     .map((row) => row.detail)
     .join(" | ");
+  const geocodeStatusPlan = database
+    .prepare("EXPLAIN QUERY PLAN SELECT id FROM postcards WHERE location_geocode_status = ? ORDER BY location_geocode_resolved_at")
+    .all("unresolved")
+    .map((row) => row.detail)
+    .join(" | ");
   assert.match(senderPlan, /idx_postcards_sender_found_date/);
   assert.match(curationPlan, /idx_postcards_curation_status_rating/);
   assert.match(localPathPlan, /idx_assets_local_path/);
@@ -106,6 +122,7 @@ try {
   assert.match(tagPlan, /idx_postcard_tags_tag_postcard/);
   assert.match(sourcePlan, /idx_research_sources_url_postcard/);
   assert.match(coordinatePlan, /idx_postcards_coordinates/);
+  assert.match(geocodeStatusPlan, /idx_postcards_location_geocode_status/);
 
   console.log(
     JSON.stringify(
@@ -115,6 +132,7 @@ try {
         round_trip: "exact",
         local_assets_verified: localAssetCount,
         research_details_verified: researchDetailCount,
+        fully_researched_active_postcards_missing_coordinates: missingResearchedCoordinates,
         query_plans: {
           sender_timeline: senderPlan,
           curation_filter: curationPlan,
@@ -129,6 +147,7 @@ try {
           related_tag_lookup: tagPlan,
           related_source_lookup: sourcePlan,
           related_coordinate_lookup: coordinatePlan,
+          geocode_status_lookup: geocodeStatusPlan,
         },
       },
       null,

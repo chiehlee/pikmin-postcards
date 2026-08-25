@@ -114,6 +114,7 @@ test("research request uses server authorization, background mode, web search, i
     assert.ok(researchSchema.required.includes("reference_images"));
     assert.ok(researchSchema.properties.visible.required.includes("sender_avatar_crop"));
     assert.match(researchSchema.properties.location.properties.address_local.description, /所有國家都先嘗試實際完整地址/);
+    assert.deepEqual(researchSchema.properties.location.properties.coordinate_confidence.anyOf[1], { type: "null" });
     assert.equal(researchSchema.properties.reference_images.maxItems, 3);
     assert.deepEqual(
       researchSchema.properties.reference_images.items.required,

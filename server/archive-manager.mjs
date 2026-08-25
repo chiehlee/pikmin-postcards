@@ -4,13 +4,14 @@ import { copyFile, mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { validateAcquisition } from "../lib/acquisition.mjs";
 import { friendEvidenceForPostcard, rebuildFriends } from "../lib/friends.mjs";
-import { researchedLocationDisplay, validateLocationNaming } from "../lib/location-names.mjs";
+import { normalizeResearchedLocation, validateLocationNaming } from "../lib/location-names.mjs";
 import { normalizeUserContribution } from "../lib/user-contribution.mjs";
 import { resolveStoredLocalPath } from "../db/asset-paths.mjs";
 import { backupDatabase, defaultDatabasePath, openDatabase, projectRoot } from "../db/database.mjs";
 import { exportSnapshots, loadSnapshots, replaceDatabaseFromSnapshots, writeSnapshots } from "../db/snapshots.mjs";
 import { readUploadSource, stageImage } from "./image-intake.mjs";
 import { ensureFriendAvatars, normalizeAvatarCropHint } from "./friend-avatars.mjs";
+import { geocodeFinalLocation, suppliedCoordinateEvidence } from "./geocoding.mjs";
 import { metadataIntakeFields, pendingResearch } from "./metadata-intake.mjs";
 import { runLocalCodexMetadata, runLocalCodexResearch } from "./local-codex.mjs";
 import { preserveResearchImages, safeRemoteLocator } from "./research-images.mjs";
@@ -508,7 +509,7 @@ async function applyReresearch(snapshots, job, result) {
   if (!record || record.lifecycle?.deleted_at) throw new Error("再研究目標已不存在或已刪除");
   const previousFriendEvidence = JSON.stringify(friendEvidenceForPostcard(record));
   const previousAvatarCrop = JSON.stringify(record.visual?.sender_avatar_crop ?? null);
-  const location = normalizedLocation(result.location, record.location.raw);
+  const location = await resolvedLocation(result.location, record.location.raw, result.research.sources);
   validateResult(result, location);
   const allowedCandidates = relatedCandidatesFromSnapshots(snapshots, record);
   const previousDetailPath = record.research.detail.source_path;
@@ -626,7 +627,7 @@ async function applyAdd(snapshots, job, result) {
   const foundDate = result.visible.found_date;
   const promoted = await promoteIntakeAsset(snapshots, job, intake, foundDate);
   const { id, archivedAt, archivedOn: date } = promoted;
-  const location = normalizedLocation(result.location, result.visible.game_location);
+  const location = await resolvedLocation(result.location, result.visible.game_location, result.research.sources);
   const acquisition = result.acquisition;
   const sender = result.visible.sender;
   validateResult(result, location);
@@ -763,7 +764,7 @@ export function updateFriendProfilesForEvidenceChange(snapshots, affectedNames) 
 }
 
 function normalizedLocation(input, raw) {
-  const location = {
+  return normalizeResearchedLocation({
     raw: raw?.trim() || input.raw.trim(),
     display: "",
     city: input.city,
@@ -784,9 +785,28 @@ function normalizedLocation(input, raw) {
     country_endonym: input.country_endonym.trim(),
     address_local: input.address_local.trim(),
     precision: input.precision,
+  });
+}
+
+async function resolvedLocation(input, raw, researchSources) {
+  const location = normalizedLocation(input, raw);
+  const supplied = suppliedCoordinateEvidence(input, location);
+  const resolved = supplied ?? await geocodeFinalLocation(location);
+  if (resolved.geocode.status !== "resolved") {
+    throw new Error(`研究地址已保存，但座標解析失敗：${resolved.geocode.error}`);
+  }
+  if (resolved.geocode.provider === "research_source") {
+    const normalizedSources = new Set(uniqueStrings(researchSources).map(normalizedUrl));
+    if (!normalizedSources.has(normalizedUrl(resolved.geocode.source_url))) {
+      throw new Error("coordinate_source_url 必須同時列在 research.sources");
+    }
+  }
+  return {
+    ...location,
+    latitude: resolved.latitude,
+    longitude: resolved.longitude,
+    geocode: resolved.geocode,
   };
-  location.display = researchedLocationDisplay(location);
-  return location;
 }
 
 function normalizedResearch(input, sourcePath, images = []) {
@@ -828,6 +848,7 @@ function validateResult(result, location) {
   if (coordinates.some((value) => value != null) && coordinates.some((value) => value == null)) throw new Error("緯度與經度必須同時存在");
   if (location.latitude != null && (location.latitude < -90 || location.latitude > 90)) throw new Error("緯度超出有效範圍");
   if (location.longitude != null && (location.longitude < -180 || location.longitude > 180)) throw new Error("經度超出有效範圍");
+  if (location.geocode?.status !== "resolved") throw new Error("完整研究必須保存可追溯的座標解析結果");
 }
 
 async function writeResearchFile(postcardId, jobId, result, images = [], userNote = null) {

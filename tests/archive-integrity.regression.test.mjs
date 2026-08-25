@@ -28,6 +28,14 @@ test("researched locations preserve the game text and compose local names consis
     assert.deepEqual(validateLocationNaming(postcard.location), [], postcard.id);
     assert.equal(postcard.location.display, researchedLocationDisplay(postcard.location), postcard.id);
     assert.ok(researchedLocationQuery(postcard.location), `${postcard.id} has no map query`);
+    assert.ok(Number.isFinite(postcard.location.latitude), `${postcard.id} has no persisted latitude`);
+    assert.ok(Number.isFinite(postcard.location.longitude), `${postcard.id} has no persisted longitude`);
+    assert.equal(postcard.location.geocode?.status, "resolved", `${postcard.id} geocode is unresolved`);
+    assert.ok(postcard.location.geocode?.provider, `${postcard.id} has no coordinate provenance`);
+    assert.ok(postcard.location.geocode?.precision, `${postcard.id} has no coordinate precision`);
+    if (postcard.location.geocode?.provider === "nominatim") {
+      assert.equal(postcard.location.geocode.attribution, "© OpenStreetMap contributors", postcard.id);
+    }
     if (!["TW", "JP"].includes(postcard.location.country_code)) {
       assert.ok(postcard.location.display.includes(postcard.location.country_endonym), `${postcard.id} omits its local country name`);
       if (locationNeedsZhTw(postcard.location.language)) {
@@ -40,7 +48,7 @@ test("researched locations preserve the game text and compose local names consis
   assert.equal(nasu.location.raw, "Nasu, Yumoto");
   assert.equal(nasu.location.endonym, "栃木県那須町湯本203");
   assert.equal(nasu.location.zh_tw, null);
-  assert.equal(nasu.location.display, "栃木県那須町湯本203");
+  assert.equal(nasu.location.display, "栃木県那須郡那須町湯本203");
   assert.equal(nasu.location.address_local, "栃木県那須郡那須町湯本203");
   assert.equal(nasu.location.precision, "full_address");
 
@@ -51,11 +59,11 @@ test("researched locations preserve the game text and compose local names consis
 
   const seoul = postcards.find((record) => record.id === "pc-0084");
   assert.equal(seoul.location.endonym, "서울특별시");
-  assert.equal(seoul.location.zh_tw, "首爾特別市");
-  assert.equal(seoul.location.display, "서울특별시, 대한민국（首爾特別市, 韓國）");
+  assert.equal(seoul.location.zh_tw, "韓國首爾特別市");
+  assert.equal(seoul.location.display, "서울특별시, 대한민국（韓國首爾特別市）");
 
   const laramie = postcards.find((record) => record.id === "pc-0030");
-  assert.equal(laramie.location.display, "Laramie, Wyoming, United States（懷俄明州拉勒米, 美國）");
+  assert.equal(laramie.location.display, "Laramie, Wyoming, United States（美國懷俄明州拉勒米）");
 
   const jordan = postcards.find((record) => record.id === "pc-0073");
   assert.equal(jordan.location.display, "佐敦, 香港");
@@ -214,8 +222,11 @@ test("research detail preserves available material and records gap re-research s
   assert.equal(tongmenghui.location.raw, "Minato, Toranomon 2-Chōme");
   assert.equal(tongmenghui.location.address_local, "東京都港区虎ノ門二丁目10−4");
   assert.equal(tongmenghui.location.precision, "full_address");
-  assert.equal(tongmenghui.location.latitude, null);
-  assert.equal(tongmenghui.location.longitude, null);
+  assert.ok(Number.isFinite(tongmenghui.location.latitude));
+  assert.ok(Number.isFinite(tongmenghui.location.longitude));
+  assert.equal(tongmenghui.location.geocode.status, "resolved");
+  assert.equal(tongmenghui.location.geocode.provider, "nominatim");
+  assert.equal(tongmenghui.location.geocode.precision, "locality");
   assert.equal(tongmenghui.research.status, "re-researched_2026-08-23");
   assert.equal(tongmenghui.research.detail.status, "structured_preserved");
   assert.equal(tongmenghui.research.detail.source_path, "research/raw/pc-0130-research-2026-08-23.md");

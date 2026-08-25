@@ -56,6 +56,12 @@ test("SQLite migration preserves every snapshot field exactly", async () => {
     assert.equal(database.prepare("SELECT user_note FROM postcard_provenance WHERE postcard_id = 'pc-0001' AND sort_order = 0").get().user_note, "我親身到過這裡。");
     assert.ok(database.prepare("PRAGMA table_info(postcards)").all().some((column) => column.name === "deleted_at"));
     assert.ok(database.prepare("PRAGMA table_info(postcards)").all().some((column) => column.name === "archived_at"));
+    assert.ok(database.prepare("PRAGMA table_info(postcards)").all().some((column) => column.name === "location_geocode_status"));
+    const resolvedLocations = database.prepare(`
+      SELECT count(*) AS count FROM postcards
+      WHERE location_geocode_status = 'resolved' AND latitude IS NOT NULL AND longitude IS NOT NULL
+    `).get().count;
+    assert.equal(resolvedLocations, snapshots.postcards.postcards.length);
     assert.equal(
       database.prepare(`
         SELECT note FROM postcard_relations

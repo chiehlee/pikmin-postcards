@@ -44,6 +44,12 @@ try {
     by_research_status: database
       .prepare("SELECT research_status AS status, count(*) AS count FROM postcards GROUP BY research_status ORDER BY count DESC")
       .all(),
+    by_location_geocode_status: database
+      .prepare("SELECT coalesce(location_geocode_status, 'legacy-null') AS status, count(*) AS count FROM postcards GROUP BY status ORDER BY status")
+      .all(),
+    active_postcards_with_coordinates: database
+      .prepare("SELECT count(*) AS count FROM postcards WHERE deleted_at IS NULL AND latitude IS NOT NULL AND longitude IS NOT NULL")
+      .get().count,
   };
   console.log(JSON.stringify(stats, null, 2));
 } finally {
