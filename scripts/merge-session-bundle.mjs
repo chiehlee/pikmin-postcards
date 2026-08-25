@@ -24,13 +24,13 @@ import { replaceDatabaseFromSnapshots } from "../db/snapshots.mjs";
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const args = parseArgs(process.argv.slice(2));
 const bundlePath = args.get("--bundle") ? path.resolve(args.get("--bundle")) : null;
-const importId = args.get("--id") ?? "postcard-session-2026-08-23";
 const shouldCommit = args.has("--commit");
 
 if (!bundlePath) {
   console.error("Usage: node scripts/merge-session-bundle.mjs --bundle /path/to/bundle.zip [--id import-id] [--commit]");
   process.exit(1);
 }
+const importId = args.get("--id") ?? path.basename(bundlePath, path.extname(bundlePath));
 
 const tempDir = await mkdtemp(path.join(os.tmpdir(), "pikmin-postcards-merge-"));
 

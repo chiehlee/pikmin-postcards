@@ -33,7 +33,7 @@ try {
 
   const senderPlan = database
     .prepare("EXPLAIN QUERY PLAN SELECT id FROM postcards WHERE sender = ? ORDER BY found_date DESC")
-    .all("柳柳")
+    .all("example-sender")
     .map((row) => row.detail)
     .join(" | ");
   const curationPlan = database
@@ -53,32 +53,32 @@ try {
     .join(" | ");
   const poiPlan = database
     .prepare("EXPLAIN QUERY PLAN SELECT id FROM postcards WHERE poi_name = ? LIMIT 16")
-    .all("鉄のドンキホーテ")
+    .all("Example POI")
     .map((row) => row.detail)
     .join(" | ");
   const rawLocationPlan = database
     .prepare("EXPLAIN QUERY PLAN SELECT id FROM postcards WHERE location_raw = ? LIMIT 16")
-    .all("Setagaya, Sangenjaya 1-Chōme")
+    .all("Example District")
     .map((row) => row.detail)
     .join(" | ");
   const displayLocationPlan = database
     .prepare("EXPLAIN QUERY PLAN SELECT id FROM postcards WHERE location_display = ? LIMIT 16")
-    .all("臺北市信義區")
+    .all("Example display location")
     .map((row) => row.detail)
     .join(" | ");
   const endonymLocationPlan = database
     .prepare("EXPLAIN QUERY PLAN SELECT id FROM postcards WHERE location_endonym = ? LIMIT 16")
-    .all("那須町湯本")
+    .all("Example endonym")
     .map((row) => row.detail)
     .join(" | ");
   const zhTwLocationPlan = database
     .prepare("EXPLAIN QUERY PLAN SELECT id FROM postcards WHERE location_zh_tw = ? LIMIT 16")
-    .all("首爾特別市")
+    .all("Example zh-TW location")
     .map((row) => row.detail)
     .join(" | ");
   const addressLocationPlan = database
     .prepare("EXPLAIN QUERY PLAN SELECT id FROM postcards WHERE location_address_local = ? LIMIT 16")
-    .all("栃木県那須郡那須町湯本203")
+    .all("Example full address")
     .map((row) => row.detail)
     .join(" | ");
   const tagPlan = database

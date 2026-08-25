@@ -163,15 +163,14 @@ npm run related:candidates -- --id pc-XXXX --limit 8
 
 Friends 頁面的 Mii avatar 使用最高品質、可確認寄件人的證據截圖產生。這是 backend intake／再研究完成流程的一部分，不得依賴維護者事後手動補圖：同一次 AI 畫面判讀應在 `visible.sender_avatar_crop` 回傳方形框的 `center_x`、`center_y`、`size`（相對原始截圖的 0–1 座標）與 confidence；看不清時回傳 null，不可猜測。Backend 只接受 confirmed sender、high／medium confidence 且完全在圖片邊界內的框，再以 ImageMagick 做原圖像素裁切、原子寫入朋友 avatar metadata 與 DB。avatar 失敗不得回滾已成功的 postcard，但必須在 friend profile 保存 `avatar_generation` 狀態，下一次有效證據變動時自動重試。
 
-下列指令只作既有資料 repair／backfill，不是正常新增流程的必要步驟：
+下列指令只作既有位置資料 repair／backfill，不是正常新增流程的必要步驟：
 
 ```bash
-npm run friends:avatars -- --commit
 npm run backfill:location-geocodes
 npm run backfill:location-geocodes -- --commit
 ```
 
-位置回填預設是 dry-run，以 `var/location-geocode-cache.json` 續跑並輸出 `var/location-backfill-report.json`；只有 166/166 之類的目標集合全部解析、地址格式 validation、snapshot → SQLite round-trip 與 integrity check 通過後才可 `--commit`。正式寫入前必須建立完整 archive backup。候選 POI 只有正規化名稱嚴格相符且地址解析度更深時才能提升地址；翻譯查詢必須回到同一 provider object ID，不能因同名或泛稱換成另一個地點。
+位置回填預設是 dry-run，以 `var/location-geocode-cache.json` 續跑並輸出 `var/location-backfill-report.json`；只有目標集合全部解析、地址格式 validation、snapshot → SQLite round-trip 與 integrity check 通過後才可 `--commit`。正式寫入前必須建立完整 archive backup。候選 POI 只有正規化名稱嚴格相符且地址解析度更深時才能提升地址；翻譯查詢必須回到同一 provider object ID，不能因同名或泛稱換成另一個地點。
 
 這是可丟棄後重建的 derived asset，不是身份證明。每次加入同一名稱的新證據，都比較實際 crop 像素尺寸與判讀信心；更好的候選應由 backend 自動更新 avatar path／checksum／crop provenance，但保留原始 postcard assets。不同 sender ID 的 Mii 看似相同時仍維持兩個 profile，等待使用者個案合併指示。
 

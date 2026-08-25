@@ -4,6 +4,8 @@ Pikmin Bloom 明信片的本機收藏、研究與朋友活動範圍證據庫。
 
 程式碼與個人收藏分開保存：Git repository 只負責可重建的應用程式、schema、測試與空白資料範本；明信片圖片、JSON snapshots、SQLite、研究原文、source bundles、備份及 logs 都放在 repository 外的持久資料目錄。重新安裝程式不會清空收藏，移動或備份收藏也不需要搬動 `node_modules`、build 或 Git history。
 
+新的 clone 第一次執行 `setup:local` 時會建立 **0 張明信片、0 位朋友、0 筆 import 與 0 筆 context** 的空白收藏；README 預覽圖只是產品文件，不會被 installer 匯入。需要搬移既有收藏時，請另外攜帶外部 `pikmin-postcards-data`，不要把它放回 Git。
+
 ## 介面預覽
 
 ### 收藏檔案
@@ -235,7 +237,7 @@ Google 地圖與收藏座標是兩條獨立資料路徑：地圖只收到正規�
 
 朋友卡預設只顯示 Mii avatar 與寄件人／遊戲 ID，讓同一個螢幕容納更多玩家；若有保守推測的據點，會在 ID 同一排顯示「可能據點」。信心、觀察數、避免寄送、研究說明與明信片收進「展開資料與明信片」。每位朋友展開後最多直接顯示 5 張明信片；超過時顯示「更多」與剩餘張數。點擊後會開啟獨立、可捲動的完整清單 popup，可用鍵盤循環焦點、Esc 或背景點擊關閉，也能從清單繼續開啟單張明信片。
 
-新增或再研究完成時，同一次 AI 畫面判讀會提供已確認寄件人 Mii 的正規化裁切框；backend 驗證信心與邊界後，自動以原圖像素產生 WebP avatar，並將來源 postcard、來源 checksum、crop box 與生成狀態寫回朋友資料和 SQLite。後續同名玩家出現更高實際 crop 像素的可靠截圖時會自動替換；ImageMagick 暫時不可用或畫面無法可靠定位時不會回滾 postcard，而會保存失敗／等待證據狀態，於下一次有效證據變動自動重試。`npm run friends:avatars -- --commit` 只保留作舊資料 repair／backfill，不是正常流程。
+新增或再研究完成時，同一次 AI 畫面判讀會提供已確認寄件人 Mii 的正規化裁切框；backend 驗證信心與邊界後，自動以原圖像素產生 WebP avatar，並將來源 postcard、來源 checksum、crop box 與生成狀態寫回朋友資料和 SQLite。後續同名玩家出現更高實際 crop 像素的可靠截圖時會自動替換；ImageMagick 暫時不可用或畫面無法可靠定位時不會回滾 postcard，而會保存失敗／等待證據狀態，於下一次有效證據變動自動重試。這是 backend 的正常流程，不需要維護者執行針對特定收藏的補圖腳本。
 
 據點分析不是按日排程。新增已確認寄件人的明信片，或再研究真的改變該玩家的日期／研究定位證據時，系統只重算受影響的玩家；批次匯入則每位玩家最多重算一次。自動早期訊號需要同一區域至少 3 個不同日期、跨 14 天並占全部有效日期至少 60%；同日多張只算一次，短期集中另視為可能旅遊群集。Soft delete 仍保留既有朋友證據，不會因清理疑似重複明信片而扭曲玩家足跡。
 
@@ -253,7 +255,7 @@ Google 地圖與收藏座標是兩條獨立資料路徑：地圖只收到正規�
 
 地址研究一律先嘗試 `full_address`；無法證實才按 `road → locality → district → city → region → country → unknown` 逐級退回，`precision` 要反映真正的證據解析度。臺灣與日本不附國名並按當地習慣連寫；其他國家按當地地址順序使用半形逗號並把當地國名放在最後。非中日文另保存相同精度、按臺灣繁中閱讀順序且含國名的 `zh_tw`。所有國家只要有可靠完整地址，主標就顯示完整地址，不再因國家而刻意降低解析度。
 
-既有地址名稱的舊工具是 `npm run backfill:location-names`。地址正規化與永久座標的一次性／repair 工具是：
+地址正規化與永久座標的一次性／repair 工具是：
 
 ```bash
 # dry-run：可續跑 cache 與報告都放在 Git 忽略的 var/
@@ -279,8 +281,6 @@ npm run backfill:location-geocodes -- --commit
 - `db/migrations/`：可版控、依序執行的資料庫 schema migrations。
 - `ai_jobs`（SQLite）：保存 UI 新增／再研究工作的收錄模式、batch ID、輸入辨識標籤、使用者再研究補充、prompt、SKILL checksum、OpenAI response ID、狀態、時間、結果或錯誤；不保存 API key。使用者補充也會寫入 postcard provenance 與 canonical record，避免工作完成後失去第一手來源身分。
 - `.env.local`：本機 server 設定（不進 Git）；設定頁以 `0600` 保存 OpenAI API key 與研究 model。
-- `imports/current-session/`：來源 session 的原始 manifest 與說明。
-- `scripts/normalize-current-session.mjs`：只用於建立全新 repo 時產生第一包 bootstrap records。
 - `scripts/merge-session-bundle.mjs`：驗證 ZIP 內所有 checksum，合併新 bundle 並保留 provenance。
 - `scripts/check-duplicate.mjs`：兩階段去重檢查。
 
