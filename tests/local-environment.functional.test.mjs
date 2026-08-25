@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { chmod, lstat, mkdtemp, mkdir, readFile, readlink, rm, writeFile } from "node:fs/promises";
+import { copyFile, lstat, mkdtemp, mkdir, readFile, readlink, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -69,22 +69,34 @@ test("fresh local setup moves mutable data outside the repository and is idempot
     const locator = JSON.parse(await readFile(path.join(project, ".pikmin-local.json"), "utf8"));
     assert.equal(locator.data_root, archive);
 
-    const fakeVinext = path.join(project, "node_modules/.bin/vinext");
-    await mkdir(path.dirname(fakeVinext), { recursive: true });
-    await writeFile(fakeVinext, [
-      "#!/usr/bin/env node",
-      "const fs = require('node:fs');",
-      "const path = require('node:path');",
-      "fs.writeFileSync(path.join(process.env.PIKMIN_DATA_ROOT, 'start-probe.json'), JSON.stringify({ args: process.argv.slice(2), project: process.env.PIKMIN_PROJECT_ROOT }));",
+    await mkdir(path.join(project, "scripts"), { recursive: true });
+    await copyFile(path.join(root, "scripts/start-production.mjs"), path.join(project, "scripts/start-production.mjs"));
+    await mkdir(path.join(project, "dist/server"), { recursive: true });
+    await writeFile(path.join(project, "dist/server/index.js"), "// synthetic production entry\n");
+    await mkdir(path.join(project, "node_modules/vinext/dist/config"), { recursive: true });
+    await mkdir(path.join(project, "node_modules/vinext/dist/server"), { recursive: true });
+    await writeFile(path.join(project, "node_modules/vinext/package.json"), JSON.stringify({
+      type: "module",
+      exports: {
+        "./internal/config/dotenv": "./dist/config/dotenv.js",
+        "./server/prod-server": "./dist/server/prod-server.js",
+      },
+    }));
+    await writeFile(path.join(project, "node_modules/vinext/dist/config/dotenv.js"), "export function loadDotenv() {}\n");
+    await writeFile(path.join(project, "node_modules/vinext/dist/server/prod-server.js"), [
+      "import fs from 'node:fs';",
+      "import path from 'node:path';",
+      "export async function startProdServer(options) {",
+      "  fs.writeFileSync(path.join(process.env.PIKMIN_DATA_ROOT, 'start-probe.json'), JSON.stringify({ options, project: process.env.PIKMIN_PROJECT_ROOT }));",
+      "}",
     ].join("\n"));
-    await chmod(fakeVinext, 0o755);
     await execFileAsync(process.execPath, [
       installer,
       "start",
       "--project-root", project,
     ], { cwd: root });
     const probe = JSON.parse(await readFile(path.join(archive, "start-probe.json"), "utf8"));
-    assert.deepEqual(probe.args, ["start", "--hostname", "0.0.0.0", "--port", "4317"]);
+    assert.deepEqual(probe.options, { host: "0.0.0.0", port: 4317, outDir: path.join(project, "dist") });
     assert.equal(probe.project, project);
   } finally {
     await rm(temporaryDirectory, { recursive: true, force: true });
@@ -139,6 +151,42 @@ test("a genuinely fresh local setup initializes an empty collection", async () =
       const snapshot = JSON.parse(await readFile(path.join(archive, "snapshots", filename), "utf8"));
       assert.deepEqual(snapshot[collection], [], `${filename} was not initialized empty`);
     }
+  } finally {
+    await rm(temporaryDirectory, { recursive: true, force: true });
+  }
+});
+
+test("setup publishes an immutable production build outside the repository", async () => {
+  const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "pikmin-local-build-"));
+  const project = path.join(temporaryDirectory, "pikmin-postcards");
+  const archive = path.join(temporaryDirectory, "pikmin-postcards-data");
+  const fakeNpm = path.join(temporaryDirectory, "fake-npm.mjs");
+  await mkdir(project, { recursive: true });
+  await writeFile(fakeNpm, [
+    "import { mkdir, writeFile } from 'node:fs/promises';",
+    "import path from 'node:path';",
+    "const output = path.join(process.cwd(), 'dist/server');",
+    "await mkdir(output, { recursive: true });",
+    "await writeFile(path.join(output, 'BUILD_ID'), 'synthetic-build\\n');",
+    "await writeFile(path.join(output, 'index.js'), '// immutable synthetic build\\n');",
+  ].join("\n"));
+  try {
+    await execFileAsync(process.execPath, [
+      installer,
+      "setup",
+      "--project-root", project,
+      "--data-root", archive,
+      "--skip-dependencies",
+      "--skip-sync",
+    ], { cwd: root, env: { ...process.env, npm_execpath: fakeNpm } });
+
+    const config = JSON.parse(await readFile(path.join(archive, "config/runtime.json"), "utf8"));
+    assert.equal(config.build_path, path.join(archive, "runtime/builds/synthetic-build"));
+    assert.equal(
+      await readFile(path.join(config.build_path, "server/index.js"), "utf8"),
+      "// immutable synthetic build\n",
+    );
+    assert.equal((await lstat(config.build_path)).isDirectory(), true);
   } finally {
     await rm(temporaryDirectory, { recursive: true, force: true });
   }

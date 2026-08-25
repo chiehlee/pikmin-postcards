@@ -272,6 +272,7 @@ npm run backfill:location-geocodes -- --commit
 - `../pikmin-postcards-data/research/raw/`：長版研究；repo 內的 `research/raw` 是 symlink。
 - `../pikmin-postcards-data/imports/source-bundles/`：原始 ZIP bundles；repo 內相同位置是 symlink。
 - `../pikmin-postcards-data/runtime/pikmin-postcards.sqlite3`：SQLite operational database；repo 內的 `var` 是 symlink。
+- `../pikmin-postcards-data/runtime/builds/<BUILD_ID>/`：本機 live server 使用的不可變 production build。測試或開發重新產生 repo 內的 `dist/` 時，不會換掉執行中 server 已載入的 chunks。
 - `../pikmin-postcards-data/backups/archive-*/`：可獨立驗證的 archive backups；每份都同時包含 SQLite、snapshots、所有 DB 引用圖片、intake 圖片、研究原文與來源 bundles。
 - `../pikmin-postcards-data/runtime/image-inbox/`：尚未 canonicalize 的圖片 intake，以 SHA-256 命名。
 - `../pikmin-postcards-data/logs/`：Wrangler 與本機維護 logs。
