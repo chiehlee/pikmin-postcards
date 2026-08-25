@@ -121,6 +121,17 @@ type Postcard = {
     precision: 'country' | 'region' | 'city' | 'district' | 'locality' | 'road' | 'full_address' | 'coordinates' | 'unknown';
     latitude?: number | null;
     longitude?: number | null;
+    geocode?: {
+      status: 'resolved' | 'unresolved';
+      provider: 'nominatim' | 'research_source' | 'manual' | 'visible_coordinates' | 'legacy' | null;
+      query: string | null;
+      matched_label: string | null;
+      precision: Postcard['location']['precision'];
+      confidence: 'high' | 'medium' | 'low';
+      resolved_at: string | null;
+      attribution: string | null;
+      error?: string | null;
+    };
   };
   asset: {
     path: string;
@@ -180,12 +191,7 @@ type Postcard = {
   }[];
 };
 
-const researchedMapOverrides: Record<string, { query: string; label: string }> = {
-  'pc-0020': {
-    query: '壹號交易廣場, 台北市信義區松仁路89號',
-    label: '壹號交易廣場前庭・臺北市信義區松仁路89號',
-  },
-};
+type GeocodeProvider = NonNullable<Postcard['location']['geocode']>['provider'];
 
 const statusLabels: Record<Status, string> = {
   keep: '保留',
@@ -250,19 +256,8 @@ function senderLine(postcard: Postcard) {
   return '來源：待確認';
 }
 
-function coordinateQuery(postcard: Postcard) {
-  const coordinates = postcardCoordinates(postcard);
-  return coordinates ? `${coordinates.latitude},${coordinates.longitude}` : null;
-}
-
 function mapTargetFor(postcard: Postcard): MapTarget | null {
   if (postcard.research.detail.status === 'not_recovered' || postcard.research.status === 'metadata_only_pending_research') return null;
-  const coordinates = coordinateQuery(postcard);
-  if (coordinates) {
-    return { query: coordinates, label: coordinates, precision: 'coordinates' };
-  }
-  const override = researchedMapOverrides[postcard.id];
-  if (override) return { ...override, precision: 'researched_place_query' };
   const researchedLocation = researchedLocationQuery(postcard.location);
   return {
     query: [postcard.poi_name, researchedLocation].filter(Boolean).join(', '),
@@ -284,6 +279,17 @@ function locationPrecisionLabel(precision: Postcard['location']['precision']) {
     unknown: '未確認',
   };
   return labels[precision];
+}
+
+function geocodeProviderLabel(provider: GeocodeProvider) {
+  const labels = {
+    nominatim: 'OpenStreetMap Nominatim',
+    research_source: '研究來源',
+    manual: '人工確認',
+    visible_coordinates: '明信片畫面座標',
+    legacy: '舊資料',
+  } as const;
+  return provider ? labels[provider] : '尚未解析';
 }
 
 function relationshipLabel(relationship: string) {
@@ -376,7 +382,7 @@ export default function Home() {
   const [sortField, setSortField] = useState<SortField>(defaultSortField);
   const [sortDirection, setSortDirection] = useState<SortDirection>(defaultSortDirection);
   const [distanceOrigin, setDistanceOrigin] = useState<DistanceOrigin | null>(null);
-  const [locationFeedback, setLocationFeedback] = useState('尚未取得距離基準。');
+  const [locationFeedback, setLocationFeedback] = useState('請使用目前位置，或自行輸入緯度與經度。');
   const [locating, setLocating] = useState(false);
   const [manualLatitude, setManualLatitude] = useState('');
   const [manualLongitude, setManualLongitude] = useState('');
@@ -1144,7 +1150,11 @@ export default function Home() {
               <div className="distance-sort-copy">
                 <strong>距離基準</strong>
                 <span role="status" aria-live="polite">{locationFeedback}</span>
-                <small>目前篩選結果有 {filteredCoordinateCount} / {filtered.length} 張具可計算座標；其餘固定排在最後。</small>
+                <small>
+                  使用地球曲面直線距離（Haversine）比較參考座標與每張明信片保存的研究座標。
+                  目前篩選結果有 {filteredCoordinateCount} / {filtered.length} 張可計算；缺座標者固定排在最後。
+                  {distanceOrigin ? ` 目前基準：${distanceOrigin.latitude.toFixed(6)}, ${distanceOrigin.longitude.toFixed(6)}。` : ''}
+                </small>
               </div>
               <button type="button" onClick={requestDeviceLocation} disabled={locating}>
                 {locating ? '定位中…' : distanceOrigin?.source === 'device' ? '更新目前位置' : '使用目前位置'}
@@ -1190,7 +1200,7 @@ export default function Home() {
                         </time>
                       </div>
                       <h3><button onClick={() => openPostcard(postcard)}>{postcard.poi_name}</button></h3>
-                      <p className="place">{researchedLocationDisplay(postcard.location)}</p>
+                      <p className="place" title={researchedLocationDisplay(postcard.location)}>{researchedLocationDisplay(postcard.location)}</p>
                       <p className="sender">{senderLine(postcard)}</p>
                       {sortField === 'distance' && (
                         <p className={`distance ${distance == null ? 'distance-missing' : ''}`}>
@@ -1463,10 +1473,13 @@ export default function Home() {
                     </div>
                   )}
                   <p className="location-map-precision">
-                    {activeMapTarget.precision === 'coordinates'
-                      ? '定位依據：明信片保存的座標'
-                      : '定位依據：研究所得地點；marker 由 Google 依地名解析，尚非人工確認座標'}
+                    地圖 marker 由 Google 依研究地址獨立解析；距離計算使用明信片保存的研究座標
+                    {`（${geocodeProviderLabel(active.location.geocode?.provider ?? null)}）`}
                     {` · 地址精度：${locationPrecisionLabel(active.location.precision)}`}
+                    {active.location.geocode?.precision
+                      ? ` · 座標精度：${locationPrecisionLabel(active.location.geocode.precision)}`
+                      : ''}
+                    {active.location.geocode?.attribution ? ` · ${active.location.geocode.attribution}` : ''}
                   </p>
                 </section>
               )}

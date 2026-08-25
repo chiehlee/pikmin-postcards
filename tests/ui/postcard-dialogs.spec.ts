@@ -77,7 +77,7 @@ test('archive controls distinguish both dates and restore every dropdown default
 test('researched locations use the local script while preserving the game text', async ({ page }) => {
   const nasuDialog = await openPostcard(page, '藤城清治美術館');
   const nasuLocation = nasuDialog.locator('.detail-location');
-  await expect(nasuLocation).toContainText('栃木県那須町湯本203');
+  await expect(nasuLocation).toContainText('栃木県那須郡那須町湯本203');
   await expect(nasuLocation.locator('small')).toHaveText('遊戲顯示：Nasu, Yumoto');
   await page.keyboard.press('Escape');
 
@@ -91,7 +91,7 @@ test('researched locations use the local script while preserving the game text',
 
   const seoulDialog = await openPostcard(page, '인공폭포');
   const seoulLocation = seoulDialog.locator('.detail-location');
-  await expect(seoulLocation).toContainText('서울특별시, 대한민국（首爾特別市, 韓國）');
+  await expect(seoulLocation).toContainText('서울특별시, 대한민국（韓國首爾特別市）');
   await expect(seoulLocation.locator('small')).toHaveText('遊戲顯示：Seoul');
   await expect(seoulDialog.locator('.location-map-precision')).toContainText('地址精度：城市');
   await page.keyboard.press('Escape');
@@ -101,6 +101,32 @@ test('researched locations use the local script while preserving the game text',
   await expect(jordanLocation).toContainText('佐敦, 香港');
   await expect(jordanLocation).not.toContainText('佐敦，香港');
   await expect(jordanLocation.locator('small')).toHaveText('遊戲顯示：Jordan');
+});
+
+test('distance sorting uses a manual origin and every active postcard persisted coordinate', async ({ page }) => {
+  await page.goto('/');
+  await page.getByLabel('排序', { exact: true }).selectOption('distance');
+  const distanceTools = page.locator('.distance-sort-tools');
+  await expect(distanceTools).toBeVisible();
+  await expect(distanceTools).toContainText('159 / 159 張可計算');
+  await distanceTools.getByLabel('參考緯度').fill('25.033000');
+  await distanceTools.getByLabel('參考經度').fill('121.565000');
+  await distanceTools.getByRole('button', { name: '套用座標' }).click();
+  await expect(distanceTools).toContainText('目前基準：25.033000, 121.565000');
+
+  const ascending = await page.locator('.postcard-card .distance').evaluateAll((elements) => (
+    elements.map((element) => Number.parseFloat(element.textContent?.match(/[\d.]+/)?.[0] ?? 'NaN'))
+  ));
+  expect(ascending).toHaveLength(60);
+  expect(ascending.every(Number.isFinite)).toBe(true);
+  expect(ascending).toEqual([...ascending].sort((left, right) => left - right));
+  await expect(page.getByText('尚無可計算座標')).toHaveCount(0);
+
+  await page.getByLabel('排序方向').selectOption('desc');
+  const descending = await page.locator('.postcard-card .distance').evaluateAll((elements) => (
+    elements.map((element) => Number.parseFloat(element.textContent?.match(/[\d.]+/)?.[0] ?? 'NaN'))
+  ));
+  expect(descending).toEqual([...descending].sort((left, right) => right - left));
 });
 
 test('long-form research uses an independently scrollable modal and restores focus', async ({ page }) => {
@@ -221,6 +247,8 @@ test('Google Map stays lazy, then loads a working keyless embed', async ({ page 
   expect(source.pathname).toBe('/maps');
   expect(source.searchParams.get('output')).toBe('embed');
   expect(source.searchParams.has('key')).toBe(false);
+  expect(source.searchParams.get('q')).toContain(postcardName);
+  expect(source.searchParams.get('q')).not.toMatch(/^-?\d+(?:\.\d+)?,-?\d+(?:\.\d+)?$/);
   expect(request.url()).not.toContain('key=');
   await expect.poll(
     () => page.frames().some((frame) => frame.url().includes('google.com/maps/embed')),

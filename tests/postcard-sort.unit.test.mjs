@@ -42,11 +42,13 @@ test("distance sorting supports nearest and farthest with ungeocoded records las
   assert.ok(Math.abs(distanceKilometers(records[0], origin) - 111.2) < 0.2);
 });
 
-test("coordinates can be recovered from the postcard's raw coordinate label", () => {
-  assert.deepEqual(
-    postcardCoordinates({ location: { raw: "(35.6443480, 139.7052670)" } }),
-    { latitude: 35.644348, longitude: 139.705267 },
-  );
+test("distance only uses persisted coordinates and never treats visible game text as canonical", () => {
+  assert.equal(postcardCoordinates({ location: { raw: "(35.6443480, 139.7052670)" } }), null);
+  assert.deepEqual(postcardCoordinates({ location: {
+    raw: "(35.6443480, 139.7052670)",
+    latitude: 35.644348,
+    longitude: 139.705267,
+  } }), { latitude: 35.644348, longitude: 139.705267 });
   assert.equal(postcardCoordinates({ location: { raw: "Ankang, Xinyi District" } }), null);
 });
 
