@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { copyFile, mkdir, readFile, readdir, rm } from "node:fs/promises";
+import { copyFile, mkdir, mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { createServer } from "node:net";
+import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { createEmptySnapshots, writeSnapshots } from "./fixtures/archive-snapshots.mjs";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -28,6 +30,10 @@ test("production server bundle does not embed the build machine's database sourc
 test("production site serves dialogs, keyless maps, and canonical assets", { timeout: 20_000 }, async () => {
   const port = await availablePort();
   const origin = `http://127.0.0.1:${port}`;
+  const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "pikmin-site-test-"));
+  const snapshotDirectory = path.join(temporaryDirectory, "data");
+  const databasePath = path.join(temporaryDirectory, "archive.sqlite3");
+  await writeSnapshots(snapshotDirectory, createEmptySnapshots());
   const runtimeAssetDirectory = path.join(projectRoot, "public/images/runtime-test");
   const runtimeAsset = path.join(runtimeAssetDirectory, "post-build.png");
   const server = spawn(
@@ -40,7 +46,15 @@ test("production site serves dialogs, keyless maps, and canonical assets", { tim
       "--port",
       String(port),
     ],
-    { cwd: projectRoot, stdio: ["ignore", "pipe", "pipe"] },
+    {
+      cwd: projectRoot,
+      stdio: ["ignore", "pipe", "pipe"],
+      env: {
+        ...process.env,
+        PIKMIN_DATABASE_PATH: databasePath,
+        PIKMIN_SNAPSHOT_DIRECTORY: snapshotDirectory,
+      },
+    },
   );
   let serverOutput = "";
   server.stdout.on("data", (chunk) => { serverOutput += chunk; });
@@ -48,7 +62,7 @@ test("production site serves dialogs, keyless maps, and canonical assets", { tim
 
   try {
     await mkdir(runtimeAssetDirectory, { recursive: true });
-    await copyFile(path.join(projectRoot, "public/images/postcards/2026/05/pc-020.png"), runtimeAsset);
+    await copyFile(path.join(projectRoot, "public/og.png"), runtimeAsset);
     const home = await waitForResponse(`${origin}/`, server, () => serverOutput);
     const html = await home.text();
     assert.match(home.headers.get("content-type") ?? "", /text\/html/);
@@ -76,7 +90,7 @@ test("production site serves dialogs, keyless maps, and canonical assets", { tim
     assert.equal(archiveResponse.status, 200);
     const archivePayload = await archiveResponse.json();
     assert.equal(archivePayload.api_version, 1);
-    assert.ok(archivePayload.postcards.length > 100);
+    assert.equal(archivePayload.postcards.length, 0);
     assert.equal(Array.isArray(archivePayload.friends), true);
 
     const clientPaths = [...html.matchAll(/(?:src|href)="([^"]+\.js)"/g)]
@@ -99,7 +113,7 @@ test("production site serves dialogs, keyless maps, and canonical assets", { tim
     assert.doesNotMatch(clientCode, /NEXT_PUBLIC_GOOGLE_MAPS_EMBED_API_KEY/);
     assert.doesNotMatch(clientCode, /One Grantai Fontain/, "Canonical postcard data must come from the backend API, not the client bundle");
 
-    const image = await fetch(`${origin}/images/postcards/2026/05/pc-020.png`);
+    const image = await fetch(`${origin}/og.png`);
     assert.equal(image.status, 200);
     assert.match(image.headers.get("content-type") ?? "", /image\/png/);
     assert.ok((await image.arrayBuffer()).byteLength > 0);
@@ -116,6 +130,7 @@ test("production site serves dialogs, keyless maps, and canonical assets", { tim
     server.kill("SIGTERM");
     if (server.exitCode == null) await new Promise((resolve) => server.once("exit", resolve));
     await rm(runtimeAssetDirectory, { recursive: true, force: true });
+    await rm(temporaryDirectory, { recursive: true, force: true });
   }
 });
 

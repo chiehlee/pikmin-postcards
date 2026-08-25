@@ -8,7 +8,7 @@ import { preserveResearchImages, safeRemoteLocator } from "../server/research-im
 
 test("research images are capped, validated by bytes, downloaded locally, and stripped of URL secrets", async () => {
   const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "pikmin-research-images-"));
-  const fixture = await readFile(new URL("../public/images/postcards/2026/05/pc-020.png", import.meta.url));
+  const fixture = await readFile(new URL("../public/og.png", import.meta.url));
   const server = createServer((request, response) => {
     if (request.url?.startsWith("/valid.png")) {
       response.writeHead(200, { "content-type": "image/png", "content-length": fixture.length });

@@ -1,11 +1,13 @@
 import assert from "node:assert/strict";
-import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { DatabaseSync } from "node:sqlite";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { openDatabase } from "../db/database.mjs";
+import { replaceDatabaseFromSnapshots } from "../db/snapshots.mjs";
 import { archiveOverview, cancelJob, softDeletePostcard } from "../server/archive-manager.mjs";
+import { createSyntheticSnapshots, writeSnapshots } from "./fixtures/archive-snapshots.mjs";
 
 test("GPT-5.6 job migrations preserve old jobs and accept new reasoning and cancellation states", async () => {
   const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "pikmin-reasoning-migration-"));
@@ -103,15 +105,17 @@ test("cancelling a queued job is terminal, preserves evidence, and removes it fr
   const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "pikmin-cancel-job-"));
   const snapshotDirectory = path.join(temporaryDirectory, "data");
   const databasePath = path.join(temporaryDirectory, "archive.sqlite3");
-  await cp(new URL("../data", import.meta.url), snapshotDirectory, { recursive: true, dereference: true });
+  const snapshots = createSyntheticSnapshots();
+  await writeSnapshots(snapshotDirectory, snapshots);
   const database = await openDatabase(databasePath);
   try {
+    replaceDatabaseFromSnapshots(database, snapshots);
     database.prepare(`
       INSERT INTO ai_jobs (
         id, kind, status, postcard_id, model, skill_path, skill_sha256, prompt,
         created_at, updated_at, provider, reasoning_effort, workflow, input_label
       ) VALUES (
-        'job-cancel-functional', 'reresearch', 'queued', 'pc-0001', 'gpt-5.6-sol',
+        'job-cancel-functional', 'reresearch', 'queued', 'pc-9001', 'gpt-5.6-sol',
         '.agents/skills/pikmin-postcard-intake/SKILL.md', 'skill-sha', '完整 prompt 仍需保留',
         '2026-08-24T01:02:03.000Z', '2026-08-24T01:02:03.000Z',
         'local_codex', 'high', 'full_research', 'cancel-functional.png'
@@ -125,7 +129,7 @@ test("cancelling a queued job is terminal, preserves evidence, and removes it fr
     const cancelled = await cancelJob("job-cancel-functional", { databasePath, snapshotDirectory });
     assert.equal(cancelled.status, "cancelled");
     assert.ok(cancelled.completed_at);
-    assert.equal(cancelled.postcard_id, "pc-0001");
+    assert.equal(cancelled.postcard_id, "pc-9001");
     assert.equal((await cancelJob("job-cancel-functional", { databasePath, snapshotDirectory })).status, "cancelled");
 
     const applyingDatabase = await openDatabase(databasePath);
@@ -135,7 +139,7 @@ test("cancelling a queued job is terminal, preserves evidence, and removes it fr
           id, kind, status, postcard_id, model, skill_path, skill_sha256, prompt,
           created_at, updated_at, provider, reasoning_effort, workflow
         ) VALUES (
-          'job-applying-functional', 'reresearch', 'applying', 'pc-0001', 'gpt-5.6-sol',
+          'job-applying-functional', 'reresearch', 'applying', 'pc-9001', 'gpt-5.6-sol',
           'skill', 'sha', 'applying prompt', '2026-08-24T01:02:03.000Z',
           '2026-08-24T01:02:04.000Z', 'local_codex', 'high', 'full_research'
         )
@@ -156,7 +160,7 @@ test("cancelling a queued job is terminal, preserves evidence, and removes it fr
           skill_sha256, prompt, created_at, started_at, updated_at, provider,
           reasoning_effort, workflow
         ) VALUES (
-          'job-openai-cancel-functional', 'reresearch', 'in_progress', 'pc-0001',
+          'job-openai-cancel-functional', 'reresearch', 'in_progress', 'pc-9001',
           'resp-functional-cancel', 'gpt-5.6', 'skill', 'sha', 'provider prompt',
           '2026-08-24T01:02:03.000Z', '2026-08-24T01:02:04.000Z',
           '2026-08-24T01:02:05.000Z', 'openai_api', 'high', 'full_research'
@@ -211,22 +215,17 @@ test("soft delete hides one postcard while preserving its image, research, DB ro
   const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "pikmin-soft-delete-"));
   const snapshotDirectory = path.join(temporaryDirectory, "data");
   const databasePath = path.join(temporaryDirectory, "archive.sqlite3");
-  const canonicalSnapshot = new URL("../data/postcards.json", import.meta.url);
-  const canonicalBefore = await readFile(canonicalSnapshot);
-  await cp(new URL("../data", import.meta.url), snapshotDirectory, {
-    recursive: true,
-    dereference: true,
-  });
+  await writeSnapshots(snapshotDirectory);
   const before = JSON.parse(await readFile(path.join(snapshotDirectory, "postcards.json"), "utf8"));
   const friendsBefore = JSON.parse(await readFile(path.join(snapshotDirectory, "friends.json"), "utf8"));
   const activeBefore = before.postcards.filter((record) => !record.lifecycle?.deleted_at).length;
   const deletedBefore = before.postcards.length - activeBefore;
-  const original = before.postcards.find((record) => record.id === "pc-0001");
+  const original = before.postcards.find((record) => record.id === "pc-9001");
   const relatedId = original.related_postcards[0].id;
 
   try {
     const deleted = await softDeletePostcard(
-      "pc-0001",
+      "pc-9001",
       "functional test",
       { snapshotDirectory, databasePath },
     );
@@ -235,7 +234,7 @@ test("soft delete hides one postcard while preserving its image, research, DB ro
 
     const after = JSON.parse(await readFile(path.join(snapshotDirectory, "postcards.json"), "utf8"));
     assert.equal(after.postcards.length, before.postcards.length);
-    const preserved = after.postcards.find((record) => record.id === "pc-0001");
+    const preserved = after.postcards.find((record) => record.id === "pc-9001");
     assert.deepEqual(preserved.asset, original.asset);
     assert.deepEqual(preserved.research, original.research);
     assert.deepEqual(preserved.related_postcards, original.related_postcards);
@@ -269,7 +268,7 @@ test("soft delete hides one postcard while preserving its image, research, DB ro
     const overview = await archiveOverview({ snapshotDirectory, databasePath });
     assert.equal(overview.totals.active, activeBefore - 1);
     assert.equal(overview.totals.deleted, deletedBefore + 1);
-    assert.ok(!overview.postcards.some((record) => record.id === "pc-0001"));
+    assert.ok(!overview.postcards.some((record) => record.id === "pc-9001"));
     assert.ok(overview.postcards.some((record) => record.id === relatedId));
     assert.notEqual(overview.postcards.find((record) => record.id === relatedId).poi_name, "STALE CLIENT SNAPSHOT MUST NOT WIN");
     assert.deepEqual(overview.friends, friendsBefore.profiles);
@@ -281,12 +280,12 @@ test("soft delete hides one postcard while preserving its image, research, DB ro
 
     const database = await openDatabase(databasePath);
     try {
-      const row = database.prepare("SELECT deleted_at, deleted_reason, document_json FROM postcards WHERE id = ?").get("pc-0001");
+      const row = database.prepare("SELECT deleted_at, deleted_reason, document_json FROM postcards WHERE id = ?").get("pc-9001");
       assert.ok(row.deleted_at);
       assert.equal(row.deleted_reason, "functional test");
       assert.equal(JSON.parse(row.document_json).asset.sha256, original.asset.sha256);
-      assert.equal(database.prepare("SELECT count(*) AS count FROM research_details WHERE postcard_id = ?").get("pc-0001").count, 1);
-      assert.equal(database.prepare("SELECT count(*) AS count FROM postcard_relations WHERE postcard_id = ?").get("pc-0001").count, original.related_postcards.length);
+      assert.equal(database.prepare("SELECT count(*) AS count FROM research_details WHERE postcard_id = ?").get("pc-9001").count, 1);
+      assert.equal(database.prepare("SELECT count(*) AS count FROM postcard_relations WHERE postcard_id = ?").get("pc-9001").count, original.related_postcards.length);
       const jobColumns = database.prepare("PRAGMA table_info(ai_jobs)").all().map((column) => column.name);
       assert.ok(jobColumns.includes("workflow"));
       assert.ok(jobColumns.includes("batch_id"));
@@ -300,7 +299,6 @@ test("soft delete hides one postcard while preserving its image, research, DB ro
       database.close();
     }
   } finally {
-    assert.deepEqual(await readFile(canonicalSnapshot), canonicalBefore);
     await rm(temporaryDirectory, { recursive: true, force: true });
   }
 });

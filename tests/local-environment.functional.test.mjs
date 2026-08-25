@@ -112,3 +112,34 @@ test("fresh local setup rejects archive data inside the Git repository", async (
     await rm(temporaryDirectory, { recursive: true, force: true });
   }
 });
+
+test("a genuinely fresh local setup initializes an empty collection", async () => {
+  const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "pikmin-local-empty-"));
+  const project = path.join(temporaryDirectory, "pikmin-postcards");
+  const archive = path.join(temporaryDirectory, "pikmin-postcards-data");
+  await mkdir(project, { recursive: true });
+  try {
+    await execFileAsync(process.execPath, [
+      installer,
+      "setup",
+      "--project-root", project,
+      "--data-root", archive,
+      "--skip-dependencies",
+      "--skip-sync",
+      "--skip-build",
+    ], { cwd: root });
+
+    const definitions = [
+      ["postcards.json", "postcards"],
+      ["friends.json", "profiles"],
+      ["imports.json", "imports"],
+      ["context.json", "records"],
+    ];
+    for (const [filename, collection] of definitions) {
+      const snapshot = JSON.parse(await readFile(path.join(archive, "snapshots", filename), "utf8"));
+      assert.deepEqual(snapshot[collection], [], `${filename} was not initialized empty`);
+    }
+  } finally {
+    await rm(temporaryDirectory, { recursive: true, force: true });
+  }
+});

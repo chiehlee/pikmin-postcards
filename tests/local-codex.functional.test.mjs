@@ -24,7 +24,7 @@ test("aborting a local Codex command terminates the child process", async () => 
 });
 
 test("local Codex research receives the maintained skill and returns structured output without writing the archive", async () => {
-  const imagePath = path.join(projectRoot, "public/images/postcards/2026/05/pc-020.png");
+  const imagePath = path.join(projectRoot, "public/og.png");
   const expected = { visible: { poi_name: "probe" }, research: { summary: "probe" } };
   let invocation;
 
@@ -59,7 +59,7 @@ test("local Codex research receives the maintained skill and returns structured 
 });
 
 test("local Codex quick intake forces GPT-5.6's lowest supported reasoning and disables search", async () => {
-  const imagePath = path.join(projectRoot, "public/images/postcards/2026/05/pc-020.png");
+  const imagePath = path.join(projectRoot, "public/og.png");
   const expected = { visible: { poi_name: "快速辨識" } };
   let invocation;
   const result = await runLocalCodexMetadata({

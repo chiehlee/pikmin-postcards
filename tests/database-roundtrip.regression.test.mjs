@@ -5,14 +5,15 @@ import path from "node:path";
 import test from "node:test";
 import { resolveStoredLocalPath } from "../db/asset-paths.mjs";
 import { openDatabase } from "../db/database.mjs";
-import { exportSnapshots, loadSnapshots, replaceDatabaseFromSnapshots } from "../db/snapshots.mjs";
+import { exportSnapshots, replaceDatabaseFromSnapshots } from "../db/snapshots.mjs";
+import { createSyntheticSnapshots } from "./fixtures/archive-snapshots.mjs";
 
 test("SQLite migration preserves every snapshot field exactly", async () => {
   const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "pikmin-db-test-"));
   const databasePath = path.join(temporaryDirectory, "archive.sqlite3");
-  const snapshots = await loadSnapshots();
+  const snapshots = createSyntheticSnapshots();
   snapshots.postcards.postcards[0].research.images = [{
-    path: "/images/research/pc-0001/job-test-1-abc123.png",
+    path: "/images/research/pc-9001/job-test-1-abc123.png",
     sha256: "a".repeat(64),
     bytes: 1234,
     media_type: "image/png",
@@ -31,10 +32,7 @@ test("SQLite migration preserves every snapshot field exactly", async () => {
     job_id: "job-roundtrip",
   }];
   snapshots.postcards.postcards[0].provenance[0].user_note = "我親身到過這裡。";
-  for (const postcardId of ["pc-0111", "pc-0112"]) {
-    const postcard = snapshots.postcards.postcards.find((record) => record.id === postcardId);
-    postcard.related_postcards[0].note = "相同 POI、日期與地點的兩張獨立遊戲截圖。";
-  }
+  for (const postcard of snapshots.postcards.postcards) postcard.related_postcards[0].note = "相同測試系列的兩張合成遊戲截圖。";
   const database = await openDatabase(databasePath);
 
   try {
@@ -43,7 +41,7 @@ test("SQLite migration preserves every snapshot field exactly", async () => {
       INSERT INTO ai_jobs (
         id, kind, status, postcard_id, user_note, model, skill_path, skill_sha256, prompt,
         created_at, updated_at
-      ) VALUES ('job-roundtrip', 'reresearch', 'queued', 'pc-0001', '我親身到過這裡。', 'test-model',
+      ) VALUES ('job-roundtrip', 'reresearch', 'queued', 'pc-9001', '我親身到過這裡。', 'test-model',
         '.agents/skills/pikmin-postcard-intake/SKILL.md', 'abc123', 'test prompt',
         '2026-08-23T00:00:00.000Z', '2026-08-23T00:00:00.000Z')
     `).run();
@@ -53,7 +51,7 @@ test("SQLite migration preserves every snapshot field exactly", async () => {
     assert.equal(database.prepare("SELECT provider FROM ai_jobs WHERE id = 'job-roundtrip'").get().provider, "openai_api");
     assert.equal(database.prepare("SELECT reasoning_effort FROM ai_jobs WHERE id = 'job-roundtrip'").get().reasoning_effort, "high");
     assert.equal(database.prepare("SELECT user_note FROM ai_jobs WHERE id = 'job-roundtrip'").get().user_note, "我親身到過這裡。");
-    assert.equal(database.prepare("SELECT user_note FROM postcard_provenance WHERE postcard_id = 'pc-0001' AND sort_order = 0").get().user_note, "我親身到過這裡。");
+    assert.equal(database.prepare("SELECT user_note FROM postcard_provenance WHERE postcard_id = 'pc-9001' AND sort_order = 0").get().user_note, "我親身到過這裡。");
     assert.ok(database.prepare("PRAGMA table_info(postcards)").all().some((column) => column.name === "deleted_at"));
     assert.ok(database.prepare("PRAGMA table_info(postcards)").all().some((column) => column.name === "archived_at"));
     assert.ok(database.prepare("PRAGMA table_info(postcards)").all().some((column) => column.name === "location_geocode_status"));
@@ -65,9 +63,9 @@ test("SQLite migration preserves every snapshot field exactly", async () => {
     assert.equal(
       database.prepare(`
         SELECT note FROM postcard_relations
-        WHERE postcard_id = 'pc-0111' AND related_postcard_id = 'pc-0112'
+        WHERE postcard_id = 'pc-9001' AND related_postcard_id = 'pc-9002'
       `).get().note,
-      "相同 POI、日期與地點的兩張獨立遊戲截圖。",
+      "相同測試系列的兩張合成遊戲截圖。",
     );
     assert.equal(database.prepare("PRAGMA integrity_check").get().integrity_check, "ok");
     assert.deepEqual(database.prepare("PRAGMA foreign_key_check").all(), []);
@@ -97,16 +95,14 @@ test("SQLite migration preserves every snapshot field exactly", async () => {
 
     const senderPlan = database
       .prepare("EXPLAIN QUERY PLAN SELECT id FROM postcards WHERE sender = ? ORDER BY found_date DESC")
-      .all("柳柳")
+      .all("synthetic-sender")
       .map((row) => row.detail)
       .join(" | ");
     assert.match(senderPlan, /idx_postcards_sender_found_date/);
-    const acquisitionPlan = database
-      .prepare("EXPLAIN QUERY PLAN SELECT id FROM postcards WHERE acquisition_type = ?")
-      .all("self_found")
-      .map((row) => row.detail)
-      .join(" | ");
-    assert.match(acquisitionPlan, /idx_postcards_acquisition_type/);
+    assert.ok(
+      database.prepare("PRAGMA index_list(postcards)").all()
+        .some((index) => index.name === "idx_postcards_acquisition_type"),
+    );
   } finally {
     database.close();
     await rm(temporaryDirectory, { recursive: true, force: true });

@@ -1,4 +1,7 @@
 import { expect, test } from '@playwright/test';
+import { createArchiveFixture, mockArchive } from './archive-fixture';
+
+test.beforeEach(async ({ page }) => mockArchive(page));
 
 test('friend footprints can expand and collapse every friend with one control', async ({ page }) => {
   await page.goto('/');
@@ -107,19 +110,7 @@ test('compact friend cards expand details and overflow postcards into an accessi
 
 test('friend base evidence returned by the management API updates the friends UI without a rebuild', async ({ page }) => {
   await page.route('**/api/archive', async (route) => {
-    const response = await route.fetch();
-    const payload = await response.json() as {
-      friends: Array<{
-        name: string;
-        likely_base: {
-          area: string | null;
-          status: string;
-          confidence: string;
-          confidence_label: string;
-          reason: string;
-        };
-      }>;
-    } & Record<string, unknown>;
+    const payload = createArchiveFixture();
     payload.friends = payload.friends.map((profile) => profile.name === '柳柳'
       ? {
         ...profile,
@@ -132,7 +123,7 @@ test('friend base evidence returned by the management API updates the friends UI
         },
       }
       : profile);
-    await route.fulfill({ response, json: payload });
+    await route.fulfill({ json: payload });
   });
 
   await page.goto('/');

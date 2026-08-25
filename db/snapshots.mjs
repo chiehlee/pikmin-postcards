@@ -13,7 +13,9 @@ const snapshotDefinitions = {
   context: { file: "context.json", collection: "records", table: "context_records" },
 };
 
-export async function loadSnapshots(directory = path.join(projectRoot, "data")) {
+const defaultSnapshotDirectory = process.env.PIKMIN_SNAPSHOT_DIRECTORY?.trim() || path.join(projectRoot, "data");
+
+export async function loadSnapshots(directory = defaultSnapshotDirectory) {
   const snapshots = {};
   for (const [name, definition] of Object.entries(snapshotDefinitions)) {
     snapshots[name] = JSON.parse(
@@ -353,7 +355,7 @@ export function exportSnapshots(database) {
   return output;
 }
 
-export async function writeSnapshots(snapshots, directory = path.join(projectRoot, "data")) {
+export async function writeSnapshots(snapshots, directory = defaultSnapshotDirectory) {
   for (const [name, definition] of Object.entries(snapshotDefinitions)) {
     const target = path.join(directory, definition.file);
     const temporary = `${target}.tmp`;

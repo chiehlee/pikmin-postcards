@@ -2,6 +2,7 @@ import { expect, type Page, test } from '@playwright/test';
 import { copyFile, mkdir, readFile, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createArchiveFixture } from './archive-fixture';
 
 type ArchivePayload = {
   postcards: Array<Record<string, unknown>>;
@@ -26,11 +27,10 @@ async function mockArchive(
   capabilities: ArchivePayload['capabilities'] = readyApiCapabilities,
 ) {
   await page.route('**/api/archive', async (route) => {
-    const response = await route.fetch();
-    const payload = await response.json() as ArchivePayload;
+    const payload = createArchiveFixture() as ArchivePayload;
     payload.capabilities = capabilities;
     payload.jobs = [];
-    await route.fulfill({ response, json: transform(payload) });
+    await route.fulfill({ json: transform(payload) });
   });
 }
 
@@ -46,9 +46,8 @@ test('the browser renders a backend connection state instead of bundling archive
   let releaseRequest: () => void = () => {};
   const gate = new Promise<void>((resolve) => { releaseRequest = resolve; });
   await page.route('**/api/archive', async (route) => {
-    const response = await route.fetch();
     await gate;
-    await route.fulfill({ response });
+    await route.fulfill({ json: createArchiveFixture() });
   });
 
   try {
@@ -68,7 +67,7 @@ test('a postcard image created after production startup loads through the live a
   const runtimeImagePath = path.join(runtimeDirectory, 'new-postcard.png');
   const runtimePublicPath = '/images/runtime-ui-test/new-postcard.png';
   await mkdir(runtimeDirectory, { recursive: true });
-  await copyFile(path.join(projectRoot, 'public/images/postcards/2026/05/pc-020.png'), runtimeImagePath);
+  await copyFile(path.join(projectRoot, 'public/og.png'), runtimeImagePath);
 
   try {
     await mockArchive(page, (payload) => ({
@@ -241,7 +240,7 @@ test('new postcard closes the form after the job starts and moves progress into 
   });
   await page.route('**/api/jobs/job-ui-add', async (route) => {
     polls += 1;
-    completed = polls >= 2;
+    completed = polls >= 4;
     await route.fulfill({ json: { job: {
       id: 'job-ui-add', kind: 'add', workflow: 'full_research', batch_id: 'batch-ui-add', input_label: 'pc-020.png', status: completed ? 'completed' : 'in_progress', postcard_id: completed ? 'pc-9999' : null,
       provider: 'openai_api', model: 'test-model', reasoning_effort: 'high',
@@ -254,7 +253,7 @@ test('new postcard closes the form after the job starts and moves progress into 
   const form = page.getByRole('dialog', { name: '新增明信片' });
   await expect(form).toContainText('AI 已連線 · OpenAI API · test-model');
   await form.getByRole('radio', { name: /^新增明信片並研究/ }).check();
-  await form.locator('input[type="file"]').setInputFiles(path.resolve('public/images/postcards/2026/05/pc-020.png'));
+  await form.locator('input[type="file"]').setInputFiles(path.resolve('public/og.png'));
   await form.getByLabel('給這批圖片的備註（選填）').fill('Playwright UI test');
   await form.getByRole('button', { name: '新增 1 張明信片並研究' }).click();
 
@@ -309,7 +308,7 @@ test('quick-add accepts a large-style multi-file selection and creates one visib
     });
   }
 
-  const fixture = await readFile(path.resolve('public/images/postcards/2026/05/pc-020.png'));
+  const fixture = await readFile(path.resolve('public/og.png'));
   await page.goto('/');
   await page.getByRole('button', { name: /新增明信片/ }).click();
   const dialog = page.getByRole('dialog', { name: '新增明信片' });
@@ -343,7 +342,7 @@ test('new postcard errors stay in the form and appear as a bottom-right notifica
   await page.goto('/');
   await page.getByRole('button', { name: /新增明信片/ }).click();
   const form = page.getByRole('dialog', { name: '新增明信片' });
-  await form.locator('input[type="file"]').setInputFiles(path.resolve('public/images/postcards/2026/05/pc-020.png'));
+  await form.locator('input[type="file"]').setInputFiles(path.resolve('public/og.png'));
   await form.getByRole('button', { name: '新增 1 張明信片' }).click();
 
   await expect(form).toBeVisible();
@@ -362,7 +361,7 @@ test('new postcard errors stay in the form and appear as a bottom-right notifica
 test('an unfinished database job restores its postcard card after reload', async ({ page }) => {
   const startedAt = new Date(Date.now() - 7_000).toISOString();
   const runningJob = {
-    id: 'job-ui-resume', kind: 'reresearch', workflow: 'full_research', batch_id: null, input_label: null, status: 'in_progress', postcard_id: 'pc-0001',
+    id: 'job-ui-resume', kind: 'reresearch', workflow: 'full_research', batch_id: null, input_label: null, status: 'in_progress', postcard_id: 'pc-ui-001',
     provider: 'openai_api', model: 'test-model', reasoning_effort: 'high',
     created_at: startedAt, started_at: startedAt, completed_at: null, error: null,
   };

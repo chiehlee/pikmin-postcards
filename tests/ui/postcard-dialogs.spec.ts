@@ -1,7 +1,10 @@
 import { expect, type Page, test } from '@playwright/test';
+import { createArchiveFixture, mockArchive } from './archive-fixture';
 
 const postcardName = 'One Grantai Fontain';
 const tallPostcardName = 'CK124蒸汽火車特色郵筒';
+
+test.beforeEach(async ({ page }) => mockArchive(page));
 
 async function openPostcard(page: Page, name = postcardName, postcardId: string | null = null) {
   await page.goto('/');
@@ -58,7 +61,7 @@ test('archive controls distinguish both dates and restore every dropdown default
 
   await sortField.selectOption('archived_on');
   await expect(page.locator('.postcard-card time').first()).toContainText('加入系統');
-  await expect(page.locator('.postcard-card time').first()).toHaveAttribute('datetime', /T\d{2}:\d{2}:\d{2}Z$/);
+  await expect(page.locator('.postcard-card time').first()).toHaveAttribute('datetime', /T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/);
 
   await senderFilter.selectOption('self-found');
   await countryFilter.selectOption({ label: '日本' });
@@ -108,7 +111,7 @@ test('distance sorting uses a manual origin and every active postcard persisted 
   await page.getByLabel('排序', { exact: true }).selectOption('distance');
   const distanceTools = page.locator('.distance-sort-tools');
   await expect(distanceTools).toBeVisible();
-  await expect(distanceTools).toContainText('159 / 159 張可計算');
+  await expect(distanceTools).toContainText('65 / 65 張可計算');
   await distanceTools.getByLabel('參考緯度').fill('25.033000');
   await distanceTools.getByLabel('參考經度').fill('121.565000');
   await distanceTools.getByRole('button', { name: '套用座標' }).click();
@@ -258,12 +261,11 @@ test('Google Map stays lazy, then loads a working keyless embed', async ({ page 
 
 test('locally preserved research images appear below the map and above management', async ({ page }) => {
   await page.route('**/api/archive', async (route) => {
-    const response = await route.fetch();
-    const payload = await response.json();
-    const postcard = payload.postcards.find((item: { poi_name: string }) => item.poi_name === postcardName);
+    const payload = createArchiveFixture();
+    const postcard = payload.postcards.find((item) => item.poi_name === postcardName)!;
     postcard.research.images = [
       {
-        path: '/images/postcards/2026/05/pc-020.png',
+        path: '/og.png',
         sha256: 'a'.repeat(64),
         bytes: 123,
         media_type: 'image/png',
@@ -276,7 +278,7 @@ test('locally preserved research images appear below the map and above managemen
         credit: 'Example Archive',
       },
       {
-        path: '/images/postcards/2026/03/pc-0044.png',
+        path: '/og.png',
         sha256: 'd'.repeat(64),
         bytes: 456,
         media_type: 'image/png',
@@ -289,7 +291,7 @@ test('locally preserved research images appear below the map and above managemen
         credit: null,
       },
     ];
-    await route.fulfill({ response, json: payload });
+    await route.fulfill({ json: payload });
   });
 
   const postcardDialog = await openPostcard(page);
@@ -297,7 +299,7 @@ test('locally preserved research images appear below the map and above managemen
   await expect(gallery).toBeVisible();
   await expect(gallery.getByRole('heading', { name: '故事參考圖片' })).toBeVisible();
   await expect(gallery.locator('figure')).toHaveCount(2);
-  await expect(gallery.locator('img').first()).toHaveAttribute('src', /^\/images\//);
+  await expect(gallery.locator('img').first()).toHaveAttribute('src', '/og.png');
   await expect(gallery.locator('img').first()).toHaveAttribute('loading', 'lazy');
   await expect(gallery.locator('img').first()).toHaveAttribute('alt', 'One Grantai Fontain 入口與噴泉');
   await expect(gallery.getByText('圖片：Example Archive')).toBeVisible();

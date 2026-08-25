@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
 import { once } from "node:events";
 import { createServer } from "node:http";
@@ -9,7 +10,8 @@ import path from "node:path";
 import test from "node:test";
 import { resolveStoredLocalPath } from "../db/asset-paths.mjs";
 import { openDatabase, projectRoot } from "../db/database.mjs";
-import { loadSnapshots, replaceDatabaseFromSnapshots } from "../db/snapshots.mjs";
+import { replaceDatabaseFromSnapshots } from "../db/snapshots.mjs";
+import { createEmptySnapshots, createSyntheticSnapshots } from "./fixtures/archive-snapshots.mjs";
 
 const execFileAsync = promisify(execFile);
 
@@ -17,13 +19,19 @@ test("image intake keeps bytes local and links an existing canonical asset", asy
   const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "pikmin-intake-test-"));
   const databasePath = path.join(temporaryDirectory, "archive.sqlite3");
   const inboxDirectory = path.join(temporaryDirectory, "inbox");
-  const sourcePath = path.join(
-    projectRoot,
-    "public/images/postcards/2026/05/pc-020.png",
-  );
+  const sourcePath = path.join(projectRoot, "public/og.png");
+  const canonicalDirectory = path.join(projectRoot, "public/images/test-fixtures");
+  const sourceBytes = await readFile(sourcePath);
+  const snapshots = createSyntheticSnapshots();
+  snapshots.postcards.postcards[0].asset = {
+    ...snapshots.postcards.postcards[0].asset,
+    path: "/images/test-fixtures/og.png",
+    sha256: createHash("sha256").update(sourceBytes).digest("hex"),
+    bytes: sourceBytes.length,
+  };
   const seedDatabase = await openDatabase(databasePath);
   try {
-    replaceDatabaseFromSnapshots(seedDatabase, await loadSnapshots());
+    replaceDatabaseFromSnapshots(seedDatabase, snapshots);
   } finally {
     seedDatabase.close();
   }
@@ -43,7 +51,7 @@ test("image intake keeps bytes local and links an existing canonical asset", asy
     const second = JSON.parse((await execFileAsync(process.execPath, args, { cwd: projectRoot })).stdout);
 
     assert.equal(first.status, "canonicalized");
-    assert.equal(first.local_path, "public/images/postcards/2026/05/pc-020.png");
+    assert.equal(first.local_path, "public/images/test-fixtures/og.png");
     assert.equal(second.sha256, first.sha256);
     assert.ok(second.backup);
 
@@ -62,6 +70,7 @@ test("image intake keeps bytes local and links an existing canonical asset", asy
       database.close();
     }
   } finally {
+    await rm(canonicalDirectory, { recursive: true, force: true });
     await rm(temporaryDirectory, { recursive: true, force: true });
   }
 });
@@ -70,9 +79,7 @@ test("remote image intake downloads new bytes locally without storing URL secret
   const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "pikmin-remote-intake-test-"));
   const databasePath = path.join(temporaryDirectory, "archive.sqlite3");
   const inboxDirectory = path.join(temporaryDirectory, "inbox");
-  const canonicalBytes = await readFile(
-    path.join(projectRoot, "public/images/postcards/2026/05/pc-020.png"),
-  );
+  const canonicalBytes = await readFile(path.join(projectRoot, "public/og.png"));
   const servedBytes = Buffer.concat([canonicalBytes, Buffer.from("remote-intake-test")]);
   const server = createServer((_request, response) => {
     response.writeHead(200, {
@@ -115,7 +122,7 @@ test("remote image intake downloads new bytes locally without storing URL secret
       assert.equal(intakeSource.source_kind, "remote");
       assert.equal(intakeSource.source_locator, `http://127.0.0.1:${address.port}/postcard.png`);
       assert.ok(!intakeSource.source_locator.includes("do-not-store"));
-      replaceDatabaseFromSnapshots(database, await loadSnapshots());
+      replaceDatabaseFromSnapshots(database, createEmptySnapshots());
       assert.equal(
         database.prepare("SELECT status FROM image_intake WHERE sha256 = ?").get(intake.sha256).status,
         "pending",
