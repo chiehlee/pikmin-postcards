@@ -110,6 +110,10 @@ test("research request uses server authorization, background mode, web search, i
     assert.match(prompt, /北投教會就在我經營的 Subway/);
     assert.match(prompt, /第一手／使用者提供內容/);
     assert.match(prompt, /不得冒充外部已證實事實/);
+    assert.match(prompt, /重新評估既有定位/);
+    assert.match(prompt, /附近地標或相對位置/);
+    assert.match(prompt, /交由 backend 更新地址與座標/);
+    assert.match(prompt, /定位查證不足時保留既有 canonical location/);
     assert.match(prompt, /不得生成或重畫人物/);
     assert.ok(researchSchema.required.includes("reference_images"));
     assert.ok(researchSchema.properties.visible.required.includes("sender_avatar_crop"));

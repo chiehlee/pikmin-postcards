@@ -30,7 +30,7 @@ export async function verifyOpenAIConnection({ apiKey, model, fetchImpl = global
 export function buildResearchPrompt({ kind, postcard = null, intakeNote = "", userNote = null, relatedCandidates = [] }) {
   const operation = kind === "add"
     ? "分析這張尚未收錄的 Pikmin Bloom 明信片截圖，完成畫面判讀、地點與故事研究、收藏判斷。"
-    : "重新研究這張既有 Pikmin Bloom 明信片。保留截圖可見 metadata，只有外部證據支持時才更新研究定位、研究稿、收藏判斷與關聯。";
+    : "重新研究這張既有 Pikmin Bloom 明信片。保留截圖可見 metadata，並重新評估既有定位；若使用者補充含地址、座標、當地名稱、附近地標或相對位置，必須把它當成搜尋線索查證 POI 與實際地址。只有新證據支持時才更新完整 location、研究稿、收藏判斷與關聯；定位查證不足時保留既有 canonical location。";
   return [
     operation,
     "請使用 web search，實際開啟每個採用的來源。summary 是精簡版；detail_body 是可獨立閱讀的繁體中文長版研究，不得只是摘要換句話說。",
