@@ -107,13 +107,13 @@ npm run check:duplicate -- \
 
 依序處理：
 
-1. 相同 SHA-256：同一份 screenshot bytes 與 canonical asset，不新增 postcard；保留新的 intake source／occurrence provenance。
+1. 相同 SHA-256：同一份 screenshot bytes 與 canonical asset；在進入任何 AI 工作前停止並詢問使用者是否要繼續。取消時不新增 postcard、不呼叫 AI；繼續時以既有 postcard ID 走正式「再研究」流程，仍不建立新的 postcard。無論選擇哪一項，都保留新的 intake source／occurrence provenance。
 2. 相同 `POI + found_date + location + sender／acquisition identity` 但 bytes 不同：一定先建立新的 postcard ID，再標成 candidate 並視需要建立雙向 `same-metadata-different-image`；candidate 不表示應刪除。
 3. POI 相同但 location 不同：不是 duplicate candidate；同名 Wayspot 在不同地點是正常資料。只有名稱變體且其他證據指向同一處時，才考慮雙向 `same-poi-name-variant`。
 4. 已確認寄件人不同，或 `self_found` 與 `received unknown` 不同：不可靜默合併。
 5. sender ID 與既有名稱不同：先建立另一個 friend profile；可回報疑似改名線索，但除非使用者明確要求，不把兩個 profile 或其觀察歷史合併。
 
-任何 probable／visual duplicate 都不得阻止新 screenshot 建立 postcard ID。只有 exact SHA-256 重複時共用 canonical record 並新增 provenance；若使用者之後指定移除或合併，再依該個案操作。
+任何 probable／visual duplicate 都不得阻止新 screenshot 建立 postcard ID。只要 bytes 不同，即使 POI、發現日期、寄件人或遊戲地點相同，也必須先當成新的 postcard 收錄。只有 exact SHA-256 重複時才共用 canonical record，並依上一步由使用者決定取消或轉為再研究；若使用者之後指定移除或合併，再依該個案操作。
 
 ### 4. 研究地點與故事
 
@@ -192,7 +192,7 @@ npm run backfill:location-geocodes -- --commit
 
 網站管理操作與 CLI 收錄共用本 Skill 的證據、圖片、定位、研究、duplicate 及 relation 規則，不建立較寬鬆的第二套捷徑：
 
-1. **新增與批次**：UI 必須明確提供「新增明信片」與「新增明信片並研究」，本機檔案使用可多選 input，遠端圖片以每行一個 URL 接受多筆；兩者可同批送出且不設張數上限。先逐張落地 `var/image-inbox/`、驗證格式／大小並計算 SHA-256，再判斷 exact duplicate。即使 AI provider 尚未設定，已驗證的圖片仍保留在 intake；不得因 AI 無法啟動而遺失來源。Exact duplicate 不再呼叫 AI，也不建立新的 postcard ID；非 exact duplicate 依 `metadata_only` 或 `full_research` 建立背景工作。部分失敗時回傳每張的安全 label 與錯誤，已建立的工作繼續執行。
+1. **新增與批次**：UI 必須明確提供「新增明信片」與「新增明信片並研究」，本機檔案使用可多選 input，遠端圖片以每行一個 URL 接受多筆；兩者可同批送出且不設張數上限。先逐張落地 `var/image-inbox/`、驗證格式／大小並計算 SHA-256，再判斷 exact duplicate。即使 AI provider 尚未設定，已驗證的圖片仍保留在 intake；不得因 AI 無法啟動而遺失來源。Exact duplicate 必須在呼叫 AI 前以既有 postcard 資訊要求使用者確認：取消則停止；繼續則以既有 ID 建立 `reresearch` 工作，兩者都不建立新的 postcard ID。只要 bytes 不同，不得用相同名稱、日期、寄件人、地點或視覺相似阻擋新增，必須依 `metadata_only` 或 `full_research` 建立新的 postcard 背景工作；metadata 相同只可在建檔後形成 candidate／relation。部分失敗時回傳每張的安全 label 與錯誤，已建立的工作繼續執行。
 2. **Soft delete**：只在被操作的 postcard 寫入 lifecycle／`deleted_at` 與原因，正常列表與查詢預設隱藏該 record。不得連帶刪除、隱藏或改寫 related postcards、朋友證據、原圖、研究檔、來源、provenance 或 DB row；已使用的 postcard ID 永不回收。若未來加入 restore，應清除 lifecycle 而不是複製舊 record。
 3. **再研究**：第一次按「再研究」只在按鈕下方展開選填的使用者補充欄，確認後才建立工作；空白補充仍可開始原本的完整研究。畫面可見 metadata、`location.raw`、asset checksum、原始研究檔、既有故事參考圖片、使用者補充與 provenance 都是不可靜默覆寫的證據。每則補充保存原文、時間與 job ID；每次都重新評估研究定位，含位置 hint 時按第 4 節查證並輸出完整 location，通過後端正規化與 geocoding 才可更新 canonical 地址、座標、地址精度及座標精度。新結果使用帶日期的新 research status 與新的 `research/raw/` 檔，新增 provenance 指回再研究前的 detail path；只有通過 schema、location、acquisition、source URL、參考圖片下載／格式／安全邊界與 relation candidate 驗證後才更新 canonical snapshot／DB。
 4. **有限關聯**：送給模型的 related candidates 必須來自 SQLite 索引的有限集合（預設最多 8），不得把整個 archive 或全部長版研究塞進 prompt。模型只能從候選集合選 relation；寫入時再次檢查 ID、未刪除狀態、一句具體 note 與雙向一致性。

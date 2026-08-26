@@ -75,6 +75,14 @@ type ManagementNotice = {
   title: string;
   message: string;
 };
+type ExactDuplicatePrompt = {
+  input_label: string;
+  postcard_id: string;
+  poi_name: string;
+  found_date: string | null;
+  asset_path: string | null;
+  sha256: string;
+};
 
 type FriendProfile = {
   name: string;
@@ -397,6 +405,8 @@ export default function Home() {
   const [addWorkflow, setAddWorkflow] = useState<AddWorkflow>('metadata_only');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [sourceUrls, setSourceUrls] = useState('');
+  const [addNote, setAddNote] = useState('');
+  const [exactDuplicates, setExactDuplicates] = useState<ExactDuplicatePrompt[]>([]);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [reresearchOpen, setReresearchOpen] = useState(false);
@@ -691,7 +701,8 @@ export default function Home() {
         batch_id: string;
         total: number;
         jobs: ManagementJob[];
-        job: ManagementJob;
+        job: ManagementJob | null;
+        duplicates: ExactDuplicatePrompt[];
         failures: { input_label: string; error: string }[];
       }>(await fetch('/api/postcards', {
         method: 'POST',
@@ -705,26 +716,31 @@ export default function Home() {
         ...payload.jobs,
       ]);
       setClock(Date.now());
-      setAddOpen(false);
       setSelectedFiles([]);
       setSourceUrls('');
       const runningCount = payload.jobs.filter((job) => !isTerminalJob(job)).length;
-      const duplicateCount = payload.jobs.filter((job) => job.result?.exact_duplicate).length;
-      if (!runningCount) {
-        const updated = await refreshArchive();
-        const duplicate = payload.jobs.length === 1
-          ? updated.find((postcard) => postcard.id === payload.job.postcard_id)
-          : null;
-        if (duplicate) setActive(duplicate);
+      const duplicateCount = payload.duplicates?.length ?? 0;
+      if (duplicateCount) {
+        setExactDuplicates(payload.duplicates);
         notify(
-          `${duplicateCount} 張圖片已存在，沒有重複建立明信片。${payload.failures.length ? `另有 ${payload.failures.length} 張未能處理。` : ''}`,
+          `${duplicateCount} 張圖片與既有原圖完全相同；尚未啟動這些圖片的 AI 工作，請在新增視窗中選擇是否改為再研究。${runningCount ? `另有 ${runningCount} 個新圖片工作已排入佇列。` : ''}`,
           payload.failures.length ? 'error' : 'success',
-          '批次檢查完成',
+          '需要確認完全相同的圖片',
+        );
+        return;
+      }
+      setAddOpen(false);
+      setAddNote('');
+      if (!runningCount) {
+        notify(
+          `${payload.failures.length} 張圖片未能處理。`,
+          'error',
+          '批次處理失敗',
         );
       } else {
         const accepted = payload.jobs.length;
         notify(
-          `已接收 ${payload.total} 張：${runningCount} 個 AI 工作已排入佇列${duplicateCount ? `，${duplicateCount} 張已存在` : ''}${payload.failures.length ? `，${payload.failures.length} 張失敗` : ''}。`,
+          `已接收 ${payload.total} 張：${runningCount} 個 AI 工作已排入佇列${payload.failures.length ? `，${payload.failures.length} 張失敗` : ''}。`,
           payload.failures.length ? 'error' : 'success',
           addWorkflow === 'metadata_only' ? '批次快速建檔已開始' : '批次新增與研究已開始',
         );
@@ -736,6 +752,70 @@ export default function Home() {
       setAdding(false);
     }
   }
+
+  async function continueExactDuplicatesAsReresearch() {
+    setAdding(true);
+    setNotice(null);
+    const uniqueDuplicates = [...new Map(exactDuplicates.map((duplicate) => [duplicate.postcard_id, duplicate])).values()];
+    const results = await Promise.allSettled(uniqueDuplicates.map(async (duplicate) => {
+      const payload = await responseJson<{ job: ManagementJob }>(await fetch(
+        `/api/postcards/${encodeURIComponent(duplicate.postcard_id)}/research`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ user_note: addNote.trim() || null }),
+        },
+      ));
+      return { duplicate, job: payload.job };
+    }));
+    const started = results.flatMap((result) => result.status === 'fulfilled' ? [result.value] : []);
+    const failedIds = new Set(results.flatMap((result, index) => result.status === 'rejected' ? [uniqueDuplicates[index].postcard_id] : []));
+    if (started.length) {
+      setJobs((items) => [
+        ...items.filter((job) => !started.some((entry) => entry.job.id === job.id)),
+        ...started.map((entry) => entry.job),
+      ]);
+      setClock(Date.now());
+    }
+    if (failedIds.size) {
+      setExactDuplicates((items) => items.filter((item) => failedIds.has(item.postcard_id)));
+      const firstFailure = results.find((result) => result.status === 'rejected');
+      notify(
+        firstFailure?.status === 'rejected' && firstFailure.reason instanceof Error
+          ? firstFailure.reason.message
+          : `${failedIds.size} 張既有明信片無法開始再研究。`,
+        'error',
+        '無法開始再研究',
+      );
+      setAdding(false);
+      return;
+    }
+    setExactDuplicates([]);
+    setAddNote('');
+    setAddOpen(false);
+    setAdding(false);
+    notify(
+      `${started.length} 張完全相同的圖片沒有重複建檔；既有明信片已加入再研究佇列。`,
+      'success',
+      '已改為再研究',
+    );
+  }
+
+  function cancelExactDuplicateResearch() {
+    setExactDuplicates([]);
+    setAddNote('');
+    setAddOpen(false);
+    notify('這些重複圖片沒有新增明信片，也沒有啟動 AI 研究。原始上傳紀錄仍保留於 intake。', 'success', '已取消重複圖片');
+  }
+
+  const closeAddDialog = useCallback(() => {
+    if (adding) return;
+    setAddOpen(false);
+    setSelectedFiles([]);
+    setSourceUrls('');
+    setAddNote('');
+    setExactDuplicates([]);
+  }, [adding]);
 
   function requestDeviceLocation() {
     if (typeof window === 'undefined' || !window.isSecureContext) {
@@ -913,7 +993,7 @@ export default function Home() {
       if (researchOpen) closeResearch();
       else if (active) closePostcard();
       else if (activeFriendGroup) closeFriendPostcards();
-      else setAddOpen(false);
+      else closeAddDialog();
     };
     document.body.classList.add('modal-open');
     window.addEventListener('keydown', close);
@@ -921,7 +1001,7 @@ export default function Home() {
       document.body.classList.remove('modal-open');
       window.removeEventListener('keydown', close);
     };
-  }, [active, activeFriendGroup, addOpen, closeFriendPostcards, closePostcard, closeResearch, researchOpen]);
+  }, [active, activeFriendGroup, addOpen, closeAddDialog, closeFriendPostcards, closePostcard, closeResearch, researchOpen]);
 
   return (
     <main>
@@ -947,6 +1027,8 @@ export default function Home() {
             setAddWorkflow('metadata_only');
             setSelectedFiles([]);
             setSourceUrls('');
+            setAddNote('');
+            setExactDuplicates([]);
             setAddOpen(true);
             setNotice(null);
           }}>
@@ -1701,12 +1783,52 @@ export default function Home() {
       )}
 
       {addOpen && !active && (
-        <div className="management-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !adding) setAddOpen(false); }}>
+        <div className="management-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeAddDialog(); }}>
           <section className="management-modal" role="dialog" aria-modal="true" aria-labelledby="add-postcard-title" onKeyDown={trapDialogFocus}>
-            <button type="button" className="management-modal-close" onClick={() => setAddOpen(false)} aria-label="關閉新增明信片" disabled={adding}>×</button>
+            <button type="button" className="management-modal-close" onClick={closeAddDialog} aria-label="關閉新增明信片" disabled={adding}>×</button>
             <p className="eyebrow">NEW POSTCARD</p>
             <h2 id="add-postcard-title">新增明信片</h2>
-            <p className="management-modal-lede">可一次選擇多張圖片，沒有人工張數上限。每張原圖會先保存在本機，再依下方路徑獨立建檔；大量上傳可以先快速新增，之後再逐張使用「再研究」。</p>
+            <p className="management-modal-lede">{exactDuplicates.length
+              ? '系統只以完整檔案 bytes 判斷硬重複。以下圖片的 SHA-256 與既有原圖完全相同，因此尚未啟動 AI，也不會新增另一張卡。'
+              : '可一次選擇多張圖片，沒有人工張數上限。每張原圖會先保存在本機，再依下方路徑獨立建檔；大量上傳可以先快速新增，之後再逐張使用「再研究」。'}</p>
+            {exactDuplicates.length ? (
+              <section className="exact-duplicate-confirmation" aria-label="完全相同圖片確認">
+                <div className="exact-duplicate-heading">
+                  <span aria-hidden="true">!</span>
+                  <div>
+                    <strong>發現 {exactDuplicates.length} 張完全相同的圖片</strong>
+                    <p>若繼續，系統會對既有明信片執行「再研究」，不新增 postcard ID。若取消，不會呼叫 AI。</p>
+                  </div>
+                </div>
+                <ul className="exact-duplicate-list">
+                  {exactDuplicates.map((duplicate) => (
+                    <li key={`${duplicate.sha256}-${duplicate.input_label}`}>
+                      {duplicate.asset_path && (
+                        <img
+                          src={liveAssetUrl(duplicate.asset_path)}
+                          alt=""
+                          onError={(event) => recoverRuntimeAsset(event, duplicate.asset_path!)}
+                        />
+                      )}
+                      <span>
+                        <small>{duplicate.input_label}</small>
+                        <strong>{duplicate.poi_name}</strong>
+                        <time>{duplicate.found_date ? `發現日期 ${duplicate.found_date}` : '發現日期未確認'} · {duplicate.postcard_id}</time>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                {addNote.trim() && (
+                  <p className="exact-duplicate-note"><strong>將帶入再研究的備註：</strong>{addNote}</p>
+                )}
+                <div className="exact-duplicate-actions">
+                  <button type="button" className="secondary-action" onClick={cancelExactDuplicateResearch} disabled={adding}>取消，不重新研究</button>
+                  <button type="button" className="submit-add" onClick={() => void continueExactDuplicatesAsReresearch()} disabled={adding}>
+                    {adding ? '正在建立再研究工作…' : '繼續，改為再研究'}
+                  </button>
+                </div>
+              </section>
+            ) : (
             <form className="add-postcard-form" onSubmit={submitAdd}>
               <fieldset className="add-workflow-options">
                 <legend>新增方式</legend>
@@ -1777,7 +1899,7 @@ export default function Home() {
               </label>
               <label>
                 <span>給這批圖片的備註（選填）</span>
-                <textarea name="note" rows={3} placeholder="例如：同一趟旅行、同一位朋友，或希望之後特別注意的線索。" disabled={adding} />
+                <textarea name="note" rows={3} value={addNote} onChange={(event) => setAddNote(event.target.value)} placeholder="例如：同一趟旅行、同一位朋友，或希望之後特別注意的線索。" disabled={adding} />
               </label>
               <div className={`api-configuration-state ${capabilities.ai_configured ? 'configured' : ''}`}>
                 <span aria-hidden="true" />
@@ -1795,6 +1917,7 @@ export default function Home() {
                     : `新增 ${selectedInputCount} 張明信片並研究`}
               </button>
             </form>
+            )}
           </section>
         </div>
       )}

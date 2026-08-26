@@ -75,6 +75,67 @@ test("image intake keeps bytes local and links an existing canonical asset", asy
   }
 });
 
+test("the add API preflight returns an exact-byte match without creating an AI job or postcard", async () => {
+  const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "pikmin-exact-preflight-"));
+  const databasePath = path.join(temporaryDirectory, "archive.sqlite3");
+  const sourcePath = path.join(projectRoot, "public/og.png");
+  const canonicalDirectory = path.join(projectRoot, "public/images/test-fixtures");
+  const sourceBytes = await readFile(sourcePath);
+  const sha256 = createHash("sha256").update(sourceBytes).digest("hex");
+  const snapshots = createSyntheticSnapshots();
+  const canonical = snapshots.postcards.postcards[0];
+  canonical.asset = {
+    ...canonical.asset,
+    path: "/images/test-fixtures/exact-preflight.png",
+    sha256,
+    bytes: sourceBytes.length,
+    media_type: "image/png",
+  };
+  const database = await openDatabase(databasePath);
+  try {
+    replaceDatabaseFromSnapshots(database, snapshots);
+  } finally {
+    database.close();
+  }
+
+  try {
+    const script = `
+      import { readFile } from 'node:fs/promises';
+      import { startAddBatch } from './server/archive-manager.mjs';
+      const bytes = await readFile(${JSON.stringify(sourcePath)});
+      const file = new File([bytes], 'same-bytes.png', { type: 'image/png' });
+      const batch = await startAddBatch({ inputs: [{ file, label: file.name }], note: 'must wait for confirmation' });
+      process.stdout.write(JSON.stringify(batch));
+    `;
+    const output = await execFileAsync(process.execPath, [
+      "--disable-warning=ExperimentalWarning",
+      "--input-type=module",
+      "--eval",
+      script,
+    ], {
+      cwd: projectRoot,
+      env: { ...process.env, PIKMIN_DATABASE_PATH: databasePath },
+    });
+    const batch = JSON.parse(output.stdout);
+    assert.equal(batch.jobs.length, 0);
+    assert.equal(batch.duplicates.length, 1);
+    assert.equal(batch.duplicates[0].postcard_id, canonical.id);
+    assert.equal(batch.duplicates[0].sha256, sha256);
+
+    const verified = await openDatabase(databasePath);
+    try {
+      assert.equal(verified.prepare("SELECT count(*) AS count FROM postcards").get().count, snapshots.postcards.postcards.length);
+      assert.equal(verified.prepare("SELECT count(*) AS count FROM ai_jobs").get().count, 0);
+      assert.equal(verified.prepare("SELECT count(*) AS count FROM image_intake WHERE sha256 = ?").get(sha256).count, 1);
+    } finally {
+      verified.close();
+    }
+  } finally {
+    await rm(canonicalDirectory, { recursive: true, force: true });
+    await rm(temporaryDirectory, { recursive: true, force: true });
+  }
+});
+
 test("remote image intake downloads new bytes locally without storing URL secrets", async () => {
   const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "pikmin-remote-intake-test-"));
   const databasePath = path.join(temporaryDirectory, "archive.sqlite3");

@@ -270,6 +270,88 @@ test('new postcard closes the form after the job starts and moves progress into 
   expect(receivedUpload).toBe(true);
 });
 
+test('byte-identical upload pauses before AI and continues only as reresearch of the existing postcard', async ({ page }) => {
+  const fixture = createArchiveFixture() as ArchivePayload;
+  const existing = fixture.postcards.find((postcard) => postcard.poi_name === targetName)!;
+  const existingId = String(existing.id);
+  const asset = existing.asset as { path: string };
+  let researchRequests = 0;
+  await mockArchive(page);
+  await page.route('**/api/postcards', async (route) => {
+    if (route.request().method() !== 'POST') return route.fallback();
+    await route.fulfill({ status: 200, json: {
+      batch_id: 'batch-exact-duplicate',
+      total: 1,
+      jobs: [],
+      job: null,
+      duplicates: [{
+        input_label: 'same-bytes.png',
+        postcard_id: existingId,
+        poi_name: targetName,
+        found_date: existing.found_date,
+        asset_path: asset.path,
+        sha256: 'same-byte-sha256',
+      }],
+      failures: [],
+    } });
+  });
+  await page.route(`**/api/postcards/${existingId}/research`, async (route) => {
+    researchRequests += 1;
+    expect(route.request().method()).toBe('POST');
+    expect(route.request().postDataJSON()).toEqual({ user_note: '同一張原圖的補充線索' });
+    const startedAt = new Date().toISOString();
+    await route.fulfill({ status: 202, json: { job: {
+      id: 'job-exact-reresearch', kind: 'reresearch', workflow: 'full_research', batch_id: null, input_label: null,
+      status: 'in_progress', postcard_id: existingId, provider: 'openai_api', model: 'test-model', reasoning_effort: 'high',
+      created_at: startedAt, started_at: startedAt, completed_at: null, error: null,
+    } } });
+  });
+  await page.route('**/api/jobs/job-exact-reresearch', async (route) => {
+    const startedAt = new Date().toISOString();
+    await route.fulfill({ json: { job: {
+      id: 'job-exact-reresearch', kind: 'reresearch', workflow: 'full_research', batch_id: null, input_label: null,
+      status: 'in_progress', postcard_id: existingId, provider: 'openai_api', model: 'test-model', reasoning_effort: 'high',
+      created_at: startedAt, started_at: startedAt, completed_at: null, error: null,
+    } } });
+  });
+
+  await page.goto('/');
+  await page.getByRole('button', { name: /新增明信片/ }).click();
+  const dialog = page.getByRole('dialog', { name: '新增明信片' });
+  const image = await readFile(path.resolve('public/og.png'));
+  await dialog.locator('input[type="file"]').setInputFiles({ name: 'same-bytes.png', mimeType: 'image/png', buffer: image });
+  await dialog.getByLabel('給這批圖片的備註（選填）').fill('同一張原圖的補充線索');
+  await dialog.getByRole('button', { name: '新增 1 張明信片' }).click();
+
+  let confirmation = dialog.getByRole('region', { name: '完全相同圖片確認' });
+  await expect(confirmation).toBeVisible();
+  await expect(dialog).toContainText('SHA-256 與既有原圖完全相同');
+  await expect(confirmation).toContainText(targetName);
+  await expect(confirmation.getByRole('button', { name: '取消，不重新研究' })).toBeVisible();
+  expect(researchRequests).toBe(0);
+
+  await confirmation.getByRole('button', { name: '取消，不重新研究' }).click();
+  await expect(dialog).toBeHidden();
+  expect(researchRequests).toBe(0);
+  await expect(page.getByRole('status')).toContainText('這些重複圖片沒有新增明信片，也沒有啟動 AI 研究');
+
+  await page.getByRole('button', { name: /新增明信片/ }).click();
+  await dialog.locator('input[type="file"]').setInputFiles({ name: 'same-bytes.png', mimeType: 'image/png', buffer: image });
+  await dialog.getByLabel('給這批圖片的備註（選填）').fill('同一張原圖的補充線索');
+  await dialog.getByRole('button', { name: '新增 1 張明信片' }).click();
+  confirmation = dialog.getByRole('region', { name: '完全相同圖片確認' });
+  await expect(confirmation).toBeVisible();
+
+  await confirmation.getByRole('button', { name: '繼續，改為再研究' }).click();
+  await expect(dialog).toBeHidden();
+  expect(researchRequests).toBe(1);
+  await expect(page.getByRole('status')).toContainText('沒有重複建檔');
+  const queue = page.getByRole('region', { name: '處理中的明信片' });
+  await expect(queue.locator('[data-job-id="job-exact-reresearch"]')).toBeVisible();
+  await expect(page.locator('.postcard-card')).toHaveCount(Math.min(60, fixture.postcards.length));
+  await expect(page.getByText(new RegExp(`共 ${fixture.postcards.length} / ${fixture.postcards.length} 張`))).toBeVisible();
+});
+
 test('quick-add accepts a large-style multi-file selection and creates one visible job per image', async ({ page }) => {
   await mockArchive(page);
   let multipartBody = '';

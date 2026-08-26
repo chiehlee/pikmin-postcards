@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { DatabaseSync } from "node:sqlite";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { openDatabase } from "../db/database.mjs";
 import { replaceDatabaseFromSnapshots } from "../db/snapshots.mjs";
-import { archiveOverview, cancelJob, softDeletePostcard } from "../server/archive-manager.mjs";
+import { archiveOverview, cancelJob, nextPostcardId, softDeletePostcard } from "../server/archive-manager.mjs";
 import { createSyntheticSnapshots, writeSnapshots } from "./fixtures/archive-snapshots.mjs";
 
 test("GPT-5.6 job migrations preserve old jobs and accept new reasoning and cancellation states", async () => {
@@ -97,6 +97,21 @@ test("GPT-5.6 job migrations preserve old jobs and accept new reasoning and canc
     assert.equal(database.prepare("PRAGMA integrity_check").get().integrity_check, "ok");
   } finally {
     database.close();
+    await rm(temporaryDirectory, { recursive: true, force: true });
+  }
+});
+
+test("postcard ID allocation skips canonical image files left by a previously failed apply", async () => {
+  const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "pikmin-postcard-id-"));
+  try {
+    const orphanDirectory = path.join(temporaryDirectory, "2026", "05");
+    await mkdir(orphanDirectory, { recursive: true });
+    await writeFile(path.join(orphanDirectory, "pc-0168.png"), "preserved orphan bytes");
+    assert.equal(
+      await nextPostcardId([{ id: "pc-0167" }], { imageDirectory: temporaryDirectory }),
+      "pc-0169",
+    );
+  } finally {
     await rm(temporaryDirectory, { recursive: true, force: true });
   }
 });

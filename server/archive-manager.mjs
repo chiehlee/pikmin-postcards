@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { constants } from "node:fs";
-import { copyFile, mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, readdir, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { validateAcquisition } from "../lib/acquisition.mjs";
 import { friendEvidenceForPostcard, rebuildFriends } from "../lib/friends.mjs";
@@ -143,11 +143,12 @@ export async function startAddBatch({ inputs, note = "", workflow = "metadata_on
   const researchProvider = await researchProviderConfiguration();
   const skill = await readFile(skillPath, "utf8");
   const jobs = [];
+  const duplicates = [];
   const failures = [];
   for (const [index, input] of inputs.entries()) {
     const inputLabel = input.label?.trim() || uploadInputLabel(input, index);
     try {
-      jobs.push(await startAddJob({
+      const outcome = await startAddJob({
         file: input.file,
         sourceUrl: input.sourceUrl,
         note,
@@ -156,7 +157,9 @@ export async function startAddBatch({ inputs, note = "", workflow = "metadata_on
         inputLabel,
         researchProvider,
         skill,
-      }));
+      });
+      if (outcome.duplicate) duplicates.push(outcome.duplicate);
+      else jobs.push(outcome.job);
     } catch (error) {
       failures.push({
         input_label: inputLabel,
@@ -165,11 +168,11 @@ export async function startAddBatch({ inputs, note = "", workflow = "metadata_on
       });
     }
   }
-  if (!jobs.length) {
+  if (!jobs.length && !duplicates.length) {
     const first = failures[0];
     throw httpError(first?.status ?? 400, first?.error ?? "沒有圖片成功建立工作");
   }
-  return { batchId, workflow, jobs, failures, total: inputs.length };
+  return { batchId, workflow, jobs, duplicates, failures, total: inputs.length };
 }
 
 /** @param {{ file?: File | null, sourceUrl?: string | null, note?: string, workflow?: "metadata_only" | "full_research", batchId?: string | null, inputLabel?: string | null, researchProvider?: object, skill?: string }} input */
@@ -192,24 +195,20 @@ export async function startAddJob({
   try {
     staged = await stageImage(source, database);
     if (staged.canonicalPostcardId) {
-      const prompt = workflow === "metadata_only"
-        ? buildMetadataPrompt({ intakeNote: note })
-        : buildResearchPrompt({ kind: "add", intakeNote: note, relatedCandidates: [] });
-      return insertJob(database, {
-        kind: "add",
-        workflow,
-        batchId,
-        inputLabel,
-        postcardId: staged.canonicalPostcardId,
-        intakeSha256: staged.sha256,
-        skill,
-        prompt,
-        provider: researchProvider.provider,
-        model: researchProvider.model,
-        reasoningEffort: workflow === "metadata_only" ? metadataReasoningEffort : researchProvider.reasoning_effort,
-        status: "completed",
-        result: { exact_duplicate: true, postcard_id: staged.canonicalPostcardId },
-      });
+      const postcard = database.prepare(`
+        SELECT postcards.id, postcards.poi_name, postcards.found_date, assets.path AS asset_path
+        FROM postcards
+        JOIN assets ON assets.sha256 = postcards.asset_sha256
+        WHERE postcards.id = ?
+      `).get(staged.canonicalPostcardId);
+      return { duplicate: {
+        input_label: inputLabel,
+        postcard_id: staged.canonicalPostcardId,
+        poi_name: postcard?.poi_name ?? staged.canonicalPostcardId,
+        found_date: postcard?.found_date ?? null,
+        asset_path: postcard?.asset_path ?? null,
+        sha256: staged.sha256,
+      } };
     }
   } finally {
     database.close();
@@ -246,7 +245,7 @@ export async function startAddJob({
     imagePath: path.resolve(projectRoot, staged.localPath),
     mediaType: staged.mediaType,
   });
-  return job;
+  return { job };
 }
 
 export async function getJob(jobId, { refresh = true } = {}) {
@@ -476,9 +475,9 @@ async function applyCompletedJob(jobId, result) {
   let claimed;
   try {
     claimed = claimDatabase.prepare(`
-      UPDATE ai_jobs SET status = 'applying', updated_at = ?
+      UPDATE ai_jobs SET status = 'applying', result_json = ?, updated_at = ?
       WHERE id = ? AND status IN ('queued', 'in_progress')
-    `).run(new Date().toISOString(), jobId).changes;
+    `).run(JSON.stringify(result), new Date().toISOString(), jobId).changes;
   } finally {
     claimDatabase.close();
   }
@@ -577,8 +576,8 @@ async function applyReresearch(snapshots, job, result) {
 async function applyMetadataAdd(snapshots, job, result) {
   const { visible, acquisition, location, avatarCrop } = metadataIntakeFields(result);
   const intake = await intakeForJob(job);
+  validateAcquisition({ id: job.postcard_id ?? "new-postcard", sender: visible.sender, acquisition });
   const promoted = await promoteIntakeAsset(snapshots, job, intake, visible.found_date);
-  validateAcquisition({ id: promoted.id, sender: visible.sender, acquisition });
   const sourcePath = await writeMetadataFile(promoted.id, job.id, visible, acquisition);
   const record = {
     id: promoted.id,
@@ -625,13 +624,13 @@ async function applyMetadataAdd(snapshots, job, result) {
 async function applyAdd(snapshots, job, result) {
   const intake = await intakeForJob(job);
   const foundDate = result.visible.found_date;
-  const promoted = await promoteIntakeAsset(snapshots, job, intake, foundDate);
-  const { id, archivedAt, archivedOn: date } = promoted;
   const location = await resolvedLocation(result.location, result.visible.game_location, result.research.sources);
   const acquisition = result.acquisition;
   const sender = result.visible.sender;
   validateResult(result, location);
-  validateAcquisition({ id, sender, acquisition });
+  validateAcquisition({ id: job.postcard_id ?? "new-postcard", sender, acquisition });
+  const promoted = await promoteIntakeAsset(snapshots, job, intake, foundDate);
+  const { id, archivedAt, archivedOn: date } = promoted;
   const preservedImages = await preserveResearchImages({
     postcardId: id,
     jobId: job.id,
@@ -709,7 +708,7 @@ async function intakeForJob(job) {
 }
 
 async function promoteIntakeAsset(snapshots, job, intake, foundDate) {
-  const id = nextPostcardId(snapshots.postcards.postcards);
+  const id = await nextPostcardId(snapshots.postcards.postcards);
   const archivedAt = secondPrecisionTimestamp(job.created_at);
   const archivedOn = localDate(new Date(archivedAt));
   const folderDate = foundDate ?? archivedOn;
@@ -1146,8 +1145,20 @@ async function persistSnapshots(snapshots, {
   await writeSnapshots(snapshots, snapshotDirectory);
 }
 
-function nextPostcardId(postcards) {
-  const max = postcards.reduce((value, record) => Math.max(value, Number.parseInt(record.id.replace(/^pc-/, ""), 10) || 0), 0);
+export async function nextPostcardId(postcards, {
+  imageDirectory = path.join(projectRoot, "public/images/postcards"),
+} = {}) {
+  const usedIds = postcards.map((record) => record.id);
+  try {
+    const entries = await readdir(imageDirectory, { recursive: true });
+    for (const entry of entries) {
+      const match = path.basename(entry).match(/^(pc-\d+)\.[^.]+$/i);
+      if (match) usedIds.push(match[1].toLowerCase());
+    }
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
+  const max = usedIds.reduce((value, id) => Math.max(value, Number.parseInt(id.replace(/^pc-/, ""), 10) || 0), 0);
   return `pc-${String(max + 1).padStart(4, "0")}`;
 }
 

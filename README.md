@@ -125,7 +125,7 @@ SQLite 沒有 username/password。若改用 PostgreSQL、MySQL 或 HTTP database
 - 「新增明信片」：固定使用 GPT-5.6 支援的最低推理 `none`，只辨識畫面可見的名稱、`見つけた日`、遊戲地點、寄件人與來源介面證據，不使用 web search。卡片會先以「待研究」狀態進入收藏，之後可逐張按「再研究」。
 - 「新增明信片並研究」：每張圖片直接依 [專案收錄 SKILL](.agents/skills/pikmin-postcard-intake/SKILL.md) 完成定位、故事、來源、收藏判斷、參考圖片與有限關聯研究。
 
-大批次會全部先建立獨立工作，後端再以有界併發處理；預設同時執行 2 張，可用 `PIKMIN_AI_CONCURRENCY` 調整為 1–8。這不限制一批可以接收多少張，只避免本機 Codex 或 API 瞬間同時啟動過多工作。UI 會在獨立的「處理中的明信片」區塊逐張顯示原圖與進度，並只在右下角提供整批開始／完成／失敗摘要。每張 queued／in-progress 卡片可單獨中止：排隊工作會移出佇列，本機 Codex 子程序會終止，OpenAI 背景 response 已成立時會要求 API 取消；原圖、intake、prompt 與 job 紀錄仍保留，且不會寫入半套 canonical postcard。進入「更新資料庫」後不可中止，以保護原子寫入。Exact duplicate 不重跑 AI；單張錯誤或中止也不會取消同批其他工作。
+大批次會全部先建立獨立工作，後端再以有界併發處理；預設同時執行 2 張，可用 `PIKMIN_AI_CONCURRENCY` 調整為 1–8。這不限制一批可以接收多少張，只避免本機 Codex 或 API 瞬間同時啟動過多工作。UI 會在獨立的「處理中的明信片」區塊逐張顯示原圖與進度，並只在右下角提供整批開始／完成／失敗摘要。每張 queued／in-progress 卡片可單獨中止：排隊工作會移出佇列，本機 Codex 子程序會終止，OpenAI 背景 response 已成立時會要求 API 取消；原圖、intake、prompt 與 job 紀錄仍保留，且不會寫入半套 canonical postcard。進入「更新資料庫」後不可中止，以保護原子寫入。Exact SHA-256 會在 AI 啟動前要求確認：取消就停止，繼續則對既有卡片執行「再研究」，不新增 postcard ID。只要 bytes 不同就建立新卡，相同 metadata 最多只形成關聯候選；單張錯誤或中止也不會取消同批其他工作。
 
 完整研究可提議 0–3 張直接說明該地點或故事的參考圖片；後端驗證並下載到本機後，才會顯示在地圖下方。
 
@@ -195,7 +195,7 @@ npm run check:duplicate -- \
 去重順序：
 
 1. 圖片 SHA-256 完全相同：確定重複。
-2. `POI + found_date + sender／來源狀態` 完全相同：可能重複，交由人工確認。
+2. `POI + found_date + sender／來源狀態` 完全相同但 SHA-256 不同：仍建立新的 postcard，只標記為可能相關的人工確認候選。
 3. 已確認寄件人不同：不自動合併。
 
 ## 來源與寄件人判讀
