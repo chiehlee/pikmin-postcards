@@ -132,6 +132,25 @@ test('distance sorting uses a manual origin and every active postcard persisted 
   expect(descending).toEqual([...descending].sort((left, right) => right - left));
 });
 
+test('a researched postcard location can become the main archive distance origin', async ({ page }) => {
+  const dialog = await openPostcard(page);
+  await dialog.getByRole('button', { name: '以此為距離起點' }).click();
+
+  await expect(dialog).toBeHidden();
+  await expect(page.getByLabel('排序', { exact: true })).toHaveValue('distance');
+  await expect(page.getByLabel('排序方向')).toHaveValue('asc');
+  const distanceTools = page.locator('.distance-sort-tools');
+  await expect(distanceTools).toBeVisible();
+  await expect(distanceTools).toContainText(`已使用「${postcardName}」的研究座標作為距離起點`);
+  await expect(distanceTools).toContainText('目前基準：25.001000, 121.501000');
+  await expect(distanceTools.getByLabel('參考緯度')).toHaveValue('25.001');
+  await expect(distanceTools.getByLabel('參考經度')).toHaveValue('121.501');
+  await expect(page.locator('.search-box input')).toHaveValue('');
+  const firstCard = page.locator('.postcard-card').first();
+  await expect(firstCard).toHaveAttribute('data-postcard-id', 'pc-ui-001');
+  await expect(firstCard.locator('.distance')).toHaveText('距離 0.0 km');
+});
+
 test('long-form research uses an independently scrollable modal and restores focus', async ({ page }) => {
   const postcardDialog = await openPostcard(page);
   const body = page.locator('body');

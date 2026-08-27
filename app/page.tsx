@@ -35,8 +35,9 @@ type AddWorkflow = 'metadata_only' | 'full_research';
 type DistanceOrigin = {
   latitude: number;
   longitude: number;
-  source: 'device' | 'manual';
+  source: 'device' | 'manual' | 'postcard';
   accuracy?: number;
+  label?: string;
 };
 type MapTarget = {
   query: string;
@@ -875,6 +876,24 @@ export default function Home() {
     if (nextField === 'distance' && !distanceOrigin) requestDeviceLocation();
   }
 
+  function applyPostcardDistanceOrigin(postcard: Postcard) {
+    const coordinates = postcardCoordinates(postcard);
+    if (!coordinates) return;
+    setDistanceOrigin({ ...coordinates, source: 'postcard', label: postcard.poi_name });
+    setManualLatitude(String(coordinates.latitude));
+    setManualLongitude(String(coordinates.longitude));
+    setLocationFeedback(`已使用「${postcard.poi_name}」的研究座標作為距離起點；座標只保存在目前頁面記憶體。`);
+    setSortField('distance');
+    setSortDirection('asc');
+    setQuery('');
+    setPage(1);
+    setView('archive');
+    closePostcard();
+    window.requestAnimationFrame(() => {
+      document.getElementById('archive')?.scrollIntoView({ block: 'start' });
+    });
+  }
+
   function resetArchiveControls() {
     setSenderFilter('all');
     setCountry('all');
@@ -956,6 +975,7 @@ export default function Home() {
   const allFriendsExpanded = friendGroups.length > 0
     && friendGroups.every((friend) => expandedFriendNames.has(friend.name));
   const activeMapTarget = active ? mapTargetFor(active) : null;
+  const activeCoordinates = active ? postcardCoordinates(active) : null;
   const activeMapIsLoaded = !!active && mapLoadedFor === active.id;
   const chronologicalSort = sortField === 'found_date' || sortField === 'archived_on';
   const filteredCoordinateCount = filtered.filter((postcard) => postcardCoordinates(postcard)).length;
@@ -1534,9 +1554,19 @@ export default function Home() {
                       <h3 id="location-map-title">研究定位</h3>
                       <p>{activeMapTarget.label}</p>
                     </div>
-                    <a href={googleMapsSearchUrl(activeMapTarget.query)} target="_blank" rel="noreferrer">
-                      Google Maps ↗
-                    </a>
+                    <div className="location-map-actions">
+                      <button
+                        type="button"
+                        onClick={() => applyPostcardDistanceOrigin(active)}
+                        disabled={!activeCoordinates}
+                        title={activeCoordinates ? '回到收藏檔案並依此座標由近到遠排序' : '這張明信片尚無可用的研究座標'}
+                      >
+                        {activeCoordinates ? '以此為距離起點' : '尚無研究座標'}
+                      </button>
+                      <a href={googleMapsSearchUrl(activeMapTarget.query)} target="_blank" rel="noreferrer">
+                        Google Maps ↗
+                      </a>
+                    </div>
                   </div>
                   {activeMapIsLoaded ? (
                     <iframe

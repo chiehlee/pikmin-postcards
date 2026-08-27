@@ -315,7 +315,12 @@ footer p { margin: 0; color: var(--ink); font-family: Georgia, serif; }
 .location-map-heading .eyebrow { margin-bottom: 5px; }
 .location-map-heading h3 { margin: 0; font: 500 22px Georgia, "Noto Serif TC", serif; }
 .location-map-heading div > p:last-child { max-width: 560px; margin: 5px 0 0; color: var(--muted); font-size: 11px; line-height: 1.55; overflow-wrap: anywhere; }
-.location-map-heading > a { flex: 0 0 auto; color: var(--green); font-size: 10px; font-weight: 800; text-decoration: none; }
+.location-map-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 10px; }
+.location-map-actions button { padding: 8px 11px; border: 1px solid var(--green); border-radius: 999px; background: var(--green); color: white; cursor: pointer; font-size: 10px; font-weight: 800; white-space: nowrap; }
+.location-map-actions button:hover { background: #174832; }
+.location-map-actions button:focus-visible { outline: 3px solid rgba(35,91,67,.22); outline-offset: 2px; }
+.location-map-actions button:disabled { border-color: var(--line); background: #ebe8df; color: var(--muted); cursor: not-allowed; }
+.location-map-actions a { color: var(--green); font-size: 10px; font-weight: 800; text-decoration: none; white-space: nowrap; }
 .location-map iframe { display: block; width: 100%; height: 300px; border: 0; background: #dce5dd; }
 .location-map-placeholder { display: grid; justify-items: center; min-height: 230px; padding: 35px 24px; place-content: center; background: radial-gradient(circle at 50% 42%, rgba(35,91,67,.13), transparent 85px), #e7e8df; text-align: center; }
 .location-map-placeholder > span { margin-bottom: 8px; color: var(--green); font: 36px Georgia, serif; }
@@ -556,6 +561,7 @@ footer p { margin: 0; color: var(--ink); font-family: Georgia, serif; }
   .modal-copy { padding: 28px 20px 45px; }
   .location-map { padding: 14px; }
   .location-map-heading { align-items: stretch; flex-direction: column; }
+  .location-map-actions { justify-content: space-between; }
   .location-map iframe { height: 260px; }
   .research-image-gallery { padding: 14px; }
   .research-image-grid { grid-template-columns: 1fr; }
