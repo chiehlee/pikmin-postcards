@@ -45,6 +45,7 @@ function syntheticPostcard({ id, poiName, address, latitude, longitude, assetSha
     received_at: null,
     archived_on: "2026-01-03",
     archived_at: "2026-01-03T04:05:06.000Z",
+    modified_at: "2026-01-03T04:05:06.000Z",
     sender: null,
     location: {
       raw: "Test District",

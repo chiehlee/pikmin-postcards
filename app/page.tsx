@@ -14,8 +14,8 @@ import {
 import { researchedLocationDisplay, researchedLocationQuery } from '../lib/location-names.mjs';
 import { googleMapsEmbedUrl, googleMapsSearchUrl } from '../lib/map-links.mjs';
 import {
-  archiveTimestamp,
   distanceKilometers,
+  modifiedTimestamp,
   paginateRecords,
   postcardCoordinates,
   sortPostcards,
@@ -23,12 +23,12 @@ import {
 
 const postcardsPerPage = 60;
 const friendPostcardsPreviewLimit = 5;
-const defaultSortField: SortField = 'archived_on';
+const defaultSortField: SortField = 'modified_at';
 const defaultSortDirection: SortDirection = 'desc';
 
 type Status = 'keep' | 'representative' | 'candidate' | 'delete' | 'unreviewed';
 type AcquisitionType = 'self_found' | 'received' | 'unknown';
-type SortField = 'rating' | 'found_date' | 'archived_on' | 'distance';
+type SortField = 'rating' | 'found_date' | 'modified_at' | 'distance';
 type SortDirection = 'asc' | 'desc';
 type ReasoningEffort = 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 type AddWorkflow = 'metadata_only' | 'full_research';
@@ -108,6 +108,7 @@ type Postcard = {
   received_at: string | null;
   archived_on: string;
   archived_at?: string | null;
+  modified_at?: string | null;
   sender: string | null;
   acquisition: {
     type: AcquisitionType;
@@ -230,6 +231,21 @@ function compactArchiveTime(postcard: Postcard) {
     second: '2-digit',
     hourCycle: 'h23',
   }).format(new Date(postcard.archived_at));
+}
+
+function compactModifiedTime(postcard: Postcard) {
+  const timestamp = modifiedTimestamp(postcard);
+  if (!timestamp) return '時間未記錄';
+  if (!timestamp.includes('T')) return `${compactDate(timestamp)} · 時間未記錄`;
+  return new Intl.DateTimeFormat('zh-TW', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).format(new Date(timestamp));
 }
 
 function liveAssetUrl(publicPath: string) {
@@ -497,6 +513,11 @@ export default function Home() {
               ? jobs.filter((job) => job.batch_id === payload.job.batch_id).length
               : 1;
             if (payload.job.status === 'completed') {
+              if (payload.job.kind === 'reresearch') {
+                setSortField(defaultSortField);
+                setSortDirection(defaultSortDirection);
+                setPage(1);
+              }
               const updated = await refreshArchive(active?.id === payload.job.postcard_id ? payload.job.postcard_id : null);
               if (cancelled) return;
               if (batchSize === 1 && payload.job.kind === 'add' && payload.job.postcard_id) {
@@ -977,7 +998,7 @@ export default function Home() {
   const activeMapTarget = active ? mapTargetFor(active) : null;
   const activeCoordinates = active ? postcardCoordinates(active) : null;
   const activeMapIsLoaded = !!active && mapLoadedFor === active.id;
-  const chronologicalSort = sortField === 'found_date' || sortField === 'archived_on';
+  const chronologicalSort = sortField === 'found_date' || sortField === 'modified_at';
   const filteredCoordinateCount = filtered.filter((postcard) => postcardCoordinates(postcard)).length;
   const pagination = paginateRecords(filtered, page, postcardsPerPage);
   const activeJob = active
@@ -1220,7 +1241,7 @@ export default function Home() {
               <select aria-label="排序" value={sortField} onChange={(event) => changeSortField(event.target.value as SortField)}>
                 <option value="rating">評分</option>
                 <option value="found_date">發現日期</option>
-                <option value="archived_on">加入系統時間</option>
+                <option value="modified_at">上次修改時間</option>
                 <option value="distance">距離</option>
               </select>
             </label>
@@ -1283,8 +1304,8 @@ export default function Home() {
             <div className="postcard-grid">
               {pagination.items.map((postcard) => {
                 const distance = distanceOrigin ? distanceKilometers(postcard, distanceOrigin) : null;
-                const displayedDate = sortField === 'archived_on' ? archiveTimestamp(postcard) : postcard.found_date;
-                const displayedDateLabel = sortField === 'archived_on' ? '加入系統' : '發現';
+                const displayedDate = sortField === 'modified_at' ? modifiedTimestamp(postcard) : postcard.found_date;
+                const displayedDateLabel = sortField === 'modified_at' ? '修改' : '發現';
                 return (
                   <article className="postcard-card" data-postcard-id={postcard.id} key={postcard.id}>
                     <button className="image-button" onClick={() => openPostcard(postcard)} aria-label={`查看 ${postcard.poi_name}`}>
@@ -1298,7 +1319,7 @@ export default function Home() {
                           {postcard.research.status === 'metadata_only_pending_research' ? '待研究' : statusLabels[postcard.curation.status]}
                         </span>
                         <time dateTime={displayedDate ?? undefined}>
-                          {displayedDateLabel} · {sortField === 'archived_on' ? compactArchiveTime(postcard) : compactDate(displayedDate)}
+                          {displayedDateLabel} · {sortField === 'modified_at' ? compactModifiedTime(postcard) : compactDate(displayedDate)}
                         </time>
                       </div>
                       <h3><button onClick={() => openPostcard(postcard)}>{postcard.poi_name}</button></h3>

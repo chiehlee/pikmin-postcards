@@ -488,8 +488,9 @@ async function applyCompletedJob(jobId, result) {
   const row = selectJob(jobDatabase, jobId);
   jobDatabase.close();
   if (!row) throw new Error(`找不到工作 ${jobId}`);
+  const completedAt = secondPrecisionTimestamp(new Date().toISOString());
   const applied = row.kind === "reresearch"
-    ? await applyReresearch(snapshots, row, result)
+    ? await applyReresearch(snapshots, row, result, completedAt)
     : row.workflow === "metadata_only"
       ? await applyMetadataAdd(snapshots, row, result)
       : await applyAdd(snapshots, row, result);
@@ -498,12 +499,12 @@ async function applyCompletedJob(jobId, result) {
     status: "completed",
     postcardId: applied.id,
     result,
-    completedAt: new Date().toISOString(),
+    completedAt,
   });
   return getJob(jobId, { refresh: false });
 }
 
-async function applyReresearch(snapshots, job, result) {
+async function applyReresearch(snapshots, job, result, completedAt) {
   const record = snapshots.postcards.postcards.find((item) => item.id === job.postcard_id);
   if (!record || record.lifecycle?.deleted_at) throw new Error("再研究目標已不存在或已刪除");
   const previousFriendEvidence = JSON.stringify(friendEvidenceForPostcard(record));
@@ -527,6 +528,7 @@ async function applyReresearch(snapshots, job, result) {
   record.location = location;
   record.research = normalizedResearch(result.research, sourcePath, researchImages);
   record.research.status = `ui-reresearched-${localDate()}`;
+  record.modified_at = completedAt;
   const avatarCrop = result.visible.sender === record.sender
     ? normalizeAvatarCropHint(result.visible.sender_avatar_crop)
     : null;
@@ -586,6 +588,7 @@ async function applyMetadataAdd(snapshots, job, result) {
     received_at: null,
     archived_on: promoted.archivedOn,
     archived_at: promoted.archivedAt,
+    modified_at: promoted.archivedAt,
     sender: visible.sender,
     location,
     asset: promoted.asset,
@@ -646,6 +649,7 @@ async function applyAdd(snapshots, job, result) {
     received_at: null,
     archived_on: date,
     archived_at: archivedAt,
+    modified_at: archivedAt,
     sender,
     location,
     asset: promoted.asset,

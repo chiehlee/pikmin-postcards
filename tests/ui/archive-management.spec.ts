@@ -148,6 +148,7 @@ test('re-research uses the dedicated research section, shows elapsed time, then 
       postcards: payload.postcards.map((postcard) => postcard.id === postcardId
         ? {
           ...postcard,
+          modified_at: '2030-01-02T03:04:05Z',
           user_contributions: [{
             kind: 'reresearch_note',
             body: userNote,
@@ -187,7 +188,13 @@ test('re-research uses the dedicated research section, shows elapsed time, then 
     } } });
   });
 
-  const dialog = await openTarget(page);
+  await page.goto('/');
+  await page.getByLabel('排序', { exact: true }).selectOption('rating');
+  await page.getByLabel('排序方向').selectOption('asc');
+  await page.getByPlaceholder('名稱、地點、故事或標籤').fill(targetName);
+  const targetCard = page.locator('.postcard-card').filter({ hasText: targetName });
+  await targetCard.getByRole('button', { name: `查看 ${targetName}` }).click();
+  const dialog = page.locator('.detail-modal');
   await dialog.getByRole('button', { name: '再研究', exact: true }).click();
   const form = dialog.getByRole('form', { name: '補充再研究資訊' });
   await expect(form).toBeVisible();
@@ -208,6 +215,11 @@ test('re-research uses the dedicated research section, shows elapsed time, then 
   const history = dialog.locator('.user-contribution-history');
   await history.getByText('已保存的使用者補充（1）').click();
   await expect(history).toContainText(userNote);
+  await expect(page.getByLabel('排序', { exact: true })).toHaveValue('modified_at');
+  await expect(page.getByLabel('排序方向')).toHaveValue('desc');
+  await page.keyboard.press('Escape');
+  await page.getByPlaceholder('名稱、地點、故事或標籤').fill('');
+  await expect(page.locator('.postcard-card').first()).toHaveAttribute('data-postcard-id', postcardId);
 });
 
 test('new postcard closes the form after the job starts and moves progress into the research section', async ({ page }) => {

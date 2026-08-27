@@ -22,10 +22,12 @@ export async function loadSnapshots(directory = defaultSnapshotDirectory) {
       await readFile(path.join(directory, definition.file), "utf8"),
     );
   }
+  normalizePostcardModifiedTimestamps(snapshots);
   return snapshots;
 }
 
 export function replaceDatabaseFromSnapshots(database, snapshots) {
+  normalizePostcardModifiedTimestamps(snapshots);
   validateSnapshots(snapshots);
   const deleteOrder = [
     "context_provenance",
@@ -50,7 +52,7 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
   `);
   const insertPostcard = database.prepare(`
     INSERT INTO postcards (
-      id, sort_order, record_type, poi_name, found_date, received_at, archived_on, archived_at, sender,
+      id, sort_order, record_type, poi_name, found_date, received_at, archived_on, archived_at, modified_at, sender,
       acquisition_type, sender_status, acquisition_confidence, acquisition_evidence_json,
       location_raw, location_display, location_endonym, location_zh_tw, location_language,
       location_name_status, location_name_confidence, location_country_endonym,
@@ -63,7 +65,7 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
       recommendation, curation_status, personal_relevance, star_visible,
       deletion_toast_visible, research_status, research_confidence,
       research_confidence_label, research_summary, deleted_at, deleted_reason, document_json
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const insertTag = database.prepare(
     "INSERT INTO postcard_tags (postcard_id, tag, sort_order) VALUES (?, ?, ?)",
@@ -152,6 +154,7 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
         record.received_at,
         record.archived_on,
         record.archived_at ?? null,
+        record.modified_at,
         record.sender,
         acquisition.type,
         acquisition.sender_status,
@@ -334,6 +337,13 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
   } catch (error) {
     database.exec("ROLLBACK");
     throw error;
+  }
+}
+
+function normalizePostcardModifiedTimestamps(snapshots) {
+  for (const record of snapshots.postcards?.postcards ?? []) {
+    record.modified_at ??= record.archived_at
+      ?? (record.archived_on ? `${record.archived_on}T00:00:00Z` : null);
   }
 }
 

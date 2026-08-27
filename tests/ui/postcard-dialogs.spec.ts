@@ -25,7 +25,7 @@ test('homepage uses a functional Pikmin postcard title', async ({ page }) => {
   await expect(page).toHaveTitle('Pikmin 明信片收藏研究庫');
 });
 
-test('archive controls distinguish both dates and restore every dropdown default without a notification', async ({ page }) => {
+test('archive controls default to last-modified time and restore every dropdown without a notification', async ({ page }) => {
   await page.goto('/');
   const senderFilter = page.locator('.filters label').filter({ hasText: /^來源／寄件人/ }).locator('select');
   const countryFilter = page.locator('.filters label').filter({ hasText: /^國家／地區/ }).locator('select');
@@ -37,10 +37,10 @@ test('archive controls distinguish both dates and restore every dropdown default
   await expect(sortField.locator('option')).toHaveText([
     '評分',
     '發現日期',
-    '加入系統時間',
+    '上次修改時間',
     '距離',
   ]);
-  await expect(sortField).toHaveValue('archived_on');
+  await expect(sortField).toHaveValue('modified_at');
   await expect(sortDirection).toHaveValue('desc');
   await expect(senderFilter).toHaveValue('all');
   await expect(countryFilter).toHaveValue('all');
@@ -48,7 +48,7 @@ test('archive controls distinguish both dates and restore every dropdown default
   await expect(restoreDefaults).toBeEnabled();
   await restoreDefaults.click();
   await expect(page.locator('.management-notice')).toHaveCount(0);
-  await expect(page.locator('.postcard-card time').first()).toContainText('加入系統');
+  await expect(page.locator('.postcard-card time').first()).toContainText('修改');
   await expect(page.locator('.postcard-card time').first()).toContainText(/\d{2}:\d{2}:\d{2}/);
 
   await sortField.selectOption('found_date');
@@ -59,8 +59,8 @@ test('archive controls distinguish both dates and restore every dropdown default
   expect(foundDates).toEqual([...foundDates].sort());
   await expect(page.locator('.postcard-card time').first()).toContainText('發現');
 
-  await sortField.selectOption('archived_on');
-  await expect(page.locator('.postcard-card time').first()).toContainText('加入系統');
+  await sortField.selectOption('modified_at');
+  await expect(page.locator('.postcard-card time').first()).toContainText('修改');
   await expect(page.locator('.postcard-card time').first()).toHaveAttribute('datetime', /T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/);
 
   await senderFilter.selectOption('self-found');
@@ -71,7 +71,7 @@ test('archive controls distinguish both dates and restore every dropdown default
   await expect(senderFilter).toHaveValue('all');
   await expect(countryFilter).toHaveValue('all');
   await expect(statusFilter).toHaveValue('all');
-  await expect(sortField).toHaveValue('archived_on');
+  await expect(sortField).toHaveValue('modified_at');
   await expect(sortDirection).toHaveValue('desc');
   await expect(restoreDefaults).toBeEnabled();
   await expect(page.locator('.management-notice')).toHaveCount(0);

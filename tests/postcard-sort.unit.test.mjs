@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  archiveTimestamp,
   distanceKilometers,
+  modifiedTimestamp,
   paginateRecords,
   postcardCoordinates,
   sortPostcards,
@@ -15,24 +15,24 @@ const records = [
   postcard("d", 4, "2026-05-02", "2026-08-02", 0, 3),
 ];
 
-test("rating, found date, and archive date sorting support both directions while missing values stay last", () => {
+test("rating, found date, and last-modified sorting support both directions while missing values stay last", () => {
   assert.deepEqual(ids(sortPostcards(records, { field: "rating", direction: "desc" })), ["a", "d", "b", "c"]);
   assert.deepEqual(ids(sortPostcards(records, { field: "rating", direction: "asc" })), ["b", "a", "d", "c"]);
   assert.deepEqual(ids(sortPostcards(records, { field: "found_date", direction: "desc" })), ["a", "d", "b", "c"]);
   assert.deepEqual(ids(sortPostcards(records, { field: "found_date", direction: "asc" })), ["b", "d", "a", "c"]);
-  assert.deepEqual(ids(sortPostcards(records, { field: "archived_on", direction: "desc" })), ["b", "d", "a", "c"]);
-  assert.deepEqual(ids(sortPostcards(records, { field: "archived_on", direction: "asc" })), ["a", "d", "b", "c"]);
+  assert.deepEqual(ids(sortPostcards(records, { field: "modified_at", direction: "desc" })), ["b", "d", "a", "c"]);
+  assert.deepEqual(ids(sortPostcards(records, { field: "modified_at", direction: "asc" })), ["a", "d", "b", "c"]);
 });
 
-test("archive sorting uses the second-precision timestamp and falls back to the legacy date", () => {
+test("last-modified sorting uses the durable timestamp and falls back through archive timestamps", () => {
   const sameDay = [
-    postcard("early", 1, null, "2026-08-23", null, null, "2026-08-23T00:00:01Z"),
+    postcard("early", 1, null, "2026-08-23", null, null, "2026-08-23T00:00:01Z", "2026-08-23T00:00:03Z"),
     postcard("legacy", 1, null, "2026-08-23", null, null),
-    postcard("late", 1, null, "2026-08-23", null, null, "2026-08-23T00:00:02Z"),
+    postcard("late", 1, null, "2026-08-23", null, null, "2026-08-23T00:00:02Z", "2026-08-23T00:00:04Z"),
   ];
-  assert.deepEqual(ids(sortPostcards(sameDay, { field: "archived_on", direction: "desc" })), ["late", "early", "legacy"]);
-  assert.equal(archiveTimestamp(sameDay[0]), "2026-08-23T00:00:01Z");
-  assert.equal(archiveTimestamp(sameDay[1]), "2026-08-23");
+  assert.deepEqual(ids(sortPostcards(sameDay, { field: "modified_at", direction: "desc" })), ["late", "early", "legacy"]);
+  assert.equal(modifiedTimestamp(sameDay[0]), "2026-08-23T00:00:03Z");
+  assert.equal(modifiedTimestamp(sameDay[1]), "2026-08-23");
 });
 
 test("distance sorting supports nearest and farthest with ungeocoded records last", () => {
@@ -73,12 +73,13 @@ test("pagination slices the globally sorted collection into 60-card pages", () =
   );
 });
 
-function postcard(id, rating, foundDate, archivedOn, latitude, longitude, archivedAt = null) {
+function postcard(id, rating, foundDate, archivedOn, latitude, longitude, archivedAt = null, modifiedAt = archivedAt) {
   return {
     id,
     found_date: foundDate,
     archived_on: archivedOn,
     archived_at: archivedAt,
+    modified_at: modifiedAt,
     curation: { rating },
     location: { raw: `${latitude}, ${longitude}`, latitude, longitude },
   };

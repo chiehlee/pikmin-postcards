@@ -45,8 +45,18 @@ test("GPT-5.6 job migrations preserve old jobs and accept new reasoning and canc
         user_note TEXT
       ) STRICT;
       CREATE TABLE postcards (
-        id TEXT PRIMARY KEY
+        id TEXT PRIMARY KEY,
+        archived_on TEXT NOT NULL,
+        archived_at TEXT,
+        document_json TEXT NOT NULL CHECK (json_valid(document_json))
       ) STRICT;
+      INSERT INTO postcards (id, archived_on, archived_at, document_json)
+      VALUES (
+        'legacy-postcard',
+        '2026-08-22',
+        '2026-08-22T01:02:03Z',
+        '{"id":"legacy-postcard","archived_on":"2026-08-22","archived_at":"2026-08-22T01:02:03Z"}'
+      );
       INSERT INTO ai_jobs (
         id, kind, status, model, skill_path, skill_sha256, prompt, created_at,
         updated_at, provider, reasoning_effort, workflow
@@ -91,9 +101,14 @@ test("GPT-5.6 job migrations preserve old jobs and accept new reasoning and canc
     assert.equal(database.prepare("SELECT prompt FROM ai_jobs WHERE id = 'cancelled-job'").get().prompt, "preserved prompt");
     assert.ok(database.prepare("SELECT 1 FROM schema_migrations WHERE version = 15").get());
     assert.ok(database.prepare("SELECT 1 FROM schema_migrations WHERE version = 16").get());
+    assert.ok(database.prepare("SELECT 1 FROM schema_migrations WHERE version = 17").get());
     const postcardColumns = new Set(database.prepare("PRAGMA table_info(postcards)").all().map((column) => column.name));
     assert.ok(postcardColumns.has("location_geocode_status"));
     assert.ok(postcardColumns.has("location_geocode_document_json"));
+    assert.ok(postcardColumns.has("modified_at"));
+    const migratedPostcard = database.prepare("SELECT modified_at, document_json FROM postcards WHERE id = 'legacy-postcard'").get();
+    assert.equal(migratedPostcard.modified_at, "2026-08-22T01:02:03Z");
+    assert.equal(JSON.parse(migratedPostcard.document_json).modified_at, "2026-08-22T01:02:03Z");
     assert.equal(database.prepare("PRAGMA integrity_check").get().integrity_check, "ok");
   } finally {
     database.close();
