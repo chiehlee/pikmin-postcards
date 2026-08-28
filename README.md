@@ -16,7 +16,7 @@ Pikmin Bloom 明信片的本機收藏、研究與朋友活動範圍證據庫。
 
 ### 明信片研究檔案
 
-單張檔案並列保存原始遊戲截圖、畫面 metadata、研究摘要、研究定位、故事參考圖片與管理操作；Google Map 只在使用者要求後載入。
+單張檔案並列保存原始遊戲截圖、畫面 metadata、研究摘要、研究定位、故事參考圖片與管理操作；Google Map 只在使用者要求後載入。研究摘要與定位之間的左右箭頭會依入口保留脈絡：由收藏進入時走完整篩選／排序結果（跨分頁），由朋友足跡進入時只走該寄件者的明信片順序。
 
 ![單張明信片研究檔案，並列原圖、摘要與研究定位](docs/images/postcard-detail.jpg)
 
@@ -175,7 +175,7 @@ npm run verify
 - `test:unit`：純函式與領域規則，包含 line 95%、branch 80%、function 95% 的 coverage gate。
 - `test:regression`：canonical 圖片、資料筆數、來源分類、雙向關聯、JSON ↔ SQLite round-trip 與既有 bug cases。
 - `test:functional`：先 production build，再從外部邊界測試圖片 intake、關聯候選 CLI、HTTP 網站與 canonical 圖片。
-- `test:ui`：以 Playwright Chromium 在桌面與手機 viewport 操作 production UI；涵蓋 modal 捲動、鍵盤／焦點、背景關閉、Google Map 延遲載入、新增、soft delete、再研究進度、工作中止，以及設定頁的 key 遮罩、localhost／LAN 權限、連線測試與確認移除。失敗時保留 screenshot、trace 與 video。
+- `test:ui`：以 Playwright Chromium 在桌面與手機 viewport 操作 production UI；涵蓋 modal 捲動、鍵盤／焦點、背景關閉、Google Map 延遲載入、新增、soft delete、再研究進度、工作中止、寄件者編輯／合併／重截／刪除、入口感知的左右導覽，以及設定頁的 key 遮罩、localhost／LAN 權限、連線測試與確認移除。失敗時保留 screenshot、trace 與 video。
 - `test:quick`：開發中快速執行 unit + regression。
 - `test:watch`：修改程式時持續重跑 unit + regression，提供即時回饋。
 - 第一次在新電腦執行 UI test 前先跑 `npx playwright install chromium`。`npm test` 等同完整的 `test:all`；`npm run verify` 再加上 lint、TypeScript、DB integrity/query plans 與資料統計，是 commit 前固定入口。
@@ -237,7 +237,9 @@ Google 地圖與收藏座標是兩條獨立資料路徑：地圖只收到正規�
 
 朋友卡預設只顯示 Mii avatar 與寄件人／遊戲 ID，讓同一個螢幕容納更多玩家；若有保守推測的據點，會在 ID 同一排顯示「可能據點」。信心、觀察數、避免寄送、研究說明與明信片收進「展開資料與明信片」。每位朋友展開後最多直接顯示 5 張明信片；超過時顯示「更多」與剩餘張數。點擊後會開啟獨立、可捲動的完整清單 popup，可用鍵盤循環焦點、Esc 或背景點擊關閉，也能從清單繼續開啟單張明信片。
 
-新增或再研究完成時，同一次 AI 畫面判讀會提供已確認寄件人 Mii 的正規化裁切框；backend 驗證信心與邊界後，自動以原圖像素產生 WebP avatar，並將來源 postcard、來源 checksum、crop box 與生成狀態寫回朋友資料和 SQLite。後續同名玩家出現更高實際 crop 像素的可靠截圖時會自動替換；ImageMagick 暫時不可用或畫面無法可靠定位時不會回滾 postcard，而會保存失敗／等待證據狀態，於下一次有效證據變動自動重試。這是 backend 的正常流程，不需要維護者執行針對特定收藏的補圖腳本。
+展開卡片後的「編輯情報」可人工修改名稱與可能據點；輸入框會預填現值，點擊即可全選。也可搜尋並合併寄件者，候選預設依最後系統修改時間排序。改名與合併會同步更新明信片指向，同時保存舊名稱、時間與合併軌跡。刪除寄件者只做 soft delete，不會刪除其明信片；這些卡片會保留原寄件者文字並在 UI 顯示為「無主」。
+
+新增或再研究完成時，同一次 AI 畫面判讀會提供已確認寄件人 Mii 的正規化裁切框；backend 驗證信心與邊界後，自動以原圖像素產生固定 192×192 WebP avatar，並將來源 postcard、來源 checksum、crop box 與生成狀態寫回朋友資料和 SQLite。選圖會同時考慮可信度、實際 crop 像素與原圖解析度，裁切另保留安全邊界，避免不同頭像忽大忽小或貼邊。後續同名玩家出現更高品質的可靠截圖時會自動替換；也可在「編輯情報」按「重新截圖」，強制以目前最佳來源重做。ImageMagick 暫時不可用或畫面無法可靠定位時不會回滾 postcard，而會保存失敗／等待證據狀態。這是 backend 的正常流程，不需要維護者執行針對特定收藏的補圖腳本。
 
 據點分析不是按日排程。新增已確認寄件人的明信片，或再研究真的改變該玩家的日期／研究定位證據時，系統只重算受影響的玩家；批次匯入則每位玩家最多重算一次。自動早期訊號需要同一區域至少 3 個不同日期、跨 14 天並占全部有效日期至少 60%；同日多張只算一次，短期集中另視為可能旅遊群集。Soft delete 仍保留既有朋友證據，不會因清理疑似重複明信片而扭曲玩家足跡。
 

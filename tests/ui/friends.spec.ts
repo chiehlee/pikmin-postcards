@@ -133,3 +133,161 @@ test('friend base evidence returned by the management API updates the friends UI
   await card.getByText('展開資料與明信片').click();
   await expect(card).toContainText('Playwright 模擬：有效地點證據變更後，只更新這位玩家。');
 });
+
+test('friend editor prefills selectable values and searches merge targets by most recent modification', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: '朋友足跡' }).click();
+  const card = page.locator('.friend-card').filter({ has: page.getByRole('heading', { name: '菎娜', exact: true }) });
+  await card.getByText('展開資料與明信片').click();
+  await card.getByRole('button', { name: '編輯情報' }).click();
+
+  const dialog = page.getByRole('dialog', { name: '編輯情報' });
+  const name = dialog.getByLabel('名稱');
+  const base = dialog.getByLabel('可能據點');
+  await expect(dialog).toBeVisible();
+  await expect(name).toHaveValue('菎娜');
+  await expect(base).toHaveValue('臺北市北投區');
+  await name.click();
+  expect(await name.evaluate((input: HTMLInputElement) => [input.selectionStart, input.selectionEnd])).toEqual([0, '菎娜'.length]);
+  await base.click();
+  expect(await base.evaluate((input: HTMLInputElement) => [input.selectionStart, input.selectionEnd])).toEqual([0, '臺北市北投區'.length]);
+
+  await dialog.getByRole('button', { name: '合併寄件者' }).click();
+  const options = dialog.locator('.friend-merge-list > button');
+  await expect(options.first()).toContainText('柳柳');
+  await dialog.getByLabel('搜尋寄件者').fill('Alice');
+  await expect(options).toHaveCount(1);
+  await expect(options.first()).toContainText('Alice');
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(card.getByRole('button', { name: '編輯情報' })).toBeFocused();
+});
+
+test('friend editor saves, recrops, and soft-deletes without deleting associated postcards', async ({ page }) => {
+  await page.unroute('**/api/archive');
+  const payload = createArchiveFixture();
+  await page.route('**/api/archive', async (route) => route.fulfill({ json: payload }));
+  let avatarCalls = 0;
+  await page.route(/\/api\/friends\/[^/]+\/avatar$/, async (route) => {
+    avatarCalls += 1;
+    const name = decodeURIComponent(new URL(route.request().url()).pathname.split('/').at(-2)!);
+    const friend = payload.friends.find((profile) => profile.name === name)!;
+    friend.modified_at = '2026-08-28T02:03:04Z';
+    friend.avatar = { path: '/images/friends/test.webp' };
+    await route.fulfill({ json: { friend, avatar_generation: [{ status: 'generated' }] } });
+  });
+  await page.route(/\/api\/friends\/[^/]+$/, async (route) => {
+    const request = route.request();
+    const oldName = decodeURIComponent(new URL(request.url()).pathname.split('/').at(-1)!);
+    if (request.method() === 'PATCH') {
+      const body = request.postDataJSON() as { name: string; likely_base_area: string };
+      const friend = payload.friends.find((profile) => profile.name === oldName)!;
+      friend.name = body.name;
+      friend.modified_at = '2026-08-28T03:04:05Z';
+      friend.likely_base = { ...friend.likely_base, area: body.likely_base_area, status: 'manual', confidence_label: '人工' };
+      payload.postcards.filter((card) => card.sender === oldName).forEach((card) => { card.sender = body.name; });
+      await route.fulfill({ json: { friend } });
+      return;
+    }
+    payload.friends = payload.friends.filter((profile) => profile.name !== oldName);
+    payload.orphaned_sender_names.push(oldName);
+    await route.fulfill({ json: { friend: { name: oldName, lifecycle: { status: 'deleted' } } } });
+  });
+
+  await page.goto('/');
+  await page.getByRole('button', { name: '朋友足跡' }).click();
+  let card = page.locator('.friend-card').filter({ has: page.getByRole('heading', { name: 'Alice', exact: true }) });
+  await card.getByText('展開資料與明信片').click();
+  await card.getByRole('button', { name: '編輯情報' }).click();
+  let dialog = page.getByRole('dialog', { name: '編輯情報' });
+  await dialog.getByRole('button', { name: '重新截圖' }).click();
+  await expect(page.getByText('Mii 頭像已更新')).toBeVisible();
+  expect(avatarCalls).toBe(1);
+  await dialog.getByLabel('名稱').fill('Alice 新');
+  await dialog.getByLabel('可能據點').fill('Boston, Massachusetts, United States（美國麻薩諸塞州波士頓）');
+  await dialog.getByRole('button', { name: '保存情報' }).click();
+  await expect(dialog).toBeHidden();
+
+  card = page.locator('.friend-card').filter({ has: page.getByRole('heading', { name: 'Alice 新', exact: true }) });
+  await expect(card).toContainText('可能據點 · Boston, Massachusetts, United States');
+  await expect(card.locator('.friend-details')).toHaveAttribute('open', '');
+  await card.getByRole('button', { name: '編輯情報' }).click();
+  dialog = page.getByRole('dialog', { name: '編輯情報' });
+  await dialog.getByRole('button', { name: '刪除', exact: true }).click();
+  await dialog.getByRole('button', { name: '確認 soft delete' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.getByRole('heading', { name: 'Alice 新', exact: true })).toHaveCount(0);
+
+  await page.getByRole('button', { name: '明信片', exact: true }).click();
+  const orphanCard = page.locator('.postcard-card').filter({ hasText: '寄件人：無主（原寄件人：Alice 新）' }).first();
+  await expect(orphanCard).toBeVisible();
+  expect(payload.postcards.filter((postcard) => postcard.sender === 'Alice 新').length).toBe(3);
+});
+
+test('friend merge moves cards into the chosen profile and removes only the source profile', async ({ page }) => {
+  await page.unroute('**/api/archive');
+  const payload = createArchiveFixture();
+  await page.route('**/api/archive', async (route) => route.fulfill({ json: payload }));
+  await page.route(/\/api\/friends\/[^/]+\/merge$/, async (route) => {
+    const sourceName = decodeURIComponent(new URL(route.request().url()).pathname.split('/').at(-2)!);
+    const { target_name: targetName } = route.request().postDataJSON() as { target_name: string };
+    const source = payload.friends.find((profile) => profile.name === sourceName)!;
+    const target = payload.friends.find((profile) => profile.name === targetName)!;
+    payload.postcards.filter((card) => card.sender === sourceName).forEach((card) => { card.sender = targetName; });
+    target.evidence_postcard_ids = [...target.evidence_postcard_ids, ...source.evidence_postcard_ids];
+    target.modified_at = '2026-08-28T04:05:06Z';
+    payload.friends = payload.friends.filter((profile) => profile.name !== sourceName);
+    await route.fulfill({ json: { friend: target, merged_friend: source, avatar_generation: [] } });
+  });
+
+  await page.goto('/');
+  await page.getByRole('button', { name: '朋友足跡' }).click();
+  const bob = page.locator('.friend-card').filter({ has: page.getByRole('heading', { name: 'Bob', exact: true }) });
+  await bob.getByText('展開資料與明信片').click();
+  await bob.getByRole('button', { name: '編輯情報' }).click();
+  const dialog = page.getByRole('dialog', { name: '編輯情報' });
+  await dialog.getByRole('button', { name: '合併寄件者' }).click();
+  await dialog.getByLabel('搜尋寄件者').fill('Carol');
+  await dialog.locator('.friend-merge-list > button').click();
+  await dialog.getByRole('button', { name: '確認合併' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.getByRole('heading', { name: 'Bob', exact: true })).toHaveCount(0);
+  const carol = page.locator('.friend-card').filter({ has: page.getByRole('heading', { name: 'Carol', exact: true }) });
+  await carol.getByText('展開資料與明信片').click();
+  await expect(carol).toContainText('6 張／');
+});
+
+test('postcard arrows follow the full archive order or the selected friend order', async ({ page }) => {
+  await page.goto('/');
+  const archiveCards = page.locator('.postcard-card');
+  const firstArchiveTitle = (await archiveCards.nth(0).locator('h3').innerText()).trim();
+  const secondArchiveTitle = (await archiveCards.nth(1).locator('h3').innerText()).trim();
+  await archiveCards.nth(0).locator('.image-button').click();
+  const detail = page.locator('.detail-modal');
+  const navigation = detail.locator('.postcard-context-navigation');
+  await expect(detail.getByRole('heading', { name: firstArchiveTitle, exact: true })).toBeVisible();
+  await expect(navigation).toContainText('目前明信片排序');
+  await navigation.getByRole('button', { name: '下一張明信片' }).click();
+  await expect(detail.getByRole('heading', { name: secondArchiveTitle, exact: true })).toBeVisible();
+  expect(await detail.evaluate((element) => {
+    const story = element.querySelector('.detail-story');
+    const arrows = element.querySelector('.postcard-context-navigation');
+    const location = element.querySelector('.location-map');
+    return Boolean(story && arrows && location
+      && (story.compareDocumentPosition(arrows) & Node.DOCUMENT_POSITION_FOLLOWING)
+      && (arrows.compareDocumentPosition(location) & Node.DOCUMENT_POSITION_FOLLOWING));
+  })).toBe(true);
+  await page.getByRole('button', { name: '關閉' }).click();
+
+  await page.getByRole('button', { name: '朋友足跡' }).click();
+  const friend = page.locator('.friend-card').filter({ has: page.getByRole('heading', { name: '柳柳', exact: true }) });
+  await friend.getByText('展開資料與明信片').click();
+  const friendCards = friend.locator('.timeline > button');
+  const firstFriendTitle = (await friendCards.nth(0).locator('span').innerText()).trim();
+  const secondFriendTitle = (await friendCards.nth(1).locator('span').innerText()).trim();
+  await friendCards.nth(0).click();
+  await expect(detail.getByRole('heading', { name: firstFriendTitle, exact: true })).toBeVisible();
+  await expect(navigation).toContainText('寄件者 · 柳柳');
+  await navigation.getByRole('button', { name: '下一張明信片' }).click();
+  await expect(detail.getByRole('heading', { name: secondFriendTitle, exact: true })).toBeVisible();
+});

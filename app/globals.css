@@ -221,7 +221,7 @@ button { color: inherit; }
 .friend-card { padding: 17px 18px 0; border: 1px solid var(--line); border-radius: 8px; background: var(--card); }
 .friend-topline { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; }
 .avatar { display: grid; place-items: center; width: 45px; height: 45px; overflow: hidden; border: 2px solid rgba(35,91,67,.18); border-radius: 50%; background: var(--green); color: white; font: 19px Georgia, "Noto Serif TC", serif; }
-.avatar img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.12); }
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
 .friend-topline p, .friend-topline h3 { margin: 0; }
 .friend-topline p { color: var(--muted); font-size: 10px; }
 .friend-topline h3 { font: 500 21px Georgia, "Noto Serif TC", serif; }
@@ -240,6 +240,9 @@ button { color: inherit; }
 .friend-details summary span { flex: 1 1 auto; font-size: 10px; font-weight: 800; }
 .friend-details summary:focus-visible { outline: 0; box-shadow: inset 0 0 0 2px rgba(35,91,67,.35); }
 .friend-details-body { padding-bottom: 18px; }
+.friend-details-actions { display: flex; justify-content: flex-end; margin: 10px 0 -1px; }
+.friend-details-actions button { padding: 7px 10px; border: 1px solid rgba(35,91,67,.34); border-radius: 4px; background: transparent; color: var(--green); cursor: pointer; font-size: 9px; font-weight: 800; }
+.friend-details-actions button:hover { border-color: var(--green); background: var(--green-light); }
 .friend-card dl { margin: 8px 0 0; }
 .friend-card dl div { display: grid; grid-template-columns: 80px 1fr; gap: 12px; padding: 9px 0; border-bottom: 1px solid rgba(31,48,38,.08); }
 .friend-card dt { color: var(--muted); font-size: 11px; }
@@ -343,6 +346,13 @@ footer p { margin: 0; color: var(--ink); font-family: Georgia, serif; }
 .research-image-grid figcaption small { color: var(--muted); font-size: 9px; line-height: 1.4; }
 .research-image-grid figcaption a { color: var(--green); font-size: 9px; font-weight: 800; text-decoration: none; }
 .detail-story { padding: 22px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.postcard-context-navigation { display: grid; grid-template-columns: 42px minmax(0, 1fr) 42px; align-items: center; gap: 12px; margin: 0; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.postcard-context-navigation button { display: grid; place-items: center; width: 42px; height: 36px; border: 1px solid rgba(35,91,67,.32); border-radius: 999px; background: transparent; color: var(--green); cursor: pointer; font-size: 19px; }
+.postcard-context-navigation button:hover:not(:disabled) { border-color: var(--green); background: var(--green-light); }
+.postcard-context-navigation button:disabled { border-color: var(--line); color: #a7aaa5; cursor: default; }
+.postcard-context-navigation span { display: grid; min-width: 0; justify-items: center; gap: 2px; text-align: center; }
+.postcard-context-navigation strong { overflow: hidden; max-width: 100%; color: var(--green); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.postcard-context-navigation small { color: var(--muted); font-size: 9px; }
 .research-summary-button { display: block; width: 100%; padding: 0; border: 0; outline: none; background: transparent; color: inherit; text-align: left; cursor: pointer; }
 .research-summary-button:focus-visible { border-radius: 3px; outline: 3px solid rgba(35,91,67,.22); outline-offset: 7px; }
 .research-summary-button:hover .research-note-action { text-decoration: underline; text-underline-offset: 3px; }
@@ -466,6 +476,39 @@ footer p { margin: 0; color: var(--ink); font-family: Georgia, serif; }
 .friend-postcards-list strong { overflow: hidden; font: 500 18px/1.25 Georgia, "Noto Serif TC", serif; text-overflow: ellipsis; white-space: nowrap; }
 .friend-postcards-list small { overflow: hidden; margin-top: 5px; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .friend-postcards-list b { color: var(--green); font-size: 17px; }
+.friend-editor-backdrop { z-index: 230; }
+.friend-editor-modal { width: min(620px, calc(100vw - 48px)); max-height: min(92dvh, 880px); overflow-y: auto; overscroll-behavior: contain; border-radius: 12px; background: var(--card); box-shadow: 0 40px 120px rgba(0,0,0,.5); }
+.friend-editor-header { display: flex; justify-content: space-between; align-items: start; gap: 24px; padding: 25px 28px 20px; border-bottom: 1px solid var(--line); background: #f3f1e9; }
+.friend-editor-header h2 { margin: 4px 0 0; font: 500 34px/1.15 Georgia, "Noto Serif TC", serif; }
+.friend-editor-header div > p:last-child { max-width: 430px; margin: 8px 0 0; color: var(--muted); font-size: 10px; line-height: 1.6; }
+.friend-editor-header > button { display: grid; flex: 0 0 auto; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; background: var(--green); color: white; cursor: pointer; font-size: 23px; }
+.friend-editor-form { display: grid; gap: 7px; padding: 23px 28px; }
+.friend-editor-form label, .friend-merge-panel > label { color: var(--ink); font-size: 10px; font-weight: 800; }
+.friend-editor-form input, .friend-merge-panel > input { width: 100%; margin-bottom: 8px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 5px; outline: 0; background: #fffef9; color: var(--ink); font: inherit; font-size: 12px; }
+.friend-editor-form input:focus, .friend-merge-panel > input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(35,91,67,.1); }
+.friend-editor-primary-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; }
+.friend-editor-primary-actions button, .friend-merge-footer button { padding: 9px 12px; border: 1px solid rgba(35,91,67,.38); border-radius: 4px; background: transparent; color: var(--green); cursor: pointer; font-size: 10px; font-weight: 800; }
+.friend-editor-primary-actions .friend-save-action, .friend-merge-footer button { border-color: var(--green); background: var(--green); color: white; }
+.friend-editor-primary-actions button:disabled, .friend-merge-footer button:disabled { cursor: wait; opacity: .5; }
+.friend-merge-panel { margin: 0 28px 23px; padding: 18px; border: 1px solid rgba(35,91,67,.2); border-radius: 6px; background: rgba(220,233,223,.28); }
+.friend-merge-panel h3 { margin: 5px 0 15px; font: 500 20px/1.3 Georgia, "Noto Serif TC", serif; }
+.friend-merge-list { display: grid; max-height: 245px; overflow-y: auto; gap: 6px; margin-top: 3px; }
+.friend-merge-list > button { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 14px; width: 100%; padding: 10px 11px; border: 1px solid var(--line); border-radius: 4px; background: #fffef9; color: var(--ink); cursor: pointer; text-align: left; }
+.friend-merge-list > button:hover, .friend-merge-list > button.selected { border-color: var(--green); background: var(--green-light); }
+.friend-merge-list span, .friend-merge-list strong, .friend-merge-list small { display: block; min-width: 0; }
+.friend-merge-list strong { font-size: 11px; }
+.friend-merge-list small, .friend-merge-list time { margin-top: 3px; color: var(--muted); font-size: 8px; }
+.friend-merge-list time { white-space: nowrap; }
+.friend-merge-empty { margin: 8px 0; color: var(--muted); font-size: 10px; }
+.friend-merge-footer { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 14px; margin-top: 12px; }
+.friend-merge-footer small { color: var(--muted); font-size: 8px; line-height: 1.55; }
+.friend-editor-danger { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 17px 28px 22px; border-top: 1px solid var(--line); background: #f8f3ee; }
+.friend-editor-danger strong, .friend-editor-danger small { display: block; }
+.friend-editor-danger strong { color: #843c31; font-size: 10px; }
+.friend-editor-danger small { margin-top: 3px; color: var(--muted); font-size: 8px; line-height: 1.5; }
+.friend-editor-danger button { padding: 8px 10px; border: 1px solid #b75849; border-radius: 4px; background: transparent; color: #9a4033; cursor: pointer; font-size: 9px; font-weight: 800; white-space: nowrap; }
+.friend-delete-confirmation { display: flex; gap: 6px; }
+.friend-delete-confirmation button:last-child { background: #a64435; color: white; }
 .research-detail { margin: 0; padding: 0; }
 .research-detail-stats { display: grid; grid-template-columns: repeat(3, 1fr); margin-bottom: 26px; border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
 .research-detail-stats span { padding: 11px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: 12px; font-weight: 800; }
@@ -572,6 +615,15 @@ footer p { margin: 0; color: var(--ink); font-family: Georgia, serif; }
   .friend-postcards-list button { grid-template-columns: 88px minmax(0, 1fr) auto; gap: 11px; padding: 8px; }
   .friend-postcards-list img { width: 88px; }
   .friend-postcards-list strong { font-size: 15px; }
+  .friend-editor-backdrop { align-items: end; padding: 0; }
+  .friend-editor-modal { width: 100%; max-height: 94dvh; border-radius: 14px 14px 0 0; }
+  .friend-editor-header { padding: 21px 20px 18px; }
+  .friend-editor-form { padding: 21px 20px; }
+  .friend-merge-panel { margin: 0 20px 20px; padding: 14px; }
+  .friend-merge-list > button { grid-template-columns: 1fr; gap: 4px; }
+  .friend-merge-footer { grid-template-columns: 1fr; }
+  .friend-editor-danger { align-items: stretch; flex-direction: column; padding: 16px 20px 22px; }
+  .friend-editor-danger > button { align-self: flex-start; }
   .management-modal-backdrop { align-items: end; padding: 0; }
   .management-modal { width: 100%; max-height: 94dvh; padding: 31px 20px 38px; border-radius: 14px 14px 0 0; }
   .add-workflow-options { grid-template-columns: 1fr; }

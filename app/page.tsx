@@ -85,8 +85,15 @@ type ExactDuplicatePrompt = {
   sha256: string;
 };
 
+type PostcardNavigation = {
+  source: 'archive' | 'friend';
+  ids: string[];
+  label: string;
+};
+
 type FriendProfile = {
   name: string;
+  modified_at: string;
   evidence_postcard_ids: string[];
   likely_base: {
     area: string | null;
@@ -267,15 +274,17 @@ function hostname(url: string) {
   }
 }
 
-function acquisitionLabel(postcard: Postcard) {
+function acquisitionLabel(postcard: Postcard, orphaned = false) {
   if (postcard.acquisition.type === 'self_found') return '自己發現';
+  if (postcard.sender && orphaned) return `朋友寄來・無主（原寄件人：${postcard.sender}）`;
   if (postcard.sender) return `朋友寄來・${postcard.sender}`;
   if (postcard.acquisition.type === 'received') return '朋友寄來・寄件人未知';
   return '來源待確認';
 }
 
-function senderLine(postcard: Postcard) {
+function senderLine(postcard: Postcard, orphaned = false) {
   if (postcard.acquisition.type === 'self_found') return '來源：自己發現';
+  if (postcard.sender && orphaned) return `寄件人：無主（原寄件人：${postcard.sender}）`;
   if (postcard.sender) return `寄件人：${postcard.sender}`;
   if (postcard.acquisition.type === 'received') return '寄件人：未知';
   return '來源：待確認';
@@ -397,6 +406,7 @@ async function responseJson<T>(response: Response): Promise<T> {
 export default function Home() {
   const [postcards, setPostcards] = useState<Postcard[]>([]);
   const [friendProfiles, setFriendProfiles] = useState<FriendProfile[]>([]);
+  const [orphanedSenderNames, setOrphanedSenderNames] = useState<string[]>([]);
   const [archiveReady, setArchiveReady] = useState(false);
   const [archiveError, setArchiveError] = useState<string | null>(null);
   const [view, setView] = useState<'archive' | 'friends'>('archive');
@@ -413,9 +423,18 @@ export default function Home() {
   const [manualLongitude, setManualLongitude] = useState('');
   const [page, setPage] = useState(1);
   const [active, setActive] = useState<Postcard | null>(null);
+  const [postcardNavigation, setPostcardNavigation] = useState<PostcardNavigation | null>(null);
   const [mapLoadedFor, setMapLoadedFor] = useState<string | null>(null);
   const [researchOpen, setResearchOpen] = useState(false);
   const [activeFriendName, setActiveFriendName] = useState<string | null>(null);
+  const [editingFriendName, setEditingFriendName] = useState<string | null>(null);
+  const [friendEditName, setFriendEditName] = useState('');
+  const [friendEditBase, setFriendEditBase] = useState('');
+  const [friendMergeOpen, setFriendMergeOpen] = useState(false);
+  const [friendMergeQuery, setFriendMergeQuery] = useState('');
+  const [friendMergeTarget, setFriendMergeTarget] = useState('');
+  const [friendDeleteConfirm, setFriendDeleteConfirm] = useState(false);
+  const [friendAction, setFriendAction] = useState<'save' | 'merge' | 'avatar' | 'delete' | null>(null);
   const [expandedFriendNames, setExpandedFriendNames] = useState<Set<string>>(() => new Set());
   const [addOpen, setAddOpen] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -443,6 +462,7 @@ export default function Home() {
   const researchTriggerRef = useRef<HTMLButtonElement | null>(null);
   const reresearchNoteRef = useRef<HTMLTextAreaElement | null>(null);
   const friendMoreTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const friendEditorTriggerRef = useRef<HTMLButtonElement | null>(null);
   const notifiedBatchesRef = useRef<Set<string>>(new Set());
 
   const notify = useCallback((
@@ -457,11 +477,13 @@ export default function Home() {
     const payload = await responseJson<{
       postcards: Postcard[];
       friends: FriendProfile[];
+      orphaned_sender_names?: string[];
       capabilities: ArchiveCapabilities;
       jobs?: ManagementJob[];
     }>(await fetch('/api/archive', { cache: 'no-store' }));
     setPostcards(payload.postcards);
     setFriendProfiles(payload.friends);
+    setOrphanedSenderNames(payload.orphaned_sender_names ?? []);
     setCapabilities(payload.capabilities);
     setJobs((current) => current.length ? current : payload.jobs ?? []);
     setArchiveError(null);
@@ -596,12 +618,13 @@ export default function Home() {
     return () => timers.forEach((timer) => window.clearTimeout(timer));
   }, [jobs, notify]);
 
-  function openPostcard(postcard: Postcard) {
+  function openPostcard(postcard: Postcard, navigation?: PostcardNavigation) {
     setMapLoadedFor(null);
     setResearchOpen(false);
     setDeleteConfirm(false);
     setReresearchOpen(false);
     setReresearchNote('');
+    if (navigation) setPostcardNavigation(navigation);
     setActive(postcard);
   }
 
@@ -611,8 +634,17 @@ export default function Home() {
     setDeleteConfirm(false);
     setReresearchOpen(false);
     setReresearchNote('');
+    setPostcardNavigation(null);
     setActive(null);
   }, []);
+
+  function navigatePostcard(direction: -1 | 1) {
+    if (!active || !postcardNavigation) return;
+    const index = postcardNavigation.ids.indexOf(active.id);
+    const nextId = postcardNavigation.ids[index + direction];
+    const next = postcards.find((postcard) => postcard.id === nextId);
+    if (next) openPostcard(next);
+  }
 
   const closeResearch = useCallback(() => {
     setResearchOpen(false);
@@ -630,8 +662,133 @@ export default function Home() {
   }
 
   function openPostcardFromFriendPopup(postcard: Postcard) {
+    const navigation = activeFriendGroup
+      ? { source: 'friend' as const, ids: activeFriendGroup.cards.map((card) => card.id), label: activeFriendGroup.name }
+      : undefined;
     setActiveFriendName(null);
-    openPostcard(postcard);
+    openPostcard(postcard, navigation);
+  }
+
+  const closeFriendEditor = useCallback(() => {
+    setEditingFriendName(null);
+    setFriendMergeOpen(false);
+    setFriendMergeQuery('');
+    setFriendMergeTarget('');
+    setFriendDeleteConfirm(false);
+    setFriendAction(null);
+    window.requestAnimationFrame(() => friendEditorTriggerRef.current?.focus());
+  }, []);
+
+  function openFriendEditor(friend: { name: string; baseArea: string | null }, trigger: HTMLButtonElement) {
+    friendEditorTriggerRef.current = trigger;
+    setEditingFriendName(friend.name);
+    setFriendEditName(friend.name);
+    setFriendEditBase(friend.baseArea ?? '');
+    setFriendMergeOpen(false);
+    setFriendMergeQuery('');
+    setFriendMergeTarget('');
+    setFriendDeleteConfirm(false);
+    setNotice(null);
+  }
+
+  async function saveFriendInformation(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!editingFriendName) return;
+    setFriendAction('save');
+    setNotice(null);
+    try {
+      const previousName = editingFriendName;
+      const payload = await responseJson<{ friend: FriendProfile }>(await fetch(
+        `/api/friends/${encodeURIComponent(previousName)}`,
+        {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ name: friendEditName, likely_base_area: friendEditBase }),
+        },
+      ));
+      await refreshArchive();
+      setExpandedFriendNames((current) => {
+        if (!current.has(previousName)) return current;
+        const next = new Set(current);
+        next.delete(previousName);
+        next.add(payload.friend.name);
+        return next;
+      });
+      closeFriendEditor();
+      notify(`已更新「${payload.friend.name}」的名稱與可能據點。`, 'success', '寄件者情報已保存');
+    } catch (error) {
+      notify(error instanceof Error ? error.message : '無法保存寄件者情報。', 'error', '保存失敗');
+    } finally {
+      setFriendAction(null);
+    }
+  }
+
+  async function mergeSelectedFriend() {
+    if (!editingFriendName || !friendMergeTarget) return;
+    setFriendAction('merge');
+    setNotice(null);
+    try {
+      await responseJson(await fetch(`/api/friends/${encodeURIComponent(editingFriendName)}/merge`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ target_name: friendMergeTarget }),
+      }));
+      const sourceName = editingFriendName;
+      const targetName = friendMergeTarget;
+      await refreshArchive();
+      closeFriendEditor();
+      notify(`「${sourceName}」已合併至「${targetName}」；明信片與異動紀錄均已保留。`, 'success', '寄件者已合併');
+    } catch (error) {
+      notify(error instanceof Error ? error.message : '無法合併寄件者。', 'error', '合併失敗');
+    } finally {
+      setFriendAction(null);
+    }
+  }
+
+  async function recropEditingFriendAvatar() {
+    if (!editingFriendName) return;
+    setFriendAction('avatar');
+    setNotice(null);
+    try {
+      const payload = await responseJson<{ avatar_generation: { status: string }[] }>(await fetch(
+        `/api/friends/${encodeURIComponent(editingFriendName)}/avatar`,
+        { method: 'POST' },
+      ));
+      await refreshArchive();
+      const generated = payload.avatar_generation.some((entry) => entry.status === 'generated');
+      notify(
+        generated
+          ? `已從「${editingFriendName}」畫質最佳的可用明信片重新裁切 Mii。`
+          : '目前沒有足夠可信的 Mii 裁切提示；既有頭像沒有被低品質結果覆寫。',
+        generated ? 'success' : 'error',
+        generated ? 'Mii 頭像已更新' : '無法重新截圖',
+      );
+    } catch (error) {
+      notify(error instanceof Error ? error.message : '無法重新截取 Mii。', 'error', '重新截圖失敗');
+    } finally {
+      setFriendAction(null);
+    }
+  }
+
+  async function deleteEditingFriend() {
+    if (!editingFriendName) return;
+    setFriendAction('delete');
+    setNotice(null);
+    try {
+      const deletedName = editingFriendName;
+      await responseJson(await fetch(`/api/friends/${encodeURIComponent(deletedName)}`, {
+        method: 'DELETE',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ reason: '使用者由網站 soft delete 寄件者情報' }),
+      }));
+      await refreshArchive();
+      closeFriendEditor();
+      notify(`「${deletedName}」已從朋友足跡隱藏；所屬明信片保留並顯示為無主。`, 'success', '寄件者已 soft delete');
+    } catch (error) {
+      notify(error instanceof Error ? error.message : '無法刪除寄件者情報。', 'error', '刪除失敗');
+    } finally {
+      setFriendAction(null);
+    }
   }
 
   function toggleReresearch() {
@@ -937,6 +1094,7 @@ export default function Home() {
     () => [...new Set(postcards.map((postcard) => postcard.location.country ?? '未正規化'))],
     [postcards],
   );
+  const orphanedSenders = useMemo(() => new Set(orphanedSenderNames), [orphanedSenderNames]);
 
   const filtered = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase('zh-Hant');
@@ -962,7 +1120,7 @@ export default function Home() {
           postcard.location.endonym,
           postcard.location.zh_tw ?? '',
           postcard.research.summary,
-          acquisitionLabel(postcard),
+          acquisitionLabel(postcard, Boolean(postcard.sender && orphanedSenders.has(postcard.sender))),
           ...postcard.curation.tags,
         ]
           .join(' ')
@@ -974,11 +1132,12 @@ export default function Home() {
       direction: sortDirection,
       origin: distanceOrigin,
     });
-  }, [country, distanceOrigin, postcards, query, senderFilter, sortDirection, sortField, status]);
+  }, [country, distanceOrigin, orphanedSenders, postcards, query, senderFilter, sortDirection, sortField, status]);
 
   const friendGroups = useMemo(() => {
     return friendProfiles.map((profile) => ({
       name: profile.name,
+      modifiedAt: profile.modified_at,
       avatar: profile.avatar,
       cards: postcards
         .filter((postcard) => profile.evidence_postcard_ids.includes(postcard.id))
@@ -990,6 +1149,19 @@ export default function Home() {
       avoid: profile.avoid_send.areas.length ? profile.avoid_send.areas.join('、') : '無正式建議',
     }));
   }, [friendProfiles, postcards]);
+  const friendMergeCandidates = useMemo(() => {
+    const normalizedQuery = friendMergeQuery.trim().toLocaleLowerCase('zh-Hant');
+    return friendGroups
+      .filter((friend) => friend.name !== editingFriendName)
+      .filter((friend) => !normalizedQuery || [friend.name, friend.baseArea ?? '']
+        .join(' ')
+        .toLocaleLowerCase('zh-Hant')
+        .includes(normalizedQuery))
+      .sort((left, right) => (
+        String(right.modifiedAt ?? '').localeCompare(String(left.modifiedAt ?? ''))
+        || left.name.localeCompare(right.name, 'zh-Hant')
+      ));
+  }, [editingFriendName, friendGroups, friendMergeQuery]);
   const activeFriendGroup = activeFriendName
     ? friendGroups.find((friend) => friend.name === activeFriendName) ?? null
     : null;
@@ -1001,6 +1173,9 @@ export default function Home() {
   const chronologicalSort = sortField === 'found_date' || sortField === 'modified_at';
   const filteredCoordinateCount = filtered.filter((postcard) => postcardCoordinates(postcard)).length;
   const pagination = paginateRecords(filtered, page, postcardsPerPage);
+  const activeNavigationIndex = active && postcardNavigation
+    ? postcardNavigation.ids.indexOf(active.id)
+    : -1;
   const activeJob = active
     ? jobs.find((job) => job.kind === 'reresearch' && job.postcard_id === active.id && !isTerminalJob(job))
     : null;
@@ -1028,11 +1203,12 @@ export default function Home() {
   }
 
   useEffect(() => {
-    if (!active && !addOpen && !activeFriendGroup) return;
+    if (!active && !addOpen && !activeFriendGroup && !editingFriendName) return;
     const close = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       if (researchOpen) closeResearch();
       else if (active) closePostcard();
+      else if (editingFriendName) closeFriendEditor();
       else if (activeFriendGroup) closeFriendPostcards();
       else closeAddDialog();
     };
@@ -1042,7 +1218,7 @@ export default function Home() {
       document.body.classList.remove('modal-open');
       window.removeEventListener('keydown', close);
     };
-  }, [active, activeFriendGroup, addOpen, closeAddDialog, closeFriendPostcards, closePostcard, closeResearch, researchOpen]);
+  }, [active, activeFriendGroup, addOpen, closeAddDialog, closeFriendEditor, closeFriendPostcards, closePostcard, closeResearch, editingFriendName, researchOpen]);
 
   return (
     <main>
@@ -1308,7 +1484,7 @@ export default function Home() {
                 const displayedDateLabel = sortField === 'modified_at' ? '修改' : '發現';
                 return (
                   <article className="postcard-card" data-postcard-id={postcard.id} key={postcard.id}>
-                    <button className="image-button" onClick={() => openPostcard(postcard)} aria-label={`查看 ${postcard.poi_name}`}>
+                    <button className="image-button" onClick={() => openPostcard(postcard, { source: 'archive', ids: filtered.map((item) => item.id), label: '目前明信片排序' })} aria-label={`查看 ${postcard.poi_name}`}>
                       <img src={postcard.asset.path} onError={(event) => recoverRuntimeAsset(event, postcard.asset.path)} alt={`${postcard.poi_name} 原始遊戲截圖`} loading="lazy" decoding="async" />
                       <span className="rating">{postcard.curation.rating == null ? '未評分' : <>{postcard.curation.rating.toFixed(1)} <b>★</b></>}</span>
                       <span className="open-hint">查看檔案 ↗</span>
@@ -1322,9 +1498,9 @@ export default function Home() {
                           {displayedDateLabel} · {sortField === 'modified_at' ? compactModifiedTime(postcard) : compactDate(displayedDate)}
                         </time>
                       </div>
-                      <h3><button onClick={() => openPostcard(postcard)}>{postcard.poi_name}</button></h3>
+                      <h3><button onClick={() => openPostcard(postcard, { source: 'archive', ids: filtered.map((item) => item.id), label: '目前明信片排序' })}>{postcard.poi_name}</button></h3>
                       <p className="place" title={researchedLocationDisplay(postcard.location)}>{researchedLocationDisplay(postcard.location)}</p>
-                      <p className="sender">{senderLine(postcard)}</p>
+                      <p className="sender">{senderLine(postcard, Boolean(postcard.sender && orphanedSenders.has(postcard.sender)))}</p>
                       {sortField === 'distance' && (
                         <p className={`distance ${distance == null ? 'distance-missing' : ''}`}>
                           {distance == null ? '尚無可計算座標' : `距離 ${distance < 10 ? distance.toFixed(1) : Math.round(distance)} km`}
@@ -1398,7 +1574,7 @@ export default function Home() {
                 <div className="friend-topline">
                   <div className="avatar">
                     {friend.avatar?.path
-                      ? <img src={friend.avatar.path} onError={(event) => recoverRuntimeAsset(event, friend.avatar!.path)} alt={`${friend.name} 的 Mii 頭像`} loading="lazy" decoding="async" />
+                      ? <img src={`${friend.avatar.path}?v=${encodeURIComponent(friend.modifiedAt)}`} onError={(event) => recoverRuntimeAsset(event, friend.avatar!.path)} alt={`${friend.name} 的 Mii 頭像`} loading="lazy" decoding="async" />
                       : friend.name.slice(0, 1)}
                   </div>
                   <div className="friend-identity">
@@ -1418,6 +1594,9 @@ export default function Home() {
                     <span>展開資料與明信片</span>
                   </summary>
                   <div className="friend-details-body">
+                    <div className="friend-details-actions">
+                      <button type="button" onClick={(event) => openFriendEditor(friend, event.currentTarget)}>編輯情報</button>
+                    </div>
                     <dl>
                       <div><dt>研究信心</dt><dd><span className={`confidence confidence-${friend.confidence}`}>信心 {friend.confidence}</span></dd></div>
                       <div><dt>據點訊號</dt><dd>{friend.signal}</dd></div>
@@ -1427,7 +1606,7 @@ export default function Home() {
                     <p className="friend-note">{friend.note}</p>
                     <div className="timeline">
                       {friend.cards.slice(0, friendPostcardsPreviewLimit).map((postcard) => (
-                        <button key={postcard.id} onClick={() => openPostcard(postcard)}>
+                        <button key={postcard.id} onClick={() => openPostcard(postcard, { source: 'friend', ids: friend.cards.map((card) => card.id), label: friend.name })}>
                           <time>{postcard.found_date ? postcard.found_date.slice(5).replace('-', '/') : '日期？'}</time>
                           <span>{postcard.poi_name}</span>
                           <small>{researchedLocationDisplay(postcard.location)}</small>
@@ -1501,6 +1680,124 @@ export default function Home() {
         </div>
       )}
 
+      {editingFriendName && (
+        <div
+          className="research-modal-backdrop friend-editor-backdrop"
+          role="presentation"
+          onMouseDown={(event) => { if (event.target === event.currentTarget) closeFriendEditor(); }}
+        >
+          <section
+            className="friend-editor-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="friend-editor-title"
+            onKeyDown={trapDialogFocus}
+          >
+            <header className="friend-editor-header">
+              <div>
+                <p className="eyebrow">FRIEND INFORMATION</p>
+                <h2 id="friend-editor-title">編輯情報</h2>
+                <p>人工修正會保留在資料庫；之後新增證據時不會覆蓋你指定的可能據點。</p>
+              </div>
+              <button type="button" onClick={closeFriendEditor} aria-label="關閉寄件者編輯" autoFocus>×</button>
+            </header>
+            <form className="friend-editor-form" onSubmit={saveFriendInformation}>
+              <label htmlFor="friend-edit-name">名稱</label>
+              <input
+                id="friend-edit-name"
+                value={friendEditName}
+                onChange={(event) => setFriendEditName(event.target.value)}
+                onClick={(event) => event.currentTarget.select()}
+                maxLength={80}
+                required
+              />
+              <label htmlFor="friend-edit-base">可能據點</label>
+              <input
+                id="friend-edit-base"
+                value={friendEditBase}
+                onChange={(event) => setFriendEditBase(event.target.value)}
+                onClick={(event) => event.currentTarget.select()}
+                maxLength={240}
+                placeholder="尚未判定；留白可人工清除"
+              />
+              <div className="friend-editor-primary-actions">
+                <button type="submit" className="friend-save-action" disabled={Boolean(friendAction)}>
+                  {friendAction === 'save' ? '保存中…' : '保存情報'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setFriendMergeOpen((open) => !open); setFriendDeleteConfirm(false); }}
+                  aria-expanded={friendMergeOpen}
+                  aria-controls="friend-merge-panel"
+                  disabled={Boolean(friendAction)}
+                >
+                  合併寄件者
+                </button>
+                <button type="button" onClick={recropEditingFriendAvatar} disabled={Boolean(friendAction)}>
+                  {friendAction === 'avatar' ? '重新截圖中…' : '重新截圖'}
+                </button>
+              </div>
+            </form>
+            {friendMergeOpen && (
+              <section id="friend-merge-panel" className="friend-merge-panel" aria-labelledby="friend-merge-title">
+                <div>
+                  <p className="eyebrow">MERGE FRIEND</p>
+                  <h3 id="friend-merge-title">把「{editingFriendName}」合併至</h3>
+                </div>
+                <label htmlFor="friend-merge-search">搜尋寄件者</label>
+                <input
+                  id="friend-merge-search"
+                  type="search"
+                  value={friendMergeQuery}
+                  onChange={(event) => setFriendMergeQuery(event.target.value)}
+                  placeholder="名稱或可能據點"
+                />
+                <div className="friend-merge-list" role="radiogroup" aria-label="選擇合併目標">
+                  {friendMergeCandidates.length ? friendMergeCandidates.map((candidate) => (
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={friendMergeTarget === candidate.name}
+                      className={friendMergeTarget === candidate.name ? 'selected' : ''}
+                      key={candidate.name}
+                      onClick={() => setFriendMergeTarget(candidate.name)}
+                    >
+                      <span>
+                        <strong>{candidate.name}</strong>
+                        <small>{candidate.baseArea ? `可能據點 · ${candidate.baseArea}` : '可能據點未確認'}</small>
+                      </span>
+                      <time dateTime={candidate.modifiedAt}>{new Date(candidate.modifiedAt).toLocaleString('zh-TW')}</time>
+                    </button>
+                  )) : <p className="friend-merge-empty">沒有符合搜尋條件的寄件者。</p>}
+                </div>
+                <div className="friend-merge-footer">
+                  <small>預設依寄件者最後系統修改時間排序。合併會改指明信片，但保留原名稱與合併軌跡。</small>
+                  <button type="button" onClick={mergeSelectedFriend} disabled={!friendMergeTarget || Boolean(friendAction)}>
+                    {friendAction === 'merge' ? '合併中…' : '確認合併'}
+                  </button>
+                </div>
+              </section>
+            )}
+            <div className="friend-editor-danger">
+              <div>
+                <strong>刪除寄件者情報</strong>
+                <small>只 soft delete 這筆寄件者；明信片不刪除，並改以無主狀態顯示。</small>
+              </div>
+              {!friendDeleteConfirm ? (
+                <button type="button" onClick={() => { setFriendDeleteConfirm(true); setFriendMergeOpen(false); }} disabled={Boolean(friendAction)}>刪除</button>
+              ) : (
+                <div className="friend-delete-confirmation" role="alertdialog" aria-label={`確認刪除寄件者 ${editingFriendName}`}>
+                  <button type="button" onClick={() => setFriendDeleteConfirm(false)} disabled={Boolean(friendAction)}>取消</button>
+                  <button type="button" onClick={deleteEditingFriend} disabled={Boolean(friendAction)}>
+                    {friendAction === 'delete' ? '刪除中…' : '確認 soft delete'}
+                  </button>
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
+
       {active && (
         <>
           <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closePostcard(); }}>
@@ -1534,7 +1831,7 @@ export default function Home() {
                   <strong>{active.found_date ?? '未確認'}</strong>
                   <small>加入系統 · {compactArchiveTime(active)}</small>
                 </div>
-                <div><span>來源／寄件人</span><strong>{acquisitionLabel(active)}</strong></div>
+                <div><span>來源／寄件人</span><strong>{acquisitionLabel(active, Boolean(active.sender && orphanedSenders.has(active.sender)))}</strong></div>
                 <div><span>收藏評分</span><strong>{active.curation.rating == null ? '未評分' : `${active.curation.rating.toFixed(1)} / 5`}</strong></div>
                 <div><span>建議</span><strong>{active.curation.recommendation ?? '尚未整理'}</strong></div>
               </div>
@@ -1567,6 +1864,30 @@ export default function Home() {
                   </button>
                 )}
               </section>
+              {postcardNavigation && activeNavigationIndex >= 0 && (
+                <nav className="postcard-context-navigation" aria-label="切換目前脈絡中的明信片">
+                  <button
+                    type="button"
+                    onClick={() => navigatePostcard(-1)}
+                    disabled={activeNavigationIndex <= 0}
+                    aria-label="上一張明信片"
+                  >
+                    ←
+                  </button>
+                  <span>
+                    <strong>{postcardNavigation.source === 'friend' ? `寄件者 · ${postcardNavigation.label}` : postcardNavigation.label}</strong>
+                    <small>{activeNavigationIndex + 1} / {postcardNavigation.ids.length}</small>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => navigatePostcard(1)}
+                    disabled={activeNavigationIndex >= postcardNavigation.ids.length - 1}
+                    aria-label="下一張明信片"
+                  >
+                    →
+                  </button>
+                </nav>
+              )}
               {activeMapTarget && (
                 <section className="location-map" aria-labelledby="location-map-title">
                   <div className="location-map-heading">
