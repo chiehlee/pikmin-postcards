@@ -7,7 +7,9 @@ import { publicPathToLocalPath, resolveStoredLocalPath } from "../db/asset-paths
 import { projectRoot } from "../db/database.mjs";
 
 const run = promisify(execFile);
-const generationVersion = 1;
+const generationVersion = 2;
+const cropPaddingRatio = 0.14;
+const outputSize = 192;
 const acceptedConfidences = new Set(["high", "medium"]);
 
 export function normalizeAvatarCropHint(input) {
@@ -25,6 +27,7 @@ export function normalizeAvatarCropHint(input) {
 
 export async function ensureFriendAvatars(snapshots, {
   affectedNames,
+  force = false,
   command = process.env.PIKMIN_MAGICK_COMMAND?.trim() || "magick",
   outputDirectory = path.join(projectRoot, "public/images/friends"),
   resolveSourcePath = defaultSourcePath,
@@ -59,9 +62,11 @@ export async function ensureFriendAvatars(snapshots, {
     }
 
     candidates.sort((left, right) => (
-      confidenceRank(right.hint.confidence) - confidenceRank(left.hint.confidence)
+      avatarCandidateQuality(right) - avatarCandidateQuality(left)
       || cropArea(right.crop) - cropArea(left.crop)
+      || confidenceRank(right.hint.confidence) - confidenceRank(left.hint.confidence)
       || right.dimensions.width * right.dimensions.height - left.dimensions.width * left.dimensions.height
+      || String(right.postcard.found_date ?? "").localeCompare(String(left.postcard.found_date ?? ""))
       || left.postcard.id.localeCompare(right.postcard.id)
     ));
     const candidate = candidates[0];
@@ -88,7 +93,7 @@ export async function ensureFriendAvatars(snapshots, {
       continue;
     }
 
-    if (!shouldReplaceAvatar(profile.avatar, candidate)) {
+    if (!shouldReplaceAvatar(profile.avatar, candidate, { force })) {
       profile.avatar_generation = {
         version: generationVersion,
         status: "preserved-better-or-equal",
@@ -134,11 +139,16 @@ export async function ensureFriendAvatars(snapshots, {
           height: candidate.crop.size,
         },
         crop_confidence: candidate.hint.confidence,
+        quality_score: avatarCandidateQuality(candidate),
+        output_size: outputSize,
+        crop_padding_ratio: cropPaddingRatio,
       };
       profile.avatar_generation = {
         version: generationVersion,
         status: "generated",
         source_postcard_id: candidate.postcard.id,
+        forced: force,
+        quality_score: avatarCandidateQuality(candidate),
       };
       report.push({ friend: profile.name, status: "generated", postcard_id: candidate.postcard.id, path: profile.avatar.path });
     } catch (error) {
@@ -166,7 +176,8 @@ function defaultSourcePath(postcard) {
 }
 
 function cropPixels({ width, height }, hint) {
-  const size = Math.min(Math.max(1, Math.round(width * hint.size)), width, height);
+  const detectedSize = Math.max(1, Math.round(width * hint.size));
+  const size = Math.min(Math.max(1, Math.round(detectedSize * (1 + cropPaddingRatio))), width, height);
   return {
     x: clamp(Math.round(width * hint.center_x - size / 2), 0, width - size),
     y: clamp(Math.round(height * hint.center_y - size / 2), 0, height - size),
@@ -174,8 +185,9 @@ function cropPixels({ width, height }, hint) {
   };
 }
 
-function shouldReplaceAvatar(avatar, candidate) {
+function shouldReplaceAvatar(avatar, candidate, { force = false } = {}) {
   if (!avatar) return true;
+  if (force) return true;
   if (
     avatar.source_asset_sha256 === candidate.postcard.asset.sha256
     && avatar.crop?.x === candidate.crop.x
@@ -200,7 +212,8 @@ async function renderAvatar({ command, sourcePath, outputPath, crop }) {
     sourcePath,
     "-crop", `${crop.size}x${crop.size}+${crop.x}+${crop.y}`,
     "+repage",
-    "-resize", "128x128>",
+    "-filter", "Lanczos",
+    "-resize", `${outputSize}x${outputSize}!`,
     "-strip",
     "-define", "webp:lossless=true",
     outputPath,
@@ -209,6 +222,11 @@ async function renderAvatar({ command, sourcePath, outputPath, crop }) {
 
 function cropArea(crop) {
   return crop.size * crop.size;
+}
+
+function avatarCandidateQuality(candidate) {
+  const confidenceWeight = candidate.hint.confidence === "high" ? 1 : 0.72;
+  return Math.round(cropArea(candidate.crop) * confidenceWeight);
 }
 
 function confidenceRank(value) {

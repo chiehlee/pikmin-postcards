@@ -37,7 +37,7 @@ test("backend creates a traceable Mii crop and keeps an equal existing derivativ
     assert.equal(first.at(-1).status, "generated");
     const smallAvatar = structuredClone(snapshots.friends.profiles[0].avatar);
     assert.equal(smallAvatar.source_postcard_id, "pc-small");
-    assert.deepEqual(smallAvatar.crop, { x: 65, y: 75, width: 10, height: 10 });
+    assert.deepEqual(smallAvatar.crop, { x: 65, y: 75, width: 11, height: 11 });
 
     snapshots.postcards.postcards.push(postcard("pc-large", "Player", "large-sha", largeSource));
     snapshots.friends.profiles[0].evidence_postcard_ids.push("pc-large");
@@ -51,8 +51,10 @@ test("backend creates a traceable Mii crop and keeps an equal existing derivativ
     assert.equal(avatar.source_postcard_id, "pc-large");
     assert.equal(avatar.source_asset_sha256, "large-sha");
     assert.equal(avatar.crop_confidence, "high");
-    assert.deepEqual(avatar.crop, { x: 156, y: 180, width: 24, height: 24 });
+    assert.deepEqual(avatar.crop, { x: 155, y: 179, width: 27, height: 27 });
     assert.ok((await readFile(path.join(outputDirectory, path.basename(avatar.path)))).length > 0);
+    const { stdout: dimensions } = await run("magick", ["identify", "-format", "%wx%h", path.join(outputDirectory, path.basename(avatar.path))]);
+    assert.equal(dimensions, "192x192");
     assert.equal(snapshots.friends.profiles[0].avatar_generation.status, "generated");
 
     const second = await ensureFriendAvatars(snapshots, {
@@ -62,6 +64,15 @@ test("backend creates a traceable Mii crop and keeps an equal existing derivativ
     });
     assert.equal(second.at(-1).status, "preserved-better-or-equal");
     assert.deepEqual(snapshots.friends.profiles[0].avatar, avatar);
+
+    const forced = await ensureFriendAvatars(snapshots, {
+      affectedNames: ["Player"],
+      force: true,
+      outputDirectory,
+      resolveSourcePath: (record) => record.test_source_path,
+    });
+    assert.equal(forced.at(-1).status, "generated");
+    assert.equal(snapshots.friends.profiles[0].avatar_generation.forced, true);
   } finally {
     await rm(temporaryDirectory, { recursive: true, force: true });
   }

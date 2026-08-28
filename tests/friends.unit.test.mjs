@@ -138,6 +138,43 @@ test("a supported legacy manual signal is preserved until stronger evidence conf
   assert.equal(analyzeFriendProfile("Manual", contradicted, previous).likely_base.area, "高雄市苓雅區");
 });
 
+test("an explicit manual base override survives new evidence and an empty override stays empty", () => {
+  const cards = [
+    postcard("pc-1", "Manual", "2026-01-01", taiwanLocation("高雄市", "苓雅區", "高雄市苓雅區意誠里")),
+    postcard("pc-2", "Manual", "2026-02-01", taiwanLocation("高雄市", "苓雅區", "高雄市苓雅區人和里")),
+    postcard("pc-3", "Manual", "2026-03-01", taiwanLocation("高雄市", "苓雅區", "高雄市苓雅區林富里")),
+  ];
+  const manual = {
+    ...legacyProfile("Manual", cards.map((card) => card.id), null),
+    manual_overrides: { likely_base_area: "臺北市北投區" },
+    modified_at: "2026-08-24T00:00:00Z",
+  };
+  const profile = analyzeFriendProfile("Manual", cards, manual);
+  assert.equal(profile.likely_base.area, "臺北市北投區");
+  assert.equal(profile.likely_base.status, "manual");
+  assert.equal(profile.base_analysis.origin, "manual_override");
+  assert.equal(profile.modified_at, manual.modified_at);
+
+  manual.manual_overrides.likely_base_area = null;
+  const cleared = analyzeFriendProfile("Manual", cards, manual);
+  assert.equal(cleared.likely_base.area, null);
+  assert.equal(cleared.likely_base.status, "manual-cleared");
+});
+
+test("soft-deleted friend profiles are never recreated by automatic evidence rebuilds", () => {
+  const deleted = {
+    ...legacyProfile("Former", ["pc-1"], null),
+    lifecycle: { status: "deleted", deleted_at: "2026-08-24T00:00:00Z", deleted_reason: "test", merged_into: null },
+  };
+  const rebuilt = rebuildFriends(
+    [postcard("pc-1", "Former", "2026-01-01")],
+    { profiles: [deleted] },
+    { affectedNames: ["Former"] },
+  );
+  assert.equal(rebuilt.profiles.length, 1);
+  assert.equal(rebuilt.profiles[0].lifecycle.deleted_at, "2026-08-24T00:00:00Z");
+});
+
 test("only affected players are recomputed and fingerprints detect effective evidence changes", () => {
   const playerCards = [
     postcard("pc-1", "Player", "2026-01-01", taiwanLocation("臺北市", "北投區", "臺北市北投區文化里")),

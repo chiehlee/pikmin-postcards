@@ -6,7 +6,16 @@ import path from "node:path";
 import test from "node:test";
 import { openDatabase } from "../db/database.mjs";
 import { replaceDatabaseFromSnapshots } from "../db/snapshots.mjs";
-import { archiveOverview, cancelJob, nextPostcardId, softDeletePostcard } from "../server/archive-manager.mjs";
+import {
+  archiveOverview,
+  cancelJob,
+  editFriendProfile,
+  mergeFriendProfiles,
+  nextPostcardId,
+  softDeleteFriend,
+  softDeletePostcard,
+} from "../server/archive-manager.mjs";
+import { rebuildFriends } from "../lib/friends.mjs";
 import { createSyntheticSnapshots, writeSnapshots } from "./fixtures/archive-snapshots.mjs";
 
 test("GPT-5.6 job migrations preserve old jobs and accept new reasoning and cancellation states", async () => {
@@ -50,6 +59,15 @@ test("GPT-5.6 job migrations preserve old jobs and accept new reasoning and canc
         archived_at TEXT,
         document_json TEXT NOT NULL CHECK (json_valid(document_json))
       ) STRICT;
+      CREATE TABLE friends (
+        name TEXT PRIMARY KEY,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        document_json TEXT NOT NULL CHECK (json_valid(document_json))
+      ) STRICT;
+      CREATE TABLE friend_evidence (
+        friend_name TEXT NOT NULL,
+        postcard_id TEXT NOT NULL
+      ) STRICT;
       INSERT INTO postcards (id, archived_on, archived_at, document_json)
       VALUES (
         'legacy-postcard',
@@ -57,6 +75,9 @@ test("GPT-5.6 job migrations preserve old jobs and accept new reasoning and canc
         '2026-08-22T01:02:03Z',
         '{"id":"legacy-postcard","archived_on":"2026-08-22","archived_at":"2026-08-22T01:02:03Z"}'
       );
+      INSERT INTO friends (name, updated_at, document_json)
+      VALUES ('legacy-friend', '2026-08-22T02:03:04Z', '{"name":"legacy-friend","evidence_postcard_ids":["legacy-postcard"]}');
+      INSERT INTO friend_evidence VALUES ('legacy-friend', 'legacy-postcard');
       INSERT INTO ai_jobs (
         id, kind, status, model, skill_path, skill_sha256, prompt, created_at,
         updated_at, provider, reasoning_effort, workflow
@@ -102,6 +123,7 @@ test("GPT-5.6 job migrations preserve old jobs and accept new reasoning and canc
     assert.ok(database.prepare("SELECT 1 FROM schema_migrations WHERE version = 15").get());
     assert.ok(database.prepare("SELECT 1 FROM schema_migrations WHERE version = 16").get());
     assert.ok(database.prepare("SELECT 1 FROM schema_migrations WHERE version = 17").get());
+    assert.ok(database.prepare("SELECT 1 FROM schema_migrations WHERE version = 18").get());
     const postcardColumns = new Set(database.prepare("PRAGMA table_info(postcards)").all().map((column) => column.name));
     assert.ok(postcardColumns.has("location_geocode_status"));
     assert.ok(postcardColumns.has("location_geocode_document_json"));
@@ -109,9 +131,74 @@ test("GPT-5.6 job migrations preserve old jobs and accept new reasoning and canc
     const migratedPostcard = database.prepare("SELECT modified_at, document_json FROM postcards WHERE id = 'legacy-postcard'").get();
     assert.equal(migratedPostcard.modified_at, "2026-08-22T01:02:03Z");
     assert.equal(JSON.parse(migratedPostcard.document_json).modified_at, "2026-08-22T01:02:03Z");
+    const friendColumns = new Set(database.prepare("PRAGMA table_info(friends)").all().map((column) => column.name));
+    assert.ok(friendColumns.has("modified_at"));
+    assert.ok(friendColumns.has("deleted_at"));
+    assert.ok(friendColumns.has("merged_into"));
+    const migratedFriend = database.prepare("SELECT modified_at, document_json FROM friends WHERE name = 'legacy-friend'").get();
+    assert.equal(migratedFriend.modified_at, "2026-08-22T01:02:03Z");
+    assert.equal(JSON.parse(migratedFriend.document_json).modified_at, "2026-08-22T01:02:03Z");
     assert.equal(database.prepare("PRAGMA integrity_check").get().integrity_check, "ok");
   } finally {
     database.close();
+    await rm(temporaryDirectory, { recursive: true, force: true });
+  }
+});
+
+test("friend edit, merge, and soft delete preserve provenance and leave postcards recoverable", async () => {
+  const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "pikmin-friend-management-"));
+  const snapshotDirectory = path.join(temporaryDirectory, "data");
+  const databasePath = path.join(temporaryDirectory, "archive.sqlite3");
+  const snapshots = createSyntheticSnapshots();
+  for (const [index, card] of snapshots.postcards.postcards.entries()) {
+    card.sender = index === 0 ? "Alice" : "Bob";
+    card.acquisition = { type: "received", sender_status: "confirmed", confidence: "high", evidence: ["sender-visible"] };
+  }
+  snapshots.friends = rebuildFriends(snapshots.postcards.postcards);
+  snapshots.friends.profiles.forEach((profile, index) => {
+    profile.modified_at = `2026-08-24T00:00:0${index}Z`;
+  });
+  await writeSnapshots(snapshotDirectory, snapshots);
+
+  try {
+    const edited = await editFriendProfile("Alice", {
+      name: "Alicia",
+      likely_base_area: "臺北市北投區",
+    }, { snapshotDirectory, databasePath });
+    assert.equal(edited.name, "Alicia");
+    assert.equal(edited.likely_base.area, "臺北市北投區");
+    assert.equal(edited.likely_base.status, "manual");
+    assert.deepEqual(edited.aliases, ["Alice"]);
+
+    const merged = await mergeFriendProfiles("Alicia", "Bob", { snapshotDirectory, databasePath });
+    assert.equal(merged.friend.name, "Bob");
+    assert.ok(merged.friend.aliases.includes("Alicia"));
+    assert.equal(merged.merged_friend.lifecycle.merged_into, "Bob");
+
+    const deleted = await softDeleteFriend("Bob", "functional friend delete", { snapshotDirectory, databasePath });
+    assert.equal(deleted.lifecycle.deleted_reason, "functional friend delete");
+    const overview = await archiveOverview({ snapshotDirectory, databasePath });
+    assert.deepEqual(overview.friends, []);
+    assert.deepEqual(overview.orphaned_sender_names, ["Bob"]);
+    assert.ok(overview.postcards.every((card) => card.sender === "Bob"));
+    assert.deepEqual(
+      overview.postcards.find((card) => card.id === "pc-9001").sender_history.map((change) => change.reason),
+      ["rename", "merge"],
+    );
+
+    const database = await openDatabase(databasePath);
+    try {
+      const source = database.prepare("SELECT deleted_at, merged_into, document_json FROM friends WHERE name = 'Alicia'").get();
+      assert.ok(source.deleted_at);
+      assert.equal(source.merged_into, "Bob");
+      const target = database.prepare("SELECT deleted_at, document_json FROM friends WHERE name = 'Bob'").get();
+      assert.ok(target.deleted_at);
+      assert.equal(JSON.parse(target.document_json).lifecycle.deleted_reason, "functional friend delete");
+      assert.deepEqual(database.prepare("PRAGMA foreign_key_check").all(), []);
+    } finally {
+      database.close();
+    }
+  } finally {
     await rm(temporaryDirectory, { recursive: true, force: true });
   }
 });

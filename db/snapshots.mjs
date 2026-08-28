@@ -23,11 +23,13 @@ export async function loadSnapshots(directory = defaultSnapshotDirectory) {
     );
   }
   normalizePostcardModifiedTimestamps(snapshots);
+  normalizeFriendModifiedTimestamps(snapshots);
   return snapshots;
 }
 
 export function replaceDatabaseFromSnapshots(database, snapshots) {
   normalizePostcardModifiedTimestamps(snapshots);
+  normalizeFriendModifiedTimestamps(snapshots);
   validateSnapshots(snapshots);
   const deleteOrder = [
     "context_provenance",
@@ -96,8 +98,8 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
     INSERT INTO friends (
       name, sort_order, evidence_count, likely_base_area, likely_base_status,
       likely_base_confidence, likely_base_confidence_label, likely_base_reason,
-      avoid_send_reason, document_json
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      avoid_send_reason, modified_at, deleted_at, deleted_reason, merged_into, document_json
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const insertFriendEvidence = database.prepare(
     "INSERT INTO friend_evidence (friend_name, postcard_id) VALUES (?, ?)",
@@ -261,6 +263,10 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
         profile.likely_base.confidence_label,
         profile.likely_base.reason,
         profile.avoid_send.reason,
+        profile.modified_at,
+        profile.lifecycle?.deleted_at ?? null,
+        profile.lifecycle?.deleted_reason ?? null,
+        profile.lifecycle?.merged_into ?? null,
         JSON.stringify(profile),
       );
       for (const postcardId of profile.evidence_postcard_ids) {
@@ -344,6 +350,19 @@ function normalizePostcardModifiedTimestamps(snapshots) {
   for (const record of snapshots.postcards?.postcards ?? []) {
     record.modified_at ??= record.archived_at
       ?? (record.archived_on ? `${record.archived_on}T00:00:00Z` : null);
+  }
+}
+
+function normalizeFriendModifiedTimestamps(snapshots) {
+  const postcardsById = new Map(
+    (snapshots.postcards?.postcards ?? []).map((record) => [record.id, record]),
+  );
+  for (const profile of snapshots.friends?.profiles ?? []) {
+    const evidenceTimestamps = (profile.evidence_postcard_ids ?? [])
+      .map((id) => postcardsById.get(id)?.modified_at)
+      .filter(Boolean)
+      .sort();
+    profile.modified_at ??= evidenceTimestamps.at(-1) ?? "1970-01-01T00:00:00Z";
   }
 }
 

@@ -56,11 +56,17 @@ export async function archiveOverview({
     database.close();
   }
   const all = snapshots.postcards.postcards;
+  const deletedFriendNames = new Set(
+    snapshots.friends.profiles
+      .filter((profile) => profile.lifecycle?.deleted_at && !profile.lifecycle?.merged_into)
+      .map((profile) => profile.name),
+  );
   const researchProvider = await researchProviderConfiguration();
   return {
     api_version: 1,
     postcards: all.filter((record) => !record.lifecycle?.deleted_at),
-    friends: snapshots.friends.profiles,
+    friends: snapshots.friends.profiles.filter((profile) => !profile.lifecycle?.deleted_at),
+    orphaned_sender_names: [...deletedFriendNames].sort((left, right) => left.localeCompare(right, "zh-Hant")),
     totals: {
       active: all.filter((record) => !record.lifecycle?.deleted_at).length,
       deleted: all.filter((record) => record.lifecycle?.deleted_at).length,
@@ -74,6 +80,146 @@ export async function archiveOverview({
     },
     jobs,
   };
+}
+
+export async function editFriendProfile(friendName, changes = {}, {
+  snapshotDirectory,
+  databasePath = defaultDatabasePath,
+} = {}) {
+  return serializeMutation(async () => {
+    const snapshots = await loadOperationalSnapshots(databasePath, snapshotDirectory);
+    const sourceName = normalizedFriendName(friendName);
+    const profile = activeFriendProfile(snapshots, sourceName);
+    const nextName = changes.name === undefined ? sourceName : normalizedFriendName(changes.name);
+    if (nextName !== sourceName && snapshots.friends.profiles.some((candidate) => candidate.name === nextName)) {
+      throw httpError(409, `寄件者「${nextName}」已存在；請使用合併寄件者。`);
+    }
+    const changedAt = managementTimestamp();
+    const previousProfiles = snapshots.friends.profiles.filter((candidate) => candidate.name !== sourceName);
+    const profileSeed = {
+      ...profile,
+      name: nextName,
+      modified_at: changedAt,
+      aliases: nextName === sourceName
+        ? [...(profile.aliases ?? [])]
+        : uniqueStrings([...(profile.aliases ?? []), sourceName]),
+    };
+    if (changes.likely_base_area !== undefined) {
+      profileSeed.manual_overrides = {
+        ...(profile.manual_overrides ?? {}),
+        likely_base_area: normalizedLikelyBaseArea(changes.likely_base_area),
+      };
+    }
+    for (const postcard of snapshots.postcards.postcards) {
+      if (nextName === sourceName || postcard.sender !== sourceName) continue;
+      recordSenderChange(postcard, sourceName, nextName, "rename", changedAt);
+    }
+    snapshots.friends = rebuildFriends(
+      snapshots.postcards.postcards,
+      { ...snapshots.friends, profiles: [...previousProfiles, profileSeed] },
+      { affectedNames: [nextName] },
+    );
+    const updated = activeFriendProfile(snapshots, nextName);
+    updated.modified_at = changedAt;
+    await persistSnapshots(snapshots, { snapshotDirectory, databasePath });
+    return updated;
+  });
+}
+
+export async function mergeFriendProfiles(sourceFriendName, targetFriendName, {
+  snapshotDirectory,
+  databasePath = defaultDatabasePath,
+} = {}) {
+  return serializeMutation(async () => {
+    const snapshots = await loadOperationalSnapshots(databasePath, snapshotDirectory);
+    const sourceName = normalizedFriendName(sourceFriendName);
+    const targetName = normalizedFriendName(targetFriendName);
+    if (sourceName === targetName) throw httpError(400, "不能把寄件者合併到自己。");
+    const source = activeFriendProfile(snapshots, sourceName);
+    const target = activeFriendProfile(snapshots, targetName);
+    const changedAt = managementTimestamp();
+    for (const postcard of snapshots.postcards.postcards) {
+      if (postcard.sender !== sourceName) continue;
+      recordSenderChange(postcard, sourceName, targetName, "merge", changedAt);
+    }
+    const deletedSource = {
+      ...source,
+      modified_at: changedAt,
+      lifecycle: {
+        status: "deleted",
+        deleted_at: changedAt,
+        deleted_reason: `已合併至 ${targetName}`,
+        merged_into: targetName,
+      },
+    };
+    const targetSeed = {
+      ...target,
+      modified_at: changedAt,
+      aliases: uniqueStrings([...(target.aliases ?? []), ...(source.aliases ?? []), sourceName]),
+      merge_history: [
+        ...(target.merge_history ?? []),
+        { source_name: sourceName, merged_at: changedAt },
+      ],
+    };
+    const unaffected = snapshots.friends.profiles.filter((profile) => ![sourceName, targetName].includes(profile.name));
+    snapshots.friends = rebuildFriends(
+      snapshots.postcards.postcards,
+      { ...snapshots.friends, profiles: [...unaffected, targetSeed, deletedSource] },
+      { affectedNames: [targetName] },
+    );
+    const updated = activeFriendProfile(snapshots, targetName);
+    updated.modified_at = changedAt;
+    const avatarGeneration = await ensureFriendAvatars(snapshots, {
+      affectedNames: [targetName],
+      force: true,
+    });
+    await persistSnapshots(snapshots, { snapshotDirectory, databasePath });
+    return { friend: updated, merged_friend: deletedSource, avatar_generation: avatarGeneration };
+  });
+}
+
+export async function recropFriendAvatar(friendName, {
+  snapshotDirectory,
+  databasePath = defaultDatabasePath,
+  avatarOptions = {},
+} = {}) {
+  return serializeMutation(async () => {
+    const snapshots = await loadOperationalSnapshots(databasePath, snapshotDirectory);
+    const name = normalizedFriendName(friendName);
+    activeFriendProfile(snapshots, name);
+    const report = await ensureFriendAvatars(snapshots, {
+      ...avatarOptions,
+      affectedNames: [name],
+      force: true,
+    });
+    const profile = activeFriendProfile(snapshots, name);
+    profile.modified_at = managementTimestamp();
+    await persistSnapshots(snapshots, { snapshotDirectory, databasePath });
+    return { friend: profile, avatar_generation: report };
+  });
+}
+
+export async function softDeleteFriend(friendName, reason = "使用者由網站移除寄件者情報", {
+  snapshotDirectory,
+  databasePath = defaultDatabasePath,
+} = {}) {
+  return serializeMutation(async () => {
+    const snapshots = await loadOperationalSnapshots(databasePath, snapshotDirectory);
+    const name = normalizedFriendName(friendName);
+    const profile = snapshots.friends.profiles.find((candidate) => candidate.name === name);
+    if (!profile) throw httpError(404, `找不到寄件者「${name}」`);
+    if (profile.lifecycle?.deleted_at) return profile;
+    const deletedAt = managementTimestamp();
+    profile.modified_at = deletedAt;
+    profile.lifecycle = {
+      status: "deleted",
+      deleted_at: deletedAt,
+      deleted_reason: normalizedDeletionReason(reason),
+      merged_into: null,
+    };
+    await persistSnapshots(snapshots, { snapshotDirectory, databasePath });
+    return profile;
+  });
 }
 
 export async function softDeletePostcard(postcardId, reason = "使用者由網站移除", {
@@ -763,6 +909,10 @@ export function updateFriendProfilesForEvidenceChange(snapshots, affectedNames) 
     snapshots.friends,
     { affectedNames: names },
   );
+  const changedAt = managementTimestamp();
+  for (const profile of snapshots.friends.profiles) {
+    if (names.includes(profile.name) && !profile.lifecycle?.deleted_at) profile.modified_at = changedAt;
+  }
   return snapshots.friends;
 }
 
@@ -1181,6 +1331,50 @@ function secondPrecisionTimestamp(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) throw new Error("AI 工作缺少有效的建立時間");
   return date.toISOString().replace(/\.\d{3}Z$/, "Z");
+}
+
+function managementTimestamp() {
+  return new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
+}
+
+function normalizedFriendName(value) {
+  if (typeof value !== "string") throw httpError(400, "寄件者名稱必須是文字。");
+  const normalized = value.trim().replace(/\s+/g, " ");
+  if (!normalized) throw httpError(400, "寄件者名稱不可空白。");
+  if (normalized.length > 80) throw httpError(400, "寄件者名稱不可超過 80 個字元。");
+  if (/[\u0000-\u001f\u007f]/.test(normalized)) throw httpError(400, "寄件者名稱含有無效控制字元。");
+  return normalized;
+}
+
+function normalizedLikelyBaseArea(value) {
+  if (value == null) return null;
+  if (typeof value !== "string") throw httpError(400, "可能據點必須是文字。");
+  const normalized = value.trim().replace(/\s+/g, " ");
+  if (normalized.length > 240) throw httpError(400, "可能據點不可超過 240 個字元。");
+  return normalized || null;
+}
+
+function normalizedDeletionReason(value) {
+  if (typeof value !== "string") return "使用者由網站移除寄件者情報";
+  return value.trim().slice(0, 500) || "使用者由網站移除寄件者情報";
+}
+
+function activeFriendProfile(snapshots, name) {
+  const profile = snapshots.friends.profiles.find((candidate) => candidate.name === name);
+  if (!profile || profile.lifecycle?.deleted_at) throw httpError(404, `找不到有效寄件者「${name}」`);
+  return profile;
+}
+
+function recordSenderChange(postcard, previousName, nextName, reason, changedAt) {
+  postcard.sender_history ??= [];
+  postcard.sender_history.push({
+    previous_name: previousName,
+    next_name: nextName,
+    reason,
+    changed_at: changedAt,
+  });
+  postcard.sender = nextName;
+  postcard.modified_at = changedAt;
 }
 
 function uniqueStrings(values = []) {
