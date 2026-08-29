@@ -237,7 +237,8 @@ button { color: inherit; }
 .friend-details summary::after { content: "＋"; flex: 0 0 auto; font-size: 15px; }
 .friend-details[open] summary { background: rgba(220,233,223,.35); }
 .friend-details[open] summary::after { content: "−"; }
-.friend-details summary span { flex: 1 1 auto; font-size: 10px; font-weight: 800; }
+.friend-details summary > span { display: flex; flex: 1 1 auto; align-items: center; justify-content: space-between; gap: 10px; font-size: 10px; font-weight: 800; }
+.friend-postcard-count { flex: 0 0 auto; padding: 2px 6px; border-radius: 999px; background: var(--green-light); color: var(--green); font-size: 9px; font-weight: 800; }
 .friend-details summary:focus-visible { outline: 0; box-shadow: inset 0 0 0 2px rgba(35,91,67,.35); }
 .friend-details-body { padding-bottom: 18px; }
 .friend-details-actions { display: flex; justify-content: flex-end; margin: 10px 0 -1px; }

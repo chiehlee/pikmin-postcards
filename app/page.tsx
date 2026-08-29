@@ -1616,7 +1616,10 @@ export default function Home() {
                   onToggle={(event) => setFriendExpanded(friend.name, event.currentTarget.open)}
                 >
                   <summary>
-                    <span>展開資料與明信片</span>
+                    <span>
+                      展開資料與明信片
+                      <small className="friend-postcard-count">{friend.cards.length} 張</small>
+                    </span>
                   </summary>
                   <div className="friend-details-body">
                     <div className="friend-details-actions">

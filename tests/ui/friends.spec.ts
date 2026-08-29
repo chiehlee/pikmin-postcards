@@ -60,6 +60,8 @@ test('compact friend cards expand details and overflow postcards into an accessi
   const details = liuCard.locator('.friend-details');
   const moreButton = liuCard.locator('.friend-more-button');
   await expect(details).not.toHaveAttribute('open', '');
+  await expect(details.locator('summary .friend-postcard-count')).toHaveText('6 張');
+  await expect(fiveCardFriend.locator('summary .friend-postcard-count')).toHaveText('5 張');
   await expect(liuCard.locator('dl')).toBeHidden();
   await expect(moreButton).toBeHidden();
   await expect(baseCard.locator('.friend-name-row')).toContainText('菎娜可能據點 · 臺北市北投區');

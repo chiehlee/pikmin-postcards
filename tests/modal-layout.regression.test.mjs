@@ -36,6 +36,7 @@ test("postcard and long-form research dialogs retain independent scroll containe
   assert.match(page, /researchTriggerRef\.current\?\.focus\(\)/);
   assert.match(page, /friend\.cards\.slice\(0, friendPostcardsPreviewLimit\)/);
   assert.match(page, /<details[\s\S]*?className="friend-details"[\s\S]*?<summary>[\s\S]*?展開資料與明信片/);
+  assert.match(page, /className="friend-postcard-count">\{friend\.cards\.length\} 張/);
   assert.match(page, /open=\{expandedFriendNames\.has\(friend\.name\)\}/);
   assert.match(page, /onToggle=\{\(event\) => setFriendExpanded\(friend\.name, event\.currentTarget\.open\)\}/);
   assert.match(page, /className="research-modal friend-postcards-modal"[\s\S]*?role="dialog"[\s\S]*?aria-modal="true"/);
