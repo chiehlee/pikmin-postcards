@@ -199,6 +199,46 @@ export async function recropFriendAvatar(friendName, {
   });
 }
 
+export async function reassessFriendBase(friendName, {
+  snapshotDirectory,
+  databasePath = defaultDatabasePath,
+} = {}) {
+  return serializeMutation(async () => {
+    const snapshots = await loadOperationalSnapshots(databasePath, snapshotDirectory);
+    const name = normalizedFriendName(friendName);
+    const profile = activeFriendProfile(snapshots, name);
+    const assessedAt = managementTimestamp();
+    const manualOverrides = { ...(profile.manual_overrides ?? {}) };
+    delete manualOverrides.likely_base_area;
+    const profileSeed = {
+      ...profile,
+      modified_at: assessedAt,
+      base_assessment_history: [
+        ...(profile.base_assessment_history ?? []),
+        {
+          assessed_at: assessedAt,
+          trigger: "user_requested_reassessment",
+          previous_likely_base: profile.likely_base,
+        },
+      ],
+    };
+    if (Object.keys(manualOverrides).length) profileSeed.manual_overrides = manualOverrides;
+    else delete profileSeed.manual_overrides;
+    snapshots.friends = rebuildFriends(
+      snapshots.postcards.postcards,
+      {
+        ...snapshots.friends,
+        profiles: snapshots.friends.profiles.map((candidate) => candidate.name === name ? profileSeed : candidate),
+      },
+      { affectedNames: [name] },
+    );
+    const updated = activeFriendProfile(snapshots, name);
+    updated.modified_at = assessedAt;
+    await persistSnapshots(snapshots, { snapshotDirectory, databasePath });
+    return updated;
+  });
+}
+
 export async function softDeleteFriend(friendName, reason = "使用者由網站移除寄件者情報", {
   snapshotDirectory,
   databasePath = defaultDatabasePath,

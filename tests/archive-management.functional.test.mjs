@@ -12,6 +12,7 @@ import {
   editFriendProfile,
   mergeFriendProfiles,
   nextPostcardId,
+  reassessFriendBase,
   softDeleteFriend,
   softDeletePostcard,
 } from "../server/archive-manager.mjs";
@@ -145,7 +146,7 @@ test("GPT-5.6 job migrations preserve old jobs and accept new reasoning and canc
   }
 });
 
-test("friend edit, merge, and soft delete preserve provenance and leave postcards recoverable", async () => {
+test("friend edit, base reassessment, merge, and soft delete preserve provenance and leave postcards recoverable", async () => {
   const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "pikmin-friend-management-"));
   const snapshotDirectory = path.join(temporaryDirectory, "data");
   const databasePath = path.join(temporaryDirectory, "archive.sqlite3");
@@ -169,6 +170,15 @@ test("friend edit, merge, and soft delete preserve provenance and leave postcard
     assert.equal(edited.likely_base.area, "臺北市北投區");
     assert.equal(edited.likely_base.status, "manual");
     assert.deepEqual(edited.aliases, ["Alice"]);
+
+    const reassessed = await reassessFriendBase("Alicia", { snapshotDirectory, databasePath });
+    assert.equal(reassessed.likely_base.area, null);
+    assert.equal(reassessed.likely_base.status, "insufficient-evidence");
+    assert.equal(reassessed.base_analysis.origin, "none");
+    assert.equal(reassessed.manual_overrides, undefined);
+    assert.equal(reassessed.base_assessment_history.length, 1);
+    assert.equal(reassessed.base_assessment_history[0].trigger, "user_requested_reassessment");
+    assert.equal(reassessed.base_assessment_history[0].previous_likely_base.area, "臺北市北投區");
 
     const merged = await mergeFriendProfiles("Alicia", "Bob", { snapshotDirectory, databasePath });
     assert.equal(merged.friend.name, "Bob");

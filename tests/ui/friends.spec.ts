@@ -168,6 +168,7 @@ test('friend editor saves, recrops, and soft-deletes without deleting associated
   const payload = createArchiveFixture();
   await page.route('**/api/archive', async (route) => route.fulfill({ json: payload }));
   let avatarCalls = 0;
+  let baseCalls = 0;
   await page.route(/\/api\/friends\/[^/]+\/avatar$/, async (route) => {
     avatarCalls += 1;
     const name = decodeURIComponent(new URL(route.request().url()).pathname.split('/').at(-2)!);
@@ -175,6 +176,20 @@ test('friend editor saves, recrops, and soft-deletes without deleting associated
     friend.modified_at = '2026-08-28T02:03:04Z';
     friend.avatar = { path: '/images/friends/test.webp' };
     await route.fulfill({ json: { friend, avatar_generation: [{ status: 'generated' }] } });
+  });
+  await page.route(/\/api\/friends\/[^/]+\/base$/, async (route) => {
+    baseCalls += 1;
+    const name = decodeURIComponent(new URL(route.request().url()).pathname.split('/').at(-2)!);
+    const friend = payload.friends.find((profile) => profile.name === name)!;
+    friend.modified_at = '2026-08-28T02:30:00Z';
+    friend.likely_base = {
+      area: null,
+      status: 'insufficient-evidence',
+      confidence: 'low',
+      confidence_label: '低',
+      reason: '目前只有 1 個有效日期，尚不足以判定生活據點。',
+    };
+    await route.fulfill({ json: { friend } });
   });
   await page.route(/\/api\/friends\/[^/]+$/, async (route) => {
     const request = route.request();
@@ -203,6 +218,11 @@ test('friend editor saves, recrops, and soft-deletes without deleting associated
   await dialog.getByRole('button', { name: '重新截圖' }).click();
   await expect(page.getByText('Mii 頭像已更新')).toBeVisible();
   expect(avatarCalls).toBe(1);
+  await dialog.getByRole('button', { name: '判定可能據點' }).click();
+  await expect(dialog.getByLabel('可能據點')).toHaveValue('');
+  await expect(page.getByText('重新判定完成・尚未判定')).toBeVisible();
+  await expect(page.getByText(/目前仍沒有足夠證據判定可能據點/)).toBeVisible();
+  expect(baseCalls).toBe(1);
   await dialog.getByLabel('名稱').fill('Alice 新');
   await dialog.getByLabel('可能據點').fill('Boston, Massachusetts, United States（美國麻薩諸塞州波士頓）');
   await dialog.getByRole('button', { name: '保存情報' }).click();

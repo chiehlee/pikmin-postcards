@@ -434,7 +434,7 @@ export default function Home() {
   const [friendMergeQuery, setFriendMergeQuery] = useState('');
   const [friendMergeTarget, setFriendMergeTarget] = useState('');
   const [friendDeleteConfirm, setFriendDeleteConfirm] = useState(false);
-  const [friendAction, setFriendAction] = useState<'save' | 'merge' | 'avatar' | 'delete' | null>(null);
+  const [friendAction, setFriendAction] = useState<'save' | 'base' | 'merge' | 'avatar' | 'delete' | null>(null);
   const [expandedFriendNames, setExpandedFriendNames] = useState<Set<string>>(() => new Set());
   const [addOpen, setAddOpen] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -765,6 +765,31 @@ export default function Home() {
       );
     } catch (error) {
       notify(error instanceof Error ? error.message : '無法重新截取 Mii。', 'error', '重新截圖失敗');
+    } finally {
+      setFriendAction(null);
+    }
+  }
+
+  async function reassessEditingFriendBase() {
+    if (!editingFriendName) return;
+    setFriendAction('base');
+    setNotice(null);
+    try {
+      const payload = await responseJson<{ friend: FriendProfile }>(await fetch(
+        `/api/friends/${encodeURIComponent(editingFriendName)}/base`,
+        { method: 'POST' },
+      ));
+      await refreshArchive();
+      setFriendEditBase(payload.friend.likely_base.area ?? '');
+      notify(
+        payload.friend.likely_base.area
+          ? `依目前有效證據，可能據點判定為「${payload.friend.likely_base.area}」。`
+          : `目前仍沒有足夠證據判定可能據點：${payload.friend.likely_base.reason}`,
+        'success',
+        payload.friend.likely_base.area ? '可能據點已重新判定' : '重新判定完成・尚未判定',
+      );
+    } catch (error) {
+      notify(error instanceof Error ? error.message : '無法重新判定可能據點。', 'error', '判定失敗');
     } finally {
       setFriendAction(null);
     }
@@ -1723,6 +1748,9 @@ export default function Home() {
               <div className="friend-editor-primary-actions">
                 <button type="submit" className="friend-save-action" disabled={Boolean(friendAction)}>
                   {friendAction === 'save' ? '保存中…' : '保存情報'}
+                </button>
+                <button type="button" onClick={reassessEditingFriendBase} disabled={Boolean(friendAction)} title="依這位寄件者目前保存的有效明信片證據重新判定">
+                  {friendAction === 'base' ? '判定中…' : '判定可能據點'}
                 </button>
                 <button
                   type="button"
