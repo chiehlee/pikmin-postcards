@@ -98,6 +98,30 @@ button { color: inherit; }
 .codex-setup code { overflow-x: auto; display: block; padding: 9px 10px; border: 1px solid rgba(35,91,67,.14); border-radius: 3px; background: #fff; color: #193b2c; font-size: 9px; white-space: nowrap; }
 .codex-setup > small { display: block; color: var(--muted); font-size: 9px; line-height: 1.6; }
 .codex-setup > small code { display: inline; padding: 1px 4px; white-space: normal; }
+.api-usage-note, .codex-usage { margin-top: 18px; padding: 18px 19px; border: 1px solid rgba(35,91,67,.18); border-radius: 6px; background: rgba(255,255,255,.48); }
+.api-usage-note strong { color: var(--ink); font-size: 11px; }
+.api-usage-note p { margin: 7px 0 0; color: var(--muted); font-size: 9px; line-height: 1.65; }
+.codex-usage { background: rgba(220,233,223,.2); }
+.codex-usage-heading { display: flex; justify-content: space-between; gap: 15px; align-items: start; }
+.codex-usage-heading .eyebrow { margin-bottom: 5px; }
+.codex-usage-heading h3 { margin: 0; font: 800 13px/1.3 system-ui, sans-serif; }
+.codex-usage-actions { display: flex; align-items: center; gap: 8px; }
+.codex-usage-actions button { min-height: 29px; padding: 0 9px; border: 1px solid rgba(35,91,67,.42); border-radius: 4px; background: transparent; color: var(--green); cursor: pointer; font-size: 8px; font-weight: 800; }
+.codex-usage-actions button:hover:not(:disabled) { background: var(--green-light); }
+.codex-usage-actions button:disabled { cursor: wait; opacity: .55; }
+.codex-usage-windows { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 17px; }
+.codex-usage-windows article { min-width: 0; padding: 13px; border: 1px solid rgba(35,91,67,.14); border-radius: 5px; background: #fff; }
+.codex-usage-windows article > div { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.codex-usage-windows strong { font-size: 10px; }
+.codex-usage-windows b { color: var(--green); font-size: 11px; white-space: nowrap; }
+.codex-usage-windows progress { overflow: hidden; display: block; width: 100%; height: 7px; margin: 10px 0 8px; border: 0; border-radius: 999px; background: #e4e9e4; accent-color: var(--green); }
+.codex-usage-windows progress::-webkit-progress-bar { border-radius: 999px; background: #e4e9e4; }
+.codex-usage-windows progress::-webkit-progress-value { border-radius: 999px; background: var(--green); }
+.codex-usage-windows progress::-moz-progress-bar { border-radius: 999px; background: var(--green); }
+.codex-usage-windows small { color: var(--muted); font-size: 8px; line-height: 1.5; }
+.codex-usage-caption { margin: 12px 0 0; color: var(--muted); font-size: 8px; line-height: 1.55; }
+.codex-usage-message { display: flex; align-items: center; gap: 8px; margin: 15px 0 0; color: var(--muted); font-size: 9px; line-height: 1.6; }
+.codex-usage-message .job-spinner { flex: 0 0 auto; }
 .settings-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 30px; }
 .settings-actions button, .settings-danger-zone button { min-height: 40px; padding: 0 14px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 800; }
 .settings-actions button:disabled, .settings-danger-zone button:disabled { cursor: not-allowed; opacity: .52; }
@@ -581,6 +605,8 @@ footer p { margin: 0; color: var(--ink); font-family: Georgia, serif; }
   .settings-content { padding: 0 14px 78px; }
   .settings-panel { padding: 25px 18px 30px; }
   .settings-panel-heading { flex-direction: column; }
+  .codex-usage-heading { flex-direction: column; }
+  .codex-usage-windows { grid-template-columns: 1fr; }
   .settings-actions { flex-direction: column; }
   .settings-actions button { width: 100%; }
   .hero { padding: 52px 18px 58px; }

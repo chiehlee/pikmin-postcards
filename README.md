@@ -137,9 +137,12 @@ SQLite 沒有 username/password。若改用 PostgreSQL、MySQL 或 HTTP database
 首頁右上角的「設定」會開啟 `/settings`。在這台 Mac 的瀏覽器使用 `http://localhost:3000/settings`，可以：
 
 - 設定、替換或移除 server-side OpenAI API key。
+- 切換本機 Codex（ChatGPT 登入）或 OpenAI API Key；本機模式會透過官方 Codex App Server 顯示 5 小時與每週視窗的已用／剩餘百分比及重設時間，不會把登入 token 或帳號資料傳到瀏覽器。
 - 選擇研究 model；新工作會在建立時保存當下的 model ID。
 - 保存前測試新 key，或測試目前已保存的連線。
 - 查看「已設定／未設定」、來源與末四碼遮罩；網站永遠不會把完整 key 讀回瀏覽器。
+
+一般 OpenAI project API key 按 token 計費，並沒有 ChatGPT Codex 訂閱的 5 小時／每週配額視窗。OpenAI 的組織 Usage／Costs API 需要 Admin Key；因其權限高於研究工作所需，本系統目前不要求或保存 Admin Key，只在 API 模式顯示這項限制。
 
 設定頁把 key 原子寫入 Git 已忽略的 `.env.local`，權限設為 `0600`，並同步目前 server process，因此由設定頁保存後不必重啟。這符合 OpenAI 的 [API key 安全建議](https://help.openai.com/en/articles/5112595-best-practices-for-api-key-safety)：key 留在 server，不部署到瀏覽器，也不提交到 repository。`.env.local` 很小且不屬於收藏資料；重新 clone 時可在 localhost 設定頁重新設定，或另行以密碼管理器備份。
 

@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import {
+  codexUsageStatus,
   isLoopbackRequest,
   removeApiKey,
   saveSettings,
@@ -162,6 +163,69 @@ test("local Codex provider persists independently and runs an authenticated CLI 
   assert.equal(result.connection.reasoning_effort, "medium");
   assert.equal(probes[0].command, "codex");
   assert.equal(probes[0].reasoningEffort, "medium");
+});
+
+test("settings expose local Codex account windows only through the dedicated usage status", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "pikmin-settings-"));
+  const envFilePath = path.join(directory, ".env.local");
+  const runtimeEnv = { PIKMIN_AI_PROVIDER: "local_codex" };
+  const calls = [];
+  const result = await codexUsageStatus({
+    envFilePath,
+    runtimeEnv,
+    codexStatusImpl,
+    codexUsageImpl: async (input) => {
+      calls.push(input);
+      return {
+        available: true,
+        source: "codex_app_server",
+        checked_at: "2026-08-29T00:00:00.000Z",
+        plan_type: "plus",
+        windows: [
+          { id: "five_hour", window_duration_minutes: 300, used_percent: 40, remaining_percent: 60, resets_at: null },
+          { id: "weekly", window_duration_minutes: 10_080, used_percent: 25, remaining_percent: 75, resets_at: null },
+        ],
+      };
+    },
+  });
+
+  assert.equal(result.provider, "local_codex");
+  assert.equal(result.usage.plan_type, "plus");
+  assert.deepEqual(result.usage.windows.map((window) => window.remaining_percent), [60, 75]);
+  assert.deepEqual(calls, [{ command: "codex" }]);
+});
+
+test("settings explain API token billing without requesting local Codex usage", async () => {
+  let usageCalls = 0;
+  const result = await codexUsageStatus({
+    envFilePath: path.join(await mkdtemp(path.join(os.tmpdir(), "pikmin-settings-")), ".env.local"),
+    runtimeEnv: { PIKMIN_AI_PROVIDER: "openai_api" },
+    codexStatusImpl,
+    codexUsageImpl: async () => {
+      usageCalls += 1;
+      return {};
+    },
+  });
+
+  assert.equal(result.provider, "openai_api");
+  assert.equal(result.usage.available, false);
+  assert.equal(result.usage.reason, "openai_api_uses_token_billing");
+  assert.equal(usageCalls, 0);
+});
+
+test("settings return a safe unavailable state when Codex usage cannot be read", async () => {
+  const result = await codexUsageStatus({
+    envFilePath: path.join(await mkdtemp(path.join(os.tmpdir(), "pikmin-settings-")), ".env.local"),
+    runtimeEnv: { PIKMIN_AI_PROVIDER: "local_codex" },
+    codexStatusImpl,
+    codexUsageImpl: async () => {
+      throw new Error("private local path /Users/test and auth diagnostic");
+    },
+  });
+
+  assert.equal(result.usage.available, false);
+  assert.equal(result.usage.reason, "codex_usage_unavailable");
+  assert.doesNotMatch(JSON.stringify(result), /Users\/test|auth diagnostic/);
 });
 
 test("settings reject unknown reasoning effort before persisting", async () => {

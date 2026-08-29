@@ -5,6 +5,7 @@ import { projectRoot } from "../db/database.mjs";
 import {
   defaultCodexResearchModel,
   localCodexStatus,
+  localCodexUsage,
   verifyLocalCodexConnection,
 } from "./local-codex.mjs";
 import { defaultResearchModel, verifyOpenAIConnection } from "./openai-research.mjs";
@@ -76,6 +77,52 @@ export async function settingsStatus({
     secret_write_allowed: secretWriteAllowed,
     persistence: ".env.local",
   };
+}
+
+export async function codexUsageStatus({
+  envFilePath = defaultSettingsPath,
+  runtimeEnv = process.env,
+  codexStatusImpl = localCodexStatus,
+  codexUsageImpl = localCodexUsage,
+} = {}) {
+  const settings = await settingsStatus({ envFilePath, runtimeEnv, codexStatusImpl });
+  if (settings.provider !== "local_codex") {
+    return {
+      provider: settings.provider,
+      usage: {
+        available: false,
+        reason: "openai_api_uses_token_billing",
+        message: "一般 OpenAI API Key 按 token 計費，沒有 ChatGPT Codex 的 5 小時與每週配額視窗。",
+      },
+    };
+  }
+  if (!settings.local_codex.installed || !settings.local_codex.authenticated) {
+    return {
+      provider: settings.provider,
+      usage: {
+        available: false,
+        reason: settings.local_codex.installed ? "codex_not_authenticated" : "codex_not_installed",
+        message: settings.local_codex.installed
+          ? "Codex CLI 尚未登入；登入 ChatGPT 後才能讀取用量。"
+          : "找不到 Codex CLI；安裝並登入後才能讀取用量。",
+      },
+    };
+  }
+  try {
+    return {
+      provider: settings.provider,
+      usage: await codexUsageImpl({ command: settings.local_codex.command }),
+    };
+  } catch {
+    return {
+      provider: settings.provider,
+      usage: {
+        available: false,
+        reason: "codex_usage_unavailable",
+        message: "暫時無法讀取 Codex 帳戶用量；請稍後重新整理。",
+      },
+    };
+  }
 }
 
 export async function saveSettings({ apiKey, model, provider, reasoningEffort }, {
