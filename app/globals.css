@@ -372,13 +372,10 @@ footer p { margin: 0; color: var(--ink); font-family: Georgia, serif; }
 .research-image-grid figcaption small { color: var(--muted); font-size: 9px; line-height: 1.4; }
 .research-image-grid figcaption a { color: var(--green); font-size: 9px; font-weight: 800; text-decoration: none; }
 .detail-story { padding: 22px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-.postcard-context-navigation { position: absolute; z-index: 3; top: 62%; right: 10px; left: 10px; display: grid; grid-template-columns: 42px minmax(0, 1fr) 42px; align-items: center; gap: 12px; padding: 0; pointer-events: none; transform: translateY(-50%); }
-.postcard-context-navigation button { display: grid; place-items: center; width: 42px; height: 36px; border: 1px solid rgba(35,91,67,.32); border-radius: 999px; background: rgba(255,254,249,.96); box-shadow: 0 5px 18px rgba(24,34,28,.1); color: var(--green); cursor: pointer; font-size: 19px; pointer-events: auto; }
+.postcard-context-navigation { position: absolute; z-index: 3; top: 62%; right: 10px; left: 10px; display: flex; align-items: center; justify-content: space-between; padding: 0; pointer-events: none; transform: translateY(-50%); }
+.postcard-context-navigation button { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid rgba(35,91,67,.32); border-radius: 50%; background: rgba(255,254,249,.96); box-shadow: 0 5px 18px rgba(24,34,28,.1); color: var(--green); cursor: pointer; font-size: 19px; line-height: 1; pointer-events: auto; }
 .postcard-context-navigation button:hover:not(:disabled) { border-color: var(--green); background: var(--green-light); }
 .postcard-context-navigation button:disabled { border-color: var(--line); background: rgba(255,254,249,.9); color: #a7aaa5; cursor: default; }
-.postcard-context-navigation span { display: grid; min-width: 0; width: fit-content; max-width: 100%; justify-self: center; justify-items: center; gap: 2px; padding: 4px 12px; border-radius: 999px; background: rgba(255,254,249,.94); text-align: center; }
-.postcard-context-navigation strong { overflow: hidden; max-width: 100%; color: var(--green); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
-.postcard-context-navigation small { color: var(--muted); font-size: 9px; }
 .research-summary-button { display: block; width: 100%; padding: 0; border: 0; outline: none; background: transparent; color: inherit; text-align: left; cursor: pointer; }
 .research-summary-button:focus-visible { border-radius: 3px; outline: 3px solid rgba(35,91,67,.22); outline-offset: 7px; }
 .research-summary-button:hover .research-note-action { text-decoration: underline; text-underline-offset: 3px; }

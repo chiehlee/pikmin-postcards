@@ -2075,7 +2075,12 @@ export default function Home() {
               <p className="hash">SHA-256 · {active.asset.sha256}</p>
               </div>
               {postcardNavigation && activeNavigationIndex >= 0 && (
-                <nav className="postcard-context-navigation" aria-label="切換目前脈絡中的明信片">
+                <nav
+                  className="postcard-context-navigation"
+                  aria-label={postcardNavigation.source === 'friend'
+                    ? `切換寄件者 ${postcardNavigation.label} 的明信片，目前第 ${activeNavigationIndex + 1} 張，共 ${postcardNavigation.ids.length} 張`
+                    : `切換目前明信片排序，目前第 ${activeNavigationIndex + 1} 張，共 ${postcardNavigation.ids.length} 張`}
+                >
                   <button
                     type="button"
                     onClick={() => navigatePostcard(-1)}
@@ -2084,10 +2089,6 @@ export default function Home() {
                   >
                     ←
                   </button>
-                  <span>
-                    <strong>{postcardNavigation.source === 'friend' ? `寄件者 · ${postcardNavigation.label}` : postcardNavigation.label}</strong>
-                    <small>{activeNavigationIndex + 1} / {postcardNavigation.ids.length}</small>
-                  </span>
                   <button
                     type="button"
                     onClick={() => navigatePostcard(1)}

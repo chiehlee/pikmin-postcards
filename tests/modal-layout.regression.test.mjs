@@ -31,6 +31,10 @@ test("postcard and long-form research dialogs retain independent scroll containe
   assert.match(postcardNavigation, /position:\s*absolute/);
   assert.match(postcardNavigation, /top:\s*62%/);
   assert.match(postcardNavigation, /pointer-events:\s*none/);
+  const postcardNavigationButton = cssRule(css, ".postcard-context-navigation button");
+  assert.match(postcardNavigationButton, /width:\s*40px/);
+  assert.match(postcardNavigationButton, /height:\s*40px/);
+  assert.match(postcardNavigationButton, /border-radius:\s*50%/);
 
   const researchScroll = cssRule(css, ".research-modal-scroll");
   assert.match(researchScroll, /min-height:\s*0/);

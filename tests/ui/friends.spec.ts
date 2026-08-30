@@ -288,7 +288,12 @@ test('postcard arrows follow the full archive order or the selected friend order
   const detail = page.locator('.detail-modal');
   const navigation = detail.locator('.postcard-context-navigation');
   await expect(detail.getByRole('heading', { name: firstArchiveTitle, exact: true })).toBeVisible();
-  await expect(navigation).toContainText('目前明信片排序');
+  await expect(navigation).toHaveAttribute('aria-label', /切換目前明信片排序，目前第 1 張/);
+  await expect(navigation.locator('span')).toHaveCount(0);
+  expect(await navigation.getByRole('button', { name: '上一張明信片' }).evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { width: style.width, height: style.height, borderRadius: style.borderRadius };
+  })).toEqual({ width: '40px', height: '40px', borderRadius: '50%' });
   const archiveNavigationY = (await navigation.boundingBox())?.y;
   expect(archiveNavigationY).toBeDefined();
   await navigation.getByRole('button', { name: '下一張明信片' }).click();
@@ -316,7 +321,7 @@ test('postcard arrows follow the full archive order or the selected friend order
   const secondFriendTitle = (await friendCards.nth(1).locator('span').innerText()).trim();
   await friendCards.nth(0).click();
   await expect(detail.getByRole('heading', { name: firstFriendTitle, exact: true })).toBeVisible();
-  await expect(navigation).toContainText('寄件者 · 柳柳');
+  await expect(navigation).toHaveAttribute('aria-label', /切換寄件者 柳柳 的明信片，目前第 1 張/);
   const friendNavigationY = (await navigation.boundingBox())?.y;
   expect(friendNavigationY).toBeDefined();
   await navigation.getByRole('button', { name: '下一張明信片' }).click();
