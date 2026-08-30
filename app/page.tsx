@@ -1844,6 +1844,7 @@ export default function Home() {
                 <img src={active.asset.path} onError={(event) => recoverRuntimeAsset(event, active.asset.path)} alt={`${active.poi_name} 原始遊戲截圖`} />
                 <a href={liveAssetUrl(active.asset.path)} target="_blank" rel="noreferrer">開啟原始尺寸 ↗</a>
               </div>
+              <div className="modal-copy-shell">
               <div className="modal-copy">
               <div className="detail-meta">
                 <span className={`status status-${active.curation.status}`}>
@@ -1895,30 +1896,6 @@ export default function Home() {
                   </button>
                 )}
               </section>
-              {postcardNavigation && activeNavigationIndex >= 0 && (
-                <nav className="postcard-context-navigation" aria-label="切換目前脈絡中的明信片">
-                  <button
-                    type="button"
-                    onClick={() => navigatePostcard(-1)}
-                    disabled={activeNavigationIndex <= 0}
-                    aria-label="上一張明信片"
-                  >
-                    ←
-                  </button>
-                  <span>
-                    <strong>{postcardNavigation.source === 'friend' ? `寄件者 · ${postcardNavigation.label}` : postcardNavigation.label}</strong>
-                    <small>{activeNavigationIndex + 1} / {postcardNavigation.ids.length}</small>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => navigatePostcard(1)}
-                    disabled={activeNavigationIndex >= postcardNavigation.ids.length - 1}
-                    aria-label="下一張明信片"
-                  >
-                    →
-                  </button>
-                </nav>
-              )}
               {activeMapTarget && (
                 <section className="location-map" aria-labelledby="location-map-title">
                   <div className="location-map-heading">
@@ -2096,6 +2073,31 @@ export default function Home() {
                 ))}
               </div>
               <p className="hash">SHA-256 · {active.asset.sha256}</p>
+              </div>
+              {postcardNavigation && activeNavigationIndex >= 0 && (
+                <nav className="postcard-context-navigation" aria-label="切換目前脈絡中的明信片">
+                  <button
+                    type="button"
+                    onClick={() => navigatePostcard(-1)}
+                    disabled={activeNavigationIndex <= 0}
+                    aria-label="上一張明信片"
+                  >
+                    ←
+                  </button>
+                  <span>
+                    <strong>{postcardNavigation.source === 'friend' ? `寄件者 · ${postcardNavigation.label}` : postcardNavigation.label}</strong>
+                    <small>{activeNavigationIndex + 1} / {postcardNavigation.ids.length}</small>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => navigatePostcard(1)}
+                    disabled={activeNavigationIndex >= postcardNavigation.ids.length - 1}
+                    aria-label="下一張明信片"
+                  >
+                    →
+                  </button>
+                </nav>
+              )}
               </div>
             </section>
           </div>

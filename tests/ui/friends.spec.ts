@@ -289,16 +289,23 @@ test('postcard arrows follow the full archive order or the selected friend order
   const navigation = detail.locator('.postcard-context-navigation');
   await expect(detail.getByRole('heading', { name: firstArchiveTitle, exact: true })).toBeVisible();
   await expect(navigation).toContainText('目前明信片排序');
+  const archiveNavigationY = (await navigation.boundingBox())?.y;
+  expect(archiveNavigationY).toBeDefined();
   await navigation.getByRole('button', { name: '下一張明信片' }).click();
   await expect(detail.getByRole('heading', { name: secondArchiveTitle, exact: true })).toBeVisible();
+  expect(Math.abs(((await navigation.boundingBox())?.y ?? -1) - archiveNavigationY!)).toBeLessThan(1);
   expect(await detail.evaluate((element) => {
-    const story = element.querySelector('.detail-story');
     const arrows = element.querySelector('.postcard-context-navigation');
-    const location = element.querySelector('.location-map');
-    return Boolean(story && arrows && location
-      && (story.compareDocumentPosition(arrows) & Node.DOCUMENT_POSITION_FOLLOWING)
-      && (arrows.compareDocumentPosition(location) & Node.DOCUMENT_POSITION_FOLLOWING));
+    const copy = element.querySelector('.modal-copy');
+    const shell = element.querySelector('.modal-copy-shell');
+    const position = arrows ? getComputedStyle(arrows).position : '';
+    return Boolean(arrows && copy && shell
+      && arrows.parentElement === shell
+      && !copy.contains(arrows)
+      && (position === 'absolute' || position === 'fixed'));
   })).toBe(true);
+  await detail.locator('.modal-copy').evaluate((element) => { element.scrollTop = 500; });
+  expect(Math.abs(((await navigation.boundingBox())?.y ?? -1) - archiveNavigationY!)).toBeLessThan(1);
   await page.getByRole('button', { name: '關閉' }).click();
 
   await page.getByRole('button', { name: '朋友足跡' }).click();
@@ -310,6 +317,9 @@ test('postcard arrows follow the full archive order or the selected friend order
   await friendCards.nth(0).click();
   await expect(detail.getByRole('heading', { name: firstFriendTitle, exact: true })).toBeVisible();
   await expect(navigation).toContainText('寄件者 · 柳柳');
+  const friendNavigationY = (await navigation.boundingBox())?.y;
+  expect(friendNavigationY).toBeDefined();
   await navigation.getByRole('button', { name: '下一張明信片' }).click();
   await expect(detail.getByRole('heading', { name: secondFriendTitle, exact: true })).toBeVisible();
+  expect(Math.abs(((await navigation.boundingBox())?.y ?? -1) - friendNavigationY!)).toBeLessThan(1);
 });
