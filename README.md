@@ -81,6 +81,24 @@ npx --yes -p node@22.23.2 -c 'npm run local'
 - 本機：`http://localhost:3000`
 - 區網／VPN：`http://<這台 Mac 的 VPN 或區網 IP>:3000`
 
+### macOS 自動常駐與更新
+
+完成一次 `setup:local` 後，可把 production server 安裝成目前 macOS 帳號的 `launchd` 服務：
+
+```bash
+npx --yes -p node@22.23.2 -c 'npm run service:install'
+```
+
+服務會在登入後自動啟動，異常結束時也會自行恢復。它每 5 秒檢查目前 Git commit；`git commit` 或 `git pull` 讓 commit 改變後，會自動建置並切換到新版。未 commit 的編輯不會觸發更新，避免存檔到一半就反覆重建。如果仍有排隊、研究中或正在寫入 DB 的 AI 工作，版本切換會延後到工作結束；若新版無法正常啟動，會恢復上一個 production build。
+
+```bash
+npx --yes -p node@22.23.2 -c 'npm run service:status'
+npx --yes -p node@22.23.2 -c 'npm run service:restart'
+npx --yes -p node@22.23.2 -c 'npm run service:uninstall'
+```
+
+服務 log 保存在外部 archive 的 `logs/pikmin-service.log`，不會進入 Git。安裝常駐服務後，不需要另外保持 `npm run local` 的 Terminal 視窗。
+
 要改 port，重新執行 setup 即可；例如改成 4317：
 
 ```bash
@@ -156,7 +174,7 @@ cp .env.example .env.local
 
 再把 `OPENAI_API_KEY` 填入 `.env.local` 並重啟 server。不要使用 `NEXT_PUBLIC_` 前綴，也不要把真正的 key 貼進程式、snapshot、SQLite 或 commit。這個 repository 目前刻意不含任何 API key；之後可一起在 localhost 設定頁完成實際連線。
 
-平常不需要手動執行 production build；`setup:local` 已包含建置。若程式碼更新，重新跑同一個 setup 指令即可。建置與完整 UI 測試會改寫 production output，因此維護前先停止正在使用的 `npm run local`，完成後再啟動，避免操作期間出現短暫 500。
+平常不需要手動執行 production build；`setup:local` 已包含建置。未安裝自動常駐服務時，程式碼更新後重新跑同一個 setup 指令即可。若已安裝常駐服務，完成 commit 後會由服務安全建置並切換版本；不要同時再開一個 `npm run local`。完整 UI 測試使用獨立 port，不會取代目前的 production runtime。
 
 只在開發維護時手動執行：
 
