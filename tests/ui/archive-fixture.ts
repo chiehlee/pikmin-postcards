@@ -122,6 +122,7 @@ function postcard(sequence: number, poiName: string, rawLocation: string, sender
     archived_on: '2026-08-24',
     archived_at: archivedAt,
     modified_at: archivedAt,
+    reading: { is_read: true, read_at: archivedAt },
     sender,
     acquisition: sender
       ? { type: 'received', sender_status: 'confirmed', confidence: 'high', evidence: ['sender-visible'] }

@@ -13,6 +13,7 @@ import {
   mergeFriendProfiles,
   nextPostcardId,
   reassessFriendBase,
+  setPostcardReadState,
   softDeleteFriend,
   softDeletePostcard,
 } from "../server/archive-manager.mjs";
@@ -125,13 +126,20 @@ test("GPT-5.6 job migrations preserve old jobs and accept new reasoning and canc
     assert.ok(database.prepare("SELECT 1 FROM schema_migrations WHERE version = 16").get());
     assert.ok(database.prepare("SELECT 1 FROM schema_migrations WHERE version = 17").get());
     assert.ok(database.prepare("SELECT 1 FROM schema_migrations WHERE version = 18").get());
+    assert.ok(database.prepare("SELECT 1 FROM schema_migrations WHERE version = 19").get());
     const postcardColumns = new Set(database.prepare("PRAGMA table_info(postcards)").all().map((column) => column.name));
     assert.ok(postcardColumns.has("location_geocode_status"));
     assert.ok(postcardColumns.has("location_geocode_document_json"));
     assert.ok(postcardColumns.has("modified_at"));
-    const migratedPostcard = database.prepare("SELECT modified_at, document_json FROM postcards WHERE id = 'legacy-postcard'").get();
+    assert.ok(postcardColumns.has("read_at"));
+    const migratedPostcard = database.prepare("SELECT modified_at, read_at, document_json FROM postcards WHERE id = 'legacy-postcard'").get();
     assert.equal(migratedPostcard.modified_at, "2026-08-22T01:02:03Z");
     assert.equal(JSON.parse(migratedPostcard.document_json).modified_at, "2026-08-22T01:02:03Z");
+    assert.equal(migratedPostcard.read_at, "2026-08-22T01:02:03Z");
+    assert.deepEqual(JSON.parse(migratedPostcard.document_json).reading, {
+      is_read: true,
+      read_at: "2026-08-22T01:02:03Z",
+    });
     const friendColumns = new Set(database.prepare("PRAGMA table_info(friends)").all().map((column) => column.name));
     assert.ok(friendColumns.has("modified_at"));
     assert.ok(friendColumns.has("deleted_at"));
@@ -142,6 +150,63 @@ test("GPT-5.6 job migrations preserve old jobs and accept new reasoning and canc
     assert.equal(database.prepare("PRAGMA integrity_check").get().integrity_check, "ok");
   } finally {
     database.close();
+    await rm(temporaryDirectory, { recursive: true, force: true });
+  }
+});
+
+test("postcard read state is durable, legacy-safe, and does not change archive sorting time", async () => {
+  const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "pikmin-read-state-"));
+  const snapshotDirectory = path.join(temporaryDirectory, "data");
+  const databasePath = path.join(temporaryDirectory, "archive.sqlite3");
+  const snapshots = createSyntheticSnapshots();
+  for (const postcard of snapshots.postcards.postcards) delete postcard.reading;
+  snapshots.postcards.schema_version = 6;
+  await writeSnapshots(snapshotDirectory, snapshots);
+
+  try {
+    const initial = await archiveOverview({ snapshotDirectory, databasePath });
+    assert.ok(initial.postcards.every((postcard) => postcard.reading.is_read));
+    assert.ok(initial.postcards.every((postcard) => postcard.reading.read_at));
+    const modifiedAt = initial.postcards[0].modified_at;
+
+    const unread = await setPostcardReadState("pc-9001", false, { snapshotDirectory, databasePath });
+    assert.deepEqual(unread.reading, { is_read: false, read_at: null });
+    assert.equal(unread.modified_at, modifiedAt);
+
+    let database = await openDatabase(databasePath);
+    try {
+      const row = database.prepare("SELECT read_at, modified_at, document_json FROM postcards WHERE id = ?").get("pc-9001");
+      assert.equal(row.read_at, null);
+      assert.equal(row.modified_at, modifiedAt);
+      assert.deepEqual(JSON.parse(row.document_json).reading, { is_read: false, read_at: null });
+    } finally {
+      database.close();
+    }
+
+    const read = await setPostcardReadState("pc-9001", true, { snapshotDirectory, databasePath });
+    assert.equal(read.reading.is_read, true);
+    assert.match(read.reading.read_at, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
+    assert.equal(read.modified_at, modifiedAt);
+
+    const saved = JSON.parse(await readFile(path.join(snapshotDirectory, "postcards.json"), "utf8"));
+    assert.equal(saved.schema_version, 7);
+    assert.deepEqual(saved.postcards.find((postcard) => postcard.id === "pc-9001").reading, read.reading);
+    database = await openDatabase(databasePath);
+    try {
+      assert.equal(database.prepare("SELECT read_at FROM postcards WHERE id = ?").get("pc-9001").read_at, read.reading.read_at);
+    } finally {
+      database.close();
+    }
+
+    await assert.rejects(
+      setPostcardReadState("missing-postcard", true, { snapshotDirectory, databasePath }),
+      (error) => error.status === 404,
+    );
+    await assert.rejects(
+      setPostcardReadState("pc-9001", "yes", { snapshotDirectory, databasePath }),
+      (error) => error.status === 400,
+    );
+  } finally {
     await rm(temporaryDirectory, { recursive: true, force: true });
   }
 });

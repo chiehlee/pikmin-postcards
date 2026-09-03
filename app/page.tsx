@@ -116,6 +116,10 @@ type Postcard = {
   archived_on: string;
   archived_at?: string | null;
   modified_at?: string | null;
+  reading?: {
+    is_read: boolean;
+    read_at: string | null;
+  };
   sender: string | null;
   acquisition: {
     type: AcquisitionType;
@@ -397,6 +401,29 @@ function reasoningEffortLabel(effort: ReasoningEffort) {
   return ({ none: 'None', minimal: 'Minimal', low: 'Low', medium: 'Medium', high: 'High', xhigh: 'XHigh', max: 'Max' } as const)[effort];
 }
 
+function postcardIsRead(postcard: Postcard) {
+  return postcard.reading?.is_read !== false;
+}
+
+function withPostcardReadState(postcard: Postcard, isRead: boolean) {
+  return {
+    ...postcard,
+    reading: {
+      is_read: isRead,
+      read_at: isRead ? new Date().toISOString() : null,
+    },
+  };
+}
+
+function readingTimestampLabel(postcard: Postcard) {
+  if (!postcardIsRead(postcard)) return '保留為未讀；下次打開時會自動標示為已讀。';
+  if (!postcard.reading?.read_at) return '這張明信片已經讀過。';
+  return `最近閱讀：${new Intl.DateTimeFormat('zh-TW', {
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+  }).format(new Date(postcard.reading.read_at))}`;
+}
+
 async function responseJson<T>(response: Response): Promise<T> {
   const payload = await response.json().catch(() => ({})) as { error?: string } & T;
   if (!response.ok) throw new Error(payload.error ?? `HTTP ${response.status}`);
@@ -445,6 +472,7 @@ export default function Home() {
   const [exactDuplicates, setExactDuplicates] = useState<ExactDuplicatePrompt[]>([]);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [readingPostcardIds, setReadingPostcardIds] = useState<Set<string>>(() => new Set());
   const [reresearchOpen, setReresearchOpen] = useState(false);
   const [reresearchNote, setReresearchNote] = useState('');
   const [startingReresearch, setStartingReresearch] = useState(false);
@@ -625,7 +653,48 @@ export default function Home() {
     setReresearchOpen(false);
     setReresearchNote('');
     if (navigation) setPostcardNavigation(navigation);
-    setActive(postcard);
+    if (postcardIsRead(postcard)) {
+      setActive(postcard);
+      return;
+    }
+    const opened = withPostcardReadState(postcard, true);
+    replacePostcardLocally(opened);
+    setActive(opened);
+    void persistPostcardReadState(postcard, opened);
+  }
+
+  function replacePostcardLocally(updated: Postcard) {
+    setPostcards((items) => items.map((item) => item.id === updated.id ? updated : item));
+    setActive((current) => current?.id === updated.id ? updated : current);
+  }
+
+  async function persistPostcardReadState(previous: Postcard, updated: Postcard) {
+    setReadingPostcardIds((current) => new Set(current).add(updated.id));
+    try {
+      const payload = await responseJson<{ postcard: Postcard }>(await fetch(`/api/postcards/${encodeURIComponent(updated.id)}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ is_read: postcardIsRead(updated) }),
+      }));
+      replacePostcardLocally(payload.postcard);
+    } catch (error) {
+      replacePostcardLocally(previous);
+      notify(error instanceof Error ? error.message : '無法更新閱讀狀態。', 'error', '閱讀狀態更新失敗');
+    } finally {
+      setReadingPostcardIds((current) => {
+        const next = new Set(current);
+        next.delete(updated.id);
+        return next;
+      });
+    }
+  }
+
+  async function toggleActiveReadState() {
+    if (!active || readingPostcardIds.has(active.id)) return;
+    const previous = active;
+    const updated = withPostcardReadState(previous, !postcardIsRead(previous));
+    replacePostcardLocally(updated);
+    await persistPostcardReadState(previous, updated);
   }
 
   const closePostcard = useCallback(() => {
@@ -1508,9 +1577,15 @@ export default function Home() {
                 const displayedDate = sortField === 'modified_at' ? modifiedTimestamp(postcard) : postcard.found_date;
                 const displayedDateLabel = sortField === 'modified_at' ? '修改' : '發現';
                 return (
-                  <article className="postcard-card" data-postcard-id={postcard.id} key={postcard.id}>
+                  <article
+                    className={`postcard-card ${postcardIsRead(postcard) ? 'postcard-card-read' : 'postcard-card-unread'}`}
+                    data-postcard-id={postcard.id}
+                    data-read-state={postcardIsRead(postcard) ? 'read' : 'unread'}
+                    key={postcard.id}
+                  >
                     <button className="image-button" onClick={() => openPostcard(postcard, { source: 'archive', ids: filtered.map((item) => item.id), label: '目前明信片排序' })} aria-label={`查看 ${postcard.poi_name}`}>
                       <img src={postcard.asset.path} onError={(event) => recoverRuntimeAsset(event, postcard.asset.path)} alt={`${postcard.poi_name} 原始遊戲截圖`} loading="lazy" decoding="async" />
+                      {!postcardIsRead(postcard) && <span className="unread-badge"><i aria-hidden="true" />未讀</span>}
                       <span className="rating">{postcard.curation.rating == null ? '未評分' : <>{postcard.curation.rating.toFixed(1)} <b>★</b></>}</span>
                       <span className="open-hint">查看檔案 ↗</span>
                     </button>
@@ -2043,6 +2118,22 @@ export default function Home() {
                     </div>
                   </div>
                 )}
+              </section>
+              <section className={`postcard-read-state ${postcardIsRead(active) ? 'is-read' : 'is-unread'}`} aria-label="閱讀狀態">
+                <div>
+                  <p className="eyebrow">READ STATUS</p>
+                  <strong>{postcardIsRead(active) ? '已讀' : '未讀'}</strong>
+                  <small>{readingTimestampLabel(active)}</small>
+                </div>
+                <button
+                  type="button"
+                  onClick={toggleActiveReadState}
+                  disabled={readingPostcardIds.has(active.id)}
+                >
+                  {readingPostcardIds.has(active.id)
+                    ? '更新中…'
+                    : postcardIsRead(active) ? '標示為未讀' : '標示為已讀'}
+                </button>
               </section>
               <div className="tag-list">{active.curation.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
               {!!active.related_postcards?.length && (

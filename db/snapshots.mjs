@@ -23,12 +23,14 @@ export async function loadSnapshots(directory = defaultSnapshotDirectory) {
     );
   }
   normalizePostcardModifiedTimestamps(snapshots);
+  normalizePostcardReadingStates(snapshots);
   normalizeFriendModifiedTimestamps(snapshots);
   return snapshots;
 }
 
 export function replaceDatabaseFromSnapshots(database, snapshots) {
   normalizePostcardModifiedTimestamps(snapshots);
+  normalizePostcardReadingStates(snapshots);
   normalizeFriendModifiedTimestamps(snapshots);
   validateSnapshots(snapshots);
   const deleteOrder = [
@@ -54,7 +56,7 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
   `);
   const insertPostcard = database.prepare(`
     INSERT INTO postcards (
-      id, sort_order, record_type, poi_name, found_date, received_at, archived_on, archived_at, modified_at, sender,
+      id, sort_order, record_type, poi_name, found_date, received_at, archived_on, archived_at, modified_at, read_at, sender,
       acquisition_type, sender_status, acquisition_confidence, acquisition_evidence_json,
       location_raw, location_display, location_endonym, location_zh_tw, location_language,
       location_name_status, location_name_confidence, location_country_endonym,
@@ -67,7 +69,7 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
       recommendation, curation_status, personal_relevance, star_visible,
       deletion_toast_visible, research_status, research_confidence,
       research_confidence_label, research_summary, deleted_at, deleted_reason, document_json
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const insertTag = database.prepare(
     "INSERT INTO postcard_tags (postcard_id, tag, sort_order) VALUES (?, ?, ?)",
@@ -157,6 +159,7 @@ export function replaceDatabaseFromSnapshots(database, snapshots) {
         record.archived_on,
         record.archived_at ?? null,
         record.modified_at,
+        record.reading.read_at,
         record.sender,
         acquisition.type,
         acquisition.sender_status,
@@ -350,6 +353,20 @@ function normalizePostcardModifiedTimestamps(snapshots) {
   for (const record of snapshots.postcards?.postcards ?? []) {
     record.modified_at ??= record.archived_at
       ?? (record.archived_on ? `${record.archived_on}T00:00:00Z` : null);
+  }
+}
+
+function normalizePostcardReadingStates(snapshots) {
+  snapshots.postcards.schema_version = Math.max(Number(snapshots.postcards.schema_version) || 0, 7);
+  for (const record of snapshots.postcards?.postcards ?? []) {
+    const explicitlyUnread = record.reading?.is_read === false;
+    const readAt = explicitlyUnread
+      ? null
+      : record.reading?.read_at
+        ?? record.modified_at
+        ?? record.archived_at
+        ?? (record.archived_on ? `${record.archived_on}T00:00:00Z` : "1970-01-01T00:00:00Z");
+    record.reading = { is_read: !explicitlyUnread, read_at: readAt };
   }
 }
 

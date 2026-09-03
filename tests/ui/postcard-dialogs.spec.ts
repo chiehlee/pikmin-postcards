@@ -77,6 +77,62 @@ test('archive controls default to last-modified time and restore every dropdown 
   await expect(page.locator('.management-notice')).toHaveCount(0);
 });
 
+test('unread postcards use a distinct frame, become read when opened, and can be marked unread again', async ({ page }) => {
+  const payload = createArchiveFixture();
+  const postcard = payload.postcards[0];
+  postcard.reading = { is_read: false, read_at: null };
+  const updates: boolean[] = [];
+  await page.unroute('**/api/archive');
+  await page.route('**/api/archive', (route) => route.fulfill({ json: payload }));
+  await page.route('**/api/postcards/*', async (route) => {
+    if (route.request().method() !== 'PATCH') return route.fallback();
+    const body = route.request().postDataJSON() as { is_read: boolean };
+    updates.push(body.is_read);
+    postcard.reading = {
+      is_read: body.is_read,
+      read_at: body.is_read ? '2026-09-03T04:05:06Z' : null,
+    };
+    await route.fulfill({ json: { postcard } });
+  });
+
+  await page.goto('/');
+  await page.getByPlaceholder('名稱、地點、故事或標籤').fill(postcard.poi_name);
+  const card = page.locator('.postcard-card').filter({ hasText: postcard.poi_name });
+  await expect(card).toHaveAttribute('data-read-state', 'unread');
+  await expect(card.getByText('未讀', { exact: true })).toBeVisible();
+  const unreadFrame = await card.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { borderColor: style.borderColor, boxShadow: style.boxShadow };
+  });
+  expect(unreadFrame.borderColor).toContain('35, 91, 67');
+  expect(unreadFrame.boxShadow).not.toBe('none');
+
+  await card.getByRole('button', { name: `查看 ${postcard.poi_name}` }).click();
+  const dialog = page.locator('.detail-modal');
+  const readState = dialog.getByRole('region', { name: '閱讀狀態' });
+  await expect.poll(() => updates).toEqual([true]);
+  await expect(card).toHaveAttribute('data-read-state', 'read');
+  await expect(card.getByText('未讀', { exact: true })).toHaveCount(0);
+  await expect(readState.getByText('已讀', { exact: true })).toBeVisible();
+  await expect(readState.getByText('最近閱讀：', { exact: false })).toBeVisible();
+  expect(await dialog.evaluate((element) => {
+    const management = element.querySelector('.postcard-management');
+    const reading = element.querySelector('.postcard-read-state');
+    return Boolean(management && reading && management.compareDocumentPosition(reading) & Node.DOCUMENT_POSITION_FOLLOWING);
+  })).toBe(true);
+
+  await readState.getByRole('button', { name: '標示為未讀' }).click();
+  await expect.poll(() => updates).toEqual([true, false]);
+  await expect(readState.getByText('未讀', { exact: true })).toBeVisible();
+  await expect(readState.getByRole('button', { name: '標示為已讀' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(card).toHaveAttribute('data-read-state', 'unread');
+  await expect(card.getByText('未讀', { exact: true })).toBeVisible();
+
+  await card.getByRole('button', { name: `查看 ${postcard.poi_name}` }).click();
+  await expect.poll(() => updates).toEqual([true, false, true]);
+});
+
 test('researched locations use the local script while preserving the game text', async ({ page }) => {
   const nasuDialog = await openPostcard(page, '藤城清治美術館');
   const nasuLocation = nasuDialog.locator('.detail-location');

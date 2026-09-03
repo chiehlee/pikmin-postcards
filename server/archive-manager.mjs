@@ -278,6 +278,25 @@ export async function softDeletePostcard(postcardId, reason = "使用者由網�
   });
 }
 
+export async function setPostcardReadState(postcardId, isRead, {
+  snapshotDirectory,
+  databasePath = defaultDatabasePath,
+} = {}) {
+  if (typeof isRead !== "boolean") throw httpError(400, "is_read 必須是布林值");
+  return serializeMutation(async () => {
+    const snapshots = await loadOperationalSnapshots(databasePath, snapshotDirectory);
+    const record = snapshots.postcards.postcards.find((item) => item.id === postcardId);
+    if (!record || record.lifecycle?.deleted_at) throw httpError(404, `找不到有效明信片 ${postcardId}`);
+    if (record.reading?.is_read === isRead) return record;
+    record.reading = {
+      is_read: isRead,
+      read_at: isRead ? managementTimestamp() : null,
+    };
+    await persistSnapshots(snapshots, { snapshotDirectory, databasePath });
+    return record;
+  });
+}
+
 /**
  * @param {string} postcardId
  * @param {{ userNote?: unknown }} [options]
@@ -775,6 +794,7 @@ async function applyMetadataAdd(snapshots, job, result) {
     archived_on: promoted.archivedOn,
     archived_at: promoted.archivedAt,
     modified_at: promoted.archivedAt,
+    reading: { is_read: false, read_at: null },
     sender: visible.sender,
     location,
     asset: promoted.asset,
@@ -836,6 +856,7 @@ async function applyAdd(snapshots, job, result) {
     archived_on: date,
     archived_at: archivedAt,
     modified_at: archivedAt,
+    reading: { is_read: false, read_at: null },
     sender,
     location,
     asset: promoted.asset,

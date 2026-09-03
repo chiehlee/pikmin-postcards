@@ -4,7 +4,7 @@ import path from "node:path";
 export function createEmptySnapshots() {
   return {
     postcards: {
-      schema_version: 6,
+      schema_version: 7,
       archive_name: "Pikmin Postcard Archive",
       source_principles: {
         found_date_is_sent_date: false,
@@ -46,6 +46,7 @@ function syntheticPostcard({ id, poiName, address, latitude, longitude, assetSha
     archived_on: "2026-01-03",
     archived_at: "2026-01-03T04:05:06.000Z",
     modified_at: "2026-01-03T04:05:06.000Z",
+    reading: { is_read: true, read_at: "2026-01-03T04:05:06.000Z" },
     sender: null,
     location: {
       raw: "Test District",
