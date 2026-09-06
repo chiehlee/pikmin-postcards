@@ -102,10 +102,11 @@ test('unread postcards use a distinct frame, become read when opened, and can be
   await expect(card.getByText('未讀', { exact: true })).toBeVisible();
   const unreadFrame = await card.evaluate((element) => {
     const style = getComputedStyle(element);
-    return { borderColor: style.borderColor, boxShadow: style.boxShadow };
+    return { borderColor: style.borderColor, borderWidth: style.borderWidth, boxShadow: style.boxShadow };
   });
-  expect(unreadFrame.borderColor).toContain('35, 91, 67');
-  expect(unreadFrame.boxShadow).not.toBe('none');
+  expect(unreadFrame.borderColor).toContain('24, 114, 77');
+  expect(unreadFrame.borderWidth).toBe('3px');
+  expect(unreadFrame.boxShadow).toContain('68, 170, 111');
 
   await card.getByRole('button', { name: `查看 ${postcard.poi_name}` }).click();
   const dialog = page.locator('.detail-modal');

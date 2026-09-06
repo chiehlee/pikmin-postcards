@@ -202,9 +202,9 @@ button { color: inherit; }
 
 .postcard-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(16px, 2vw, 28px); align-items: start; }
 .postcard-card { overflow: hidden; border: 1px solid var(--line); border-radius: 9px; background: var(--card); box-shadow: 0 7px 24px rgba(34,45,38,.045); transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
-.postcard-card-unread { border-color: rgba(35,91,67,.78); box-shadow: 0 0 0 3px rgba(35,91,67,.12), 0 9px 28px rgba(34,45,38,.09); }
+.postcard-card-unread { border: 3px solid #18724d; box-shadow: 0 0 0 5px rgba(68,170,111,.26), 0 12px 34px rgba(24,89,61,.2); }
 .postcard-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
-.postcard-card-unread:hover { border-color: var(--green); box-shadow: 0 0 0 3px rgba(35,91,67,.17), var(--shadow); }
+.postcard-card-unread:hover { border-color: #0f5c3b; box-shadow: 0 0 0 6px rgba(68,170,111,.34), 0 18px 48px rgba(24,89,61,.25); }
 .image-button { position: relative; display: block; width: 100%; aspect-ratio: 1.22; overflow: hidden; padding: 0; border: 0; border-bottom: 1px solid var(--line); background: #dce5dd; cursor: pointer; }
 .image-button img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 19%; transform: scale(1.02); transition: transform .35s ease; }
 .postcard-card:hover .image-button img { transform: scale(1.06); }
