@@ -3,7 +3,7 @@ import { constants } from "node:fs";
 import { copyFile, mkdir, readFile, readdir, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { validateAcquisition } from "../lib/acquisition.mjs";
-import { friendEvidenceForPostcard, rebuildFriends } from "../lib/friends.mjs";
+import { canonicalMergedFriendName, friendEvidenceForPostcard, rebuildFriends } from "../lib/friends.mjs";
 import { normalizeResearchedLocation, validateLocationNaming } from "../lib/location-names.mjs";
 import { normalizeUserContribution } from "../lib/user-contribution.mjs";
 import { resolveStoredLocalPath } from "../db/asset-paths.mjs";
@@ -734,7 +734,8 @@ async function applyReresearch(snapshots, job, result, completedAt) {
   record.research = normalizedResearch(result.research, sourcePath, researchImages);
   record.research.status = `ui-reresearched-${localDate()}`;
   record.modified_at = completedAt;
-  const avatarCrop = result.visible.sender === record.sender
+  const visibleSender = canonicalMergedFriendName(result.visible.sender, snapshots.friends);
+  const avatarCrop = visibleSender === record.sender
     ? normalizeAvatarCropHint(result.visible.sender_avatar_crop)
     : null;
   record.visual = {
@@ -782,8 +783,11 @@ async function applyReresearch(snapshots, job, result, completedAt) {
 
 async function applyMetadataAdd(snapshots, job, result) {
   const { visible, acquisition, location, avatarCrop } = metadataIntakeFields(result);
+  const sender = acquisition.sender_status === "confirmed"
+    ? canonicalMergedFriendName(visible.sender, snapshots.friends)
+    : visible.sender;
   const intake = await intakeForJob(job);
-  validateAcquisition({ id: job.postcard_id ?? "new-postcard", sender: visible.sender, acquisition });
+  validateAcquisition({ id: job.postcard_id ?? "new-postcard", sender, acquisition });
   const promoted = await promoteIntakeAsset(snapshots, job, intake, visible.found_date);
   const sourcePath = await writeMetadataFile(promoted.id, job.id, visible, acquisition);
   const record = {
@@ -795,7 +799,7 @@ async function applyMetadataAdd(snapshots, job, result) {
     archived_at: promoted.archivedAt,
     modified_at: promoted.archivedAt,
     reading: { is_read: false, read_at: null },
-    sender: visible.sender,
+    sender,
     location,
     asset: promoted.asset,
     curation: {
@@ -817,6 +821,9 @@ async function applyMetadataAdd(snapshots, job, result) {
     acquisition,
     visual: { sender_avatar_crop: avatarCrop },
   };
+  if (visible.sender && sender !== visible.sender) {
+    recordSenderChange(record, visible.sender, sender, "merged-alias-normalization", promoted.archivedAt);
+  }
   const matches = metadataMatches(snapshots.postcards.postcards, record);
   snapshots.postcards.postcards.push(record);
   if (record.sender && record.acquisition.sender_status === "confirmed") {
@@ -835,7 +842,10 @@ async function applyAdd(snapshots, job, result) {
   const foundDate = result.visible.found_date;
   const location = await resolvedLocation(result.location, result.visible.game_location, result.research.sources);
   const acquisition = result.acquisition;
-  const sender = result.visible.sender;
+  const visibleSender = result.visible.sender;
+  const sender = acquisition.sender_status === "confirmed"
+    ? canonicalMergedFriendName(visibleSender, snapshots.friends)
+    : visibleSender;
   validateResult(result, location);
   validateAcquisition({ id: job.postcard_id ?? "new-postcard", sender, acquisition });
   const promoted = await promoteIntakeAsset(snapshots, job, intake, foundDate);
@@ -883,6 +893,9 @@ async function applyAdd(snapshots, job, result) {
         : null,
     },
   };
+  if (visibleSender && sender !== visibleSender) {
+    recordSenderChange(record, visibleSender, sender, "merged-alias-normalization", archivedAt);
+  }
   const matches = metadataMatches(snapshots.postcards.postcards, record);
   snapshots.postcards.postcards.push(record);
   if (record.sender && record.acquisition.sender_status === "confirmed") {

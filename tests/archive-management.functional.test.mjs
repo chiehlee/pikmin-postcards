@@ -59,10 +59,12 @@ test("GPT-5.6 job migrations preserve old jobs and accept new reasoning and canc
         id TEXT PRIMARY KEY,
         archived_on TEXT NOT NULL,
         archived_at TEXT,
+        sender TEXT,
         document_json TEXT NOT NULL CHECK (json_valid(document_json))
       ) STRICT;
       CREATE TABLE friends (
         name TEXT PRIMARY KEY,
+        evidence_count INTEGER NOT NULL DEFAULT 1,
         updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
         document_json TEXT NOT NULL CHECK (json_valid(document_json))
       ) STRICT;
@@ -127,6 +129,7 @@ test("GPT-5.6 job migrations preserve old jobs and accept new reasoning and canc
     assert.ok(database.prepare("SELECT 1 FROM schema_migrations WHERE version = 17").get());
     assert.ok(database.prepare("SELECT 1 FROM schema_migrations WHERE version = 18").get());
     assert.ok(database.prepare("SELECT 1 FROM schema_migrations WHERE version = 19").get());
+    assert.ok(database.prepare("SELECT 1 FROM schema_migrations WHERE version = 20").get());
     const postcardColumns = new Set(database.prepare("PRAGMA table_info(postcards)").all().map((column) => column.name));
     assert.ok(postcardColumns.has("location_geocode_status"));
     assert.ok(postcardColumns.has("location_geocode_document_json"));
@@ -148,6 +151,68 @@ test("GPT-5.6 job migrations preserve old jobs and accept new reasoning and canc
     assert.equal(migratedFriend.modified_at, "2026-08-22T01:02:03Z");
     assert.equal(JSON.parse(migratedFriend.document_json).modified_at, "2026-08-22T01:02:03Z");
     assert.equal(database.prepare("PRAGMA integrity_check").get().integrity_check, "ok");
+  } finally {
+    database.close();
+    await rm(temporaryDirectory, { recursive: true, force: true });
+  }
+});
+
+test("merged sender migration reconnects a newly seen old ID to its canonical friend", async () => {
+  const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "pikmin-merged-sender-migration-"));
+  const databasePath = path.join(temporaryDirectory, "archive.sqlite3");
+  const database = new DatabaseSync(databasePath);
+  try {
+    database.exec(`
+      CREATE TABLE postcards (
+        id TEXT PRIMARY KEY,
+        sender TEXT,
+        archived_on TEXT,
+        archived_at TEXT,
+        modified_at TEXT,
+        document_json TEXT NOT NULL CHECK (json_valid(document_json))
+      ) STRICT;
+      CREATE TABLE friends (
+        name TEXT PRIMARY KEY,
+        evidence_count INTEGER NOT NULL DEFAULT 0,
+        deleted_at TEXT,
+        merged_into TEXT,
+        document_json TEXT NOT NULL CHECK (json_valid(document_json))
+      ) STRICT;
+      CREATE TABLE friend_evidence (
+        friend_name TEXT NOT NULL,
+        postcard_id TEXT NOT NULL,
+        PRIMARY KEY (friend_name, postcard_id)
+      ) STRICT;
+      INSERT INTO postcards VALUES (
+        'pc-new', 'レ', '2026-09-06', '2026-09-06T23:36:32Z', '2026-09-06T23:36:32Z',
+        '{"id":"pc-new","sender":"レ","archived_on":"2026-09-06","archived_at":"2026-09-06T23:36:32Z","modified_at":"2026-09-06T23:36:32Z"}'
+      );
+      INSERT INTO friends VALUES (
+        'V', 0, NULL, NULL,
+        '{"name":"V","evidence_postcard_ids":[],"base_analysis":{"evidence_count":0}}'
+      );
+      INSERT INTO friends VALUES (
+        'レ', 1, '2026-09-02T02:58:26Z', 'V',
+        '{"name":"レ","evidence_postcard_ids":["pc-old"],"lifecycle":{"status":"deleted","deleted_at":"2026-09-02T02:58:26Z","merged_into":"V"}}'
+      );
+    `);
+    database.exec(await readFile(path.join(process.cwd(), "db/migrations/020_merged_sender_aliases.sql"), "utf8"));
+
+    const postcard = database.prepare("SELECT sender, document_json FROM postcards WHERE id = 'pc-new'").get();
+    assert.equal(postcard.sender, "V");
+    assert.deepEqual(JSON.parse(postcard.document_json).sender_history, [{
+      previous_name: "レ",
+      next_name: "V",
+      reason: "merged-alias-normalization",
+      changed_at: "2026-09-06T23:36:32Z",
+    }]);
+    assert.deepEqual(
+      database.prepare("SELECT friend_name, postcard_id FROM friend_evidence").all()
+        .map(({ friend_name, postcard_id }) => ({ friend_name, postcard_id })),
+      [{ friend_name: "V", postcard_id: "pc-new" }],
+    );
+    assert.equal(database.prepare("SELECT evidence_count FROM friends WHERE name = 'V'").get().evidence_count, 1);
+    assert.deepEqual(JSON.parse(database.prepare("SELECT document_json FROM friends WHERE name = 'V'").get().document_json).evidence_postcard_ids, ["pc-new"]);
   } finally {
     database.close();
     await rm(temporaryDirectory, { recursive: true, force: true });
@@ -189,7 +254,7 @@ test("postcard read state is durable, legacy-safe, and does not change archive s
     assert.equal(read.modified_at, modifiedAt);
 
     const saved = JSON.parse(await readFile(path.join(snapshotDirectory, "postcards.json"), "utf8"));
-    assert.equal(saved.schema_version, 7);
+    assert.equal(saved.schema_version, 8);
     assert.deepEqual(saved.postcards.find((postcard) => postcard.id === "pc-9001").reading, read.reading);
     database = await openDatabase(databasePath);
     try {

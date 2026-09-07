@@ -36,7 +36,7 @@ description: "接收單張或批次 Pikmin Bloom 明信片圖片、聊天附件�
 - `見つけた日` 是 `found_date`，不是寄送日期。
 - 畫面可見 `フレンドに送る` 代表 `self_found`，此時 `sender: null` 且 `sender_status: not_applicable`。
 - 已確認 `○○ より` 才能把姓名存成 sender。收到但名稱留白可標成 `received + unknown`；UI 證據不足則維持 acquisition `unknown`。
-- 每次都把畫面可見 sender ID 與現有 friends／postcards 重新比對。不同字串預設為不同的 provisional player，即使 Mii、地點或時間看似相同也不自動建立 alias 或合併；只有使用者明確提出個案合併時才改 player identity。名稱改變本身不能證明是同一人。
+- 每次都把畫面可見 sender ID 與現有 friends／postcards 重新比對。不同字串預設為不同的 provisional player，即使 Mii、地點或時間看似相同也不自動建立 alias 或合併；只有使用者明確提出個案合併時才改 player identity。唯一例外是 DB 已保存使用者核准的 `merged_into`／alias：新卡再次出現該舊 ID 時，backend 必須沿合併鏈寫入現行 active profile，同時在 postcard 的 sender history／provenance 保留畫面原 ID。名稱改變本身不能證明是同一人。
 - `sender: null` 本身絕不等於未知寄件人。
 - raw location、研究後當地原名、台灣繁中譯名、完整地址、顯示精度、座標／地圖查詢與信心分開保存。`location.raw` 必須逐字保留遊戲畫面；`location.endonym` 使用當地原文。每個國家都先以官方場館、政府、營運者或其他可靠來源尋找 POI／現物的實際完整地址，`location.address_local` 保存來源能支持的最深層級，`location.precision` 必須與該層級一致；無法證實時才按 `full_address → road → locality → district → city → region → country → unknown` 逐級退回，並在 unresolved questions 記錄缺少的證據，不得從 raw location、郵遞區號片段或地圖搜尋結果猜門牌。臺灣與日本依當地習慣連寫地址、不附國名；其他國家依當地習慣排列、只用半形逗號加空格 `, `，並把當地語言國名放在最後。非中文、日文地點的 `zh_tw` 必須翻譯到與 `address_local` 相同精度，依臺灣繁中地址順序排列並包含國名；中文或日文的 `zh_tw` 維持 null。`location.display` 只作為共用 formatter 組成的快取，所有國家都優先顯示最深的 `address_local`，過長交由 UI 折行／省略而不是丟失地址。Google Map query 使用 `address_local` 與必要的當地國名，由 Google 獨立解析 marker；不得拿 raw、括號譯名或永久座標冒充 Google 解析結果。尚未研究完成時用 `language: und`、`name_status: provisional`、`precision: unknown` 與低信心，不假裝已確認。沒有可靠證據時，不把搜尋結果寫成精確地址或座標。
 - 明信片拍到紀念碑、遺址標、復刻物或移設物時，canonical `location` 定位畫面中的現物；所紀念事件、原建物或原物件的歷史位置另存於 research facts／inferences／unresolved questions，並分別表達精度與信心。不得把現物的精確地址或座標冒充歷史事件的精確位置，也不因歷史基址未定就降低現物定位的信心。
@@ -111,7 +111,7 @@ npm run check:duplicate -- \
 2. 相同 `POI + found_date + location + sender／acquisition identity` 但 bytes 不同：一定先建立新的 postcard ID，再標成 candidate 並視需要建立雙向 `same-metadata-different-image`；candidate 不表示應刪除。
 3. POI 相同但 location 不同：不是 duplicate candidate；同名 Wayspot 在不同地點是正常資料。只有名稱變體且其他證據指向同一處時，才考慮雙向 `same-poi-name-variant`。
 4. 已確認寄件人不同，或 `self_found` 與 `received unknown` 不同：不可靜默合併。
-5. sender ID 與既有名稱不同：先建立另一個 friend profile；可回報疑似改名線索，但除非使用者明確要求，不把兩個 profile 或其觀察歷史合併。
+5. sender ID 與既有名稱不同：先查 DB 是否已有使用者核准的合併軌跡。若有，就沿 `merged_into` 鏈使用現行 active profile，保留畫面原 ID 與 sender history；若沒有，才建立另一個 friend profile。可回報疑似改名線索，但除非使用者明確要求，不把兩個 profile 或其觀察歷史合併。
 
 任何 probable／visual duplicate 都不得阻止新 screenshot 建立 postcard ID。只要 bytes 不同，即使 POI、發現日期、寄件人或遊戲地點相同，也必須先當成新的 postcard 收錄。只有 exact SHA-256 重複時才共用 canonical record，並依上一步由使用者決定取消或轉為再研究；若使用者之後指定移除或合併，再依該個案操作。
 
@@ -159,7 +159,7 @@ npm run related:candidates -- --id pc-XXXX --limit 8
 
 朋友據點採 **evidence-change event**，不做每日／每週排程，也不為每張卡呼叫另一輪 AI。只有新增已確認寄件人的 postcard，或再研究實際改變該 postcard 的 `found_date`／研究定位欄位時，才用正規化欄位重算受影響的 sender；只改研究文字不重算。批次匯入先收齊異動，每個 sender 最多重算一次。Soft delete 不移除朋友證據、不觸發據點降級，因為原始觀察仍需保留。
 
-自動據點只建立保守的 `early-signal`：同一天不論有幾張都只算一個日期；同一地理層級至少 3 個不同 `found_date`、首末跨至少 14 天、占該玩家全部有效日期至少 60%，而且不能與同層候選並列第一。優先使用可反覆比較的行政區／城市層級，不用單一 POI 或完整門牌當生活據點。未達門檻時維持 low confidence／needs-review，14 天內的多日集中只標成 possible trip cluster。既有人工判斷在至少 2 個日期仍支持且沒有更強矛盾時保留；不同 sender 字串仍是不同玩家。每次分析保存 evidence postcard IDs、規則版本與只含 sender、日期、正規化地點／座標的 fingerprint，讓不相關的研究文字更新不會造成重算。
+自動據點只建立保守的 `early-signal`：同一天不論有幾張都只算一個日期；同一地理層級至少 3 個不同 `found_date`、首末跨至少 14 天、占該玩家全部有效日期至少 60%，而且不能與同層候選並列第一。優先使用可反覆比較的行政區／城市層級，不用單一 POI 或完整門牌當生活據點。未達門檻時維持 low confidence／needs-review，14 天內的多日集中只標成 possible trip cluster。既有人工判斷在至少 2 個日期仍支持且沒有更強矛盾時保留；未經使用者合併的不同 sender 字串仍是不同玩家，已核准合併的舊 ID 則沿合併鏈歸入現行 profile。每次分析保存 evidence postcard IDs、規則版本與只含 sender、日期、正規化地點／座標的 fingerprint，讓不相關的研究文字更新不會造成重算。
 
 Friends 頁面的 Mii avatar 使用最高品質、可確認寄件人的證據截圖產生。這是 backend intake／再研究完成流程的一部分，不得依賴維護者事後手動補圖：同一次 AI 畫面判讀應在 `visible.sender_avatar_crop` 回傳方形框的 `center_x`、`center_y`、`size`（相對原始截圖的 0–1 座標）與 confidence；看不清時回傳 null，不可猜測。Backend 只接受 confirmed sender、high／medium confidence 且完全在圖片邊界內的框，再以 ImageMagick 做原圖像素裁切、原子寫入朋友 avatar metadata 與 DB。avatar 失敗不得回滾已成功的 postcard，但必須在 friend profile 保存 `avatar_generation` 狀態，下一次有效證據變動時自動重試。
 
@@ -172,7 +172,7 @@ npm run backfill:location-geocodes -- --commit
 
 位置回填預設是 dry-run，以 `var/location-geocode-cache.json` 續跑並輸出 `var/location-backfill-report.json`；只有目標集合全部解析、地址格式 validation、snapshot → SQLite round-trip 與 integrity check 通過後才可 `--commit`。正式寫入前必須建立完整 archive backup。候選 POI 只有正規化名稱嚴格相符且地址解析度更深時才能提升地址；翻譯查詢必須回到同一 provider object ID，不能因同名或泛稱換成另一個地點。
 
-這是可丟棄後重建的 derived asset，不是身份證明。每次加入同一名稱的新證據，都比較實際 crop 像素尺寸與判讀信心；更好的候選應由 backend 自動更新 avatar path／checksum／crop provenance，但保留原始 postcard assets。不同 sender ID 的 Mii 看似相同時仍維持兩個 profile，等待使用者個案合併指示。
+這是可丟棄後重建的 derived asset，不是身份證明。每次加入同一名稱的新證據，都比較實際 crop 像素尺寸與判讀信心；更好的候選應由 backend 自動更新 avatar path／checksum／crop provenance，但保留原始 postcard assets。不同 sender ID 的 Mii 看似相同時仍維持兩個 profile，等待使用者個案合併指示；DB 已有使用者核准的 merge 時，後續舊 ID 證據歸入合併目標，不再另建 profile。
 
 ### 6. Canonicalize 並同步網站／DB
 

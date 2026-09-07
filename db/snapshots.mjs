@@ -1,6 +1,7 @@
 import { readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { validateAcquisition } from "../lib/acquisition.mjs";
+import { canonicalMergedFriendName, rebuildFriends } from "../lib/friends.mjs";
 import { validateResearchDetail } from "../lib/research-details.mjs";
 import { validateLocationNaming } from "../lib/location-names.mjs";
 import { publicPathToLocalPath } from "./asset-paths.mjs";
@@ -24,6 +25,7 @@ export async function loadSnapshots(directory = defaultSnapshotDirectory) {
   }
   normalizePostcardModifiedTimestamps(snapshots);
   normalizePostcardReadingStates(snapshots);
+  normalizeFriendEvidence(snapshots);
   normalizeFriendModifiedTimestamps(snapshots);
   return snapshots;
 }
@@ -31,6 +33,7 @@ export async function loadSnapshots(directory = defaultSnapshotDirectory) {
 export function replaceDatabaseFromSnapshots(database, snapshots) {
   normalizePostcardModifiedTimestamps(snapshots);
   normalizePostcardReadingStates(snapshots);
+  normalizeFriendEvidence(snapshots);
   normalizeFriendModifiedTimestamps(snapshots);
   validateSnapshots(snapshots);
   const deleteOrder = [
@@ -370,6 +373,54 @@ function normalizePostcardReadingStates(snapshots) {
   }
 }
 
+function normalizeFriendEvidence(snapshots) {
+  snapshots.postcards.schema_version = Math.max(Number(snapshots.postcards.schema_version) || 0, 8);
+  const postcards = snapshots.postcards?.postcards ?? [];
+  const archive = snapshots.friends ?? { profiles: [] };
+  let needsRebuild = false;
+
+  for (const record of postcards) {
+    if (!record.sender || (record.acquisition && record.acquisition.sender_status !== "confirmed")) continue;
+    const canonical = canonicalMergedFriendName(record.sender, archive);
+    if (!canonical || canonical === record.sender) continue;
+    const previousName = record.sender;
+    const changedAt = record.modified_at
+      ?? record.archived_at
+      ?? (record.archived_on ? `${record.archived_on}T00:00:00Z` : "1970-01-01T00:00:00Z");
+    record.sender_history ??= [];
+    record.sender_history.push({
+      previous_name: previousName,
+      next_name: canonical,
+      reason: "merged-alias-normalization",
+      changed_at: changedAt,
+    });
+    record.sender = canonical;
+    needsRebuild = true;
+  }
+
+  const expectedByName = new Map();
+  for (const record of postcards) {
+    if (!record.sender || (record.acquisition && record.acquisition.sender_status !== "confirmed")) continue;
+    const ids = expectedByName.get(record.sender) ?? [];
+    ids.push(record.id);
+    expectedByName.set(record.sender, ids);
+  }
+  const profilesByName = new Map((archive.profiles ?? []).map((profile) => [profile.name, profile]));
+  const affectedNames = new Set();
+  for (const [name, ids] of expectedByName) {
+    ids.sort();
+    const profile = profilesByName.get(name);
+    if (profile?.lifecycle?.deleted_at) continue;
+    const actual = [...(profile?.evidence_postcard_ids ?? [])].sort();
+    if (!profile || !arraysEqual(ids, actual)) {
+      affectedNames.add(name);
+      needsRebuild = true;
+    }
+  }
+  if (!needsRebuild) return;
+  snapshots.friends = rebuildFriends(postcards, archive, { affectedNames: [...affectedNames] });
+}
+
 function normalizeFriendModifiedTimestamps(snapshots) {
   const postcardsById = new Map(
     (snapshots.postcards?.postcards ?? []).map((record) => [record.id, record]),
@@ -398,6 +449,10 @@ export function exportSnapshots(database) {
       [definition.collection]: rows.map((row) => JSON.parse(row.document_json)),
     };
   }
+  normalizePostcardModifiedTimestamps(output);
+  normalizePostcardReadingStates(output);
+  normalizeFriendEvidence(output);
+  normalizeFriendModifiedTimestamps(output);
   return output;
 }
 
@@ -417,6 +472,10 @@ function insertResearchNotes(statement, postcardId, kind, values = []) {
 function nullableBoolean(value) {
   if (value == null) return null;
   return value ? 1 : 0;
+}
+
+function arraysEqual(left, right) {
+  return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
 function normalizedGeocode(location) {

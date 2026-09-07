@@ -2,10 +2,32 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   analyzeFriendProfile,
+  canonicalMergedFriendName,
   friendEvidenceFingerprint,
   friendEvidenceForPostcard,
   rebuildFriends,
 } from "../lib/friends.mjs";
+
+test("a manually merged sender alias resolves to the active canonical profile", () => {
+  const archive = {
+    profiles: [
+      { name: "レ", lifecycle: { status: "deleted", deleted_at: "2026-09-02T00:00:00Z", merged_into: "V" } },
+      { name: "V", aliases: ["レ"] },
+      { name: "Old V", lifecycle: { status: "deleted", deleted_at: "2026-09-03T00:00:00Z", merged_into: "レ" } },
+      { name: "Retired", lifecycle: { status: "deleted", deleted_at: "2026-09-04T00:00:00Z" } },
+      { name: "Retired alias", lifecycle: { status: "deleted", deleted_at: "2026-09-04T00:00:00Z", merged_into: "Retired" } },
+      { name: "Cycle A", lifecycle: { status: "deleted", deleted_at: "2026-09-05T00:00:00Z", merged_into: "Cycle B" } },
+      { name: "Cycle B", lifecycle: { status: "deleted", deleted_at: "2026-09-05T00:00:00Z", merged_into: "Cycle A" } },
+    ],
+  };
+
+  assert.equal(canonicalMergedFriendName("レ", archive), "V");
+  assert.equal(canonicalMergedFriendName("Old V", archive), "V");
+  assert.equal(canonicalMergedFriendName("V", archive), "V");
+  assert.equal(canonicalMergedFriendName("Unrelated", archive), "Unrelated");
+  assert.equal(canonicalMergedFriendName("Retired alias", archive), "Retired alias");
+  assert.equal(canonicalMergedFriendName("Cycle A", archive), "Cycle A");
+});
 
 test("a changed visible sender ID remains a separate provisional friend", () => {
   const archive = rebuildFriends([

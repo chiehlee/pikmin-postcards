@@ -4,7 +4,7 @@ import path from "node:path";
 export function createEmptySnapshots() {
   return {
     postcards: {
-      schema_version: 7,
+      schema_version: 8,
       archive_name: "Pikmin Postcard Archive",
       source_principles: {
         found_date_is_sent_date: false,

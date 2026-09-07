@@ -6,7 +6,62 @@ import test from "node:test";
 import { resolveStoredLocalPath } from "../db/asset-paths.mjs";
 import { openDatabase } from "../db/database.mjs";
 import { exportSnapshots, replaceDatabaseFromSnapshots } from "../db/snapshots.mjs";
+import { rebuildFriends } from "../lib/friends.mjs";
 import { createSyntheticSnapshots } from "./fixtures/archive-snapshots.mjs";
+
+test("postcards using an already-merged sender ID rejoin the canonical friend profile", async () => {
+  const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "pikmin-merged-sender-test-"));
+  const databasePath = path.join(temporaryDirectory, "archive.sqlite3");
+  const snapshots = createSyntheticSnapshots();
+  const [existing, newlySeenAlias] = snapshots.postcards.postcards;
+  existing.sender = "V";
+  newlySeenAlias.sender = "レ";
+  for (const postcard of snapshots.postcards.postcards) {
+    postcard.acquisition = { type: "received", sender_status: "confirmed", confidence: "high", evidence: ["sender-visible"] };
+  }
+  const canonical = rebuildFriends([existing]).profiles[0];
+  canonical.aliases = ["レ"];
+  const mergedAlias = {
+    ...rebuildFriends([{ ...existing, sender: "レ" }]).profiles[0],
+    lifecycle: {
+      status: "deleted",
+      deleted_at: "2026-09-02T02:58:26Z",
+      deleted_reason: "已合併至 V",
+      merged_into: "V",
+    },
+  };
+  snapshots.friends = { schema_version: 1, generated_from: "data/postcards.json", profiles: [canonical, mergedAlias] };
+  const database = await openDatabase(databasePath);
+
+  try {
+    replaceDatabaseFromSnapshots(database, snapshots);
+    const exported = exportSnapshots(database);
+    assert.equal(exported.postcards.schema_version, 8);
+    assert.ok(exported.postcards.postcards.every((postcard) => postcard.sender === "V"));
+    assert.deepEqual(
+      exported.postcards.postcards.find((postcard) => postcard.id === newlySeenAlias.id).sender_history.at(-1),
+      {
+        previous_name: "レ",
+        next_name: "V",
+        reason: "merged-alias-normalization",
+        changed_at: newlySeenAlias.modified_at,
+      },
+    );
+    const active = exported.friends.profiles.find((profile) => profile.name === "V");
+    assert.deepEqual(active.evidence_postcard_ids, ["pc-9001", "pc-9002"]);
+    assert.equal(exported.friends.profiles.find((profile) => profile.name === "レ").lifecycle.merged_into, "V");
+    assert.deepEqual(
+      database
+        .prepare("SELECT postcard_id FROM friend_evidence WHERE friend_name = 'V' ORDER BY postcard_id")
+        .all()
+        .map(({ postcard_id }) => ({ postcard_id })),
+      [{ postcard_id: "pc-9001" }, { postcard_id: "pc-9002" }],
+    );
+  } finally {
+    database.close();
+    await rm(temporaryDirectory, { recursive: true, force: true });
+  }
+});
 
 test("SQLite migration preserves every snapshot field exactly", async () => {
   const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "pikmin-db-test-"));
