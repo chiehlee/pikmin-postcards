@@ -102,6 +102,31 @@ test("production site serves dialogs, keyless maps, and canonical assets", { tim
     assert.equal(Array.isArray(archivePayload.friends), true);
 
     const postcardId = archivePayload.postcards[0].id;
+    const originalName = archivePayload.postcards[0].poi_name;
+    const originalLocation = structuredClone(archivePayload.postcards[0].location);
+    const nameResponse = await fetch(`${origin}/api/postcards/${encodeURIComponent(postcardId)}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json", origin },
+      body: JSON.stringify({ poi_name: "  圖  " }),
+    });
+    assert.equal(nameResponse.status, 200, await nameResponse.clone().text());
+    const namePayload = await nameResponse.json();
+    assert.equal(namePayload.postcard.poi_name, "圖");
+    assert.deepEqual(namePayload.postcard.location, originalLocation);
+    assert.deepEqual(namePayload.postcard.poi_name_history.at(-1), {
+      previous_name: originalName,
+      next_name: "圖",
+      reason: "manual-edit",
+      changed_at: namePayload.postcard.modified_at,
+    });
+
+    const invalidNameResponse = await fetch(`${origin}/api/postcards/${encodeURIComponent(postcardId)}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json", origin },
+      body: JSON.stringify({ poi_name: "   " }),
+    });
+    assert.equal(invalidNameResponse.status, 400);
+
     const unreadResponse = await fetch(`${origin}/api/postcards/${encodeURIComponent(postcardId)}`, {
       method: "PATCH",
       headers: { "content-type": "application/json", origin },

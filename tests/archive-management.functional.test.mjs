@@ -16,6 +16,7 @@ import {
   setPostcardReadState,
   softDeleteFriend,
   softDeletePostcard,
+  updatePostcard,
 } from "../server/archive-manager.mjs";
 import { rebuildFriends } from "../lib/friends.mjs";
 import { createSyntheticSnapshots, writeSnapshots } from "./fixtures/archive-snapshots.mjs";
@@ -270,6 +271,54 @@ test("postcard read state is durable, legacy-safe, and does not change archive s
     await assert.rejects(
       setPostcardReadState("pc-9001", "yes", { snapshotDirectory, databasePath }),
       (error) => error.status === 400,
+    );
+  } finally {
+    await rm(temporaryDirectory, { recursive: true, force: true });
+  }
+});
+
+test("manual postcard name edits preserve the AI value and leave location and research evidence unchanged", async () => {
+  const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "pikmin-postcard-name-edit-"));
+  const snapshotDirectory = path.join(temporaryDirectory, "data");
+  const databasePath = path.join(temporaryDirectory, "archive.sqlite3");
+  const snapshots = createSyntheticSnapshots();
+  const original = structuredClone(snapshots.postcards.postcards[0]);
+  await writeSnapshots(snapshotDirectory, snapshots);
+
+  try {
+    const edited = await updatePostcard("pc-9001", { poi_name: "  圖  " }, { snapshotDirectory, databasePath });
+    assert.equal(edited.poi_name, "圖");
+    assert.match(edited.modified_at, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
+    assert.deepEqual(edited.poi_name_history, [{
+      previous_name: original.poi_name,
+      next_name: "圖",
+      reason: "manual-edit",
+      changed_at: edited.modified_at,
+    }]);
+    assert.deepEqual(edited.location, original.location);
+    assert.deepEqual(edited.research, original.research);
+
+    const unchanged = await updatePostcard("pc-9001", { poi_name: "圖" }, { snapshotDirectory, databasePath });
+    assert.equal(unchanged.modified_at, edited.modified_at);
+    assert.equal(unchanged.poi_name_history.length, 1);
+
+    const database = await openDatabase(databasePath);
+    try {
+      const row = database.prepare("SELECT poi_name, modified_at, document_json FROM postcards WHERE id = ?").get("pc-9001");
+      assert.equal(row.poi_name, "圖");
+      assert.equal(row.modified_at, edited.modified_at);
+      assert.deepEqual(JSON.parse(row.document_json).poi_name_history, edited.poi_name_history);
+    } finally {
+      database.close();
+    }
+
+    await assert.rejects(
+      updatePostcard("pc-9001", { poi_name: "   " }, { snapshotDirectory, databasePath }),
+      (error) => error.status === 400,
+    );
+    await assert.rejects(
+      updatePostcard("missing-postcard", { poi_name: "圖" }, { snapshotDirectory, databasePath }),
+      (error) => error.status === 404,
     );
   } finally {
     await rm(temporaryDirectory, { recursive: true, force: true });

@@ -125,7 +125,7 @@ npx --yes -p node@22.23.2 -c 'npm run setup:local -- --port 3000 --data-root /Vo
 
 ## 前後端與資料庫邊界
 
-瀏覽器不 import `data/*.json`、不開啟 SQLite，也不接收資料庫 path、username 或 password。首頁啟動後只透過 `/api/archive` 取得帶 `api_version: 1` 的收藏 read model，新增、刪除、再研究與圖片也分別走 server API；後端才負責資料庫連線、migration、交易、檔案路徑與圖片 bytes。若後端暫時無法連線，前端會保留明確的 loading／error／retry 狀態，不以 build 時的舊快照冒充最新資料。
+瀏覽器不 import `data/*.json`、不開啟 SQLite，也不接收資料庫 path、username 或 password。首頁啟動後只透過 `/api/archive` 取得帶 `api_version: 1` 的收藏 read model，新增、編輯、刪除、再研究與圖片也分別走 server API；後端才負責資料庫連線、migration、交易、檔案路徑與圖片 bytes。若後端暫時無法連線，前端會保留明確的 loading／error／retry 狀態，不以 build 時的舊快照冒充最新資料。
 
 目前 production adapter 是 SQLite，server 可使用下列設定切換到另一個具有相同 migrations/schema 的 SQLite 檔案：
 
@@ -149,6 +149,7 @@ SQLite 沒有 username/password。若改用 PostgreSQL、MySQL 或 HTTP database
 
 每張明信片視窗另有管理操作：
 
+- 「編輯名稱」：直接修正單張明信片的畫面名稱，不呼叫 AI。後端會保存舊名稱、人工修改原因與時間，更新 `modified_at`，並在同一個原子操作中同步 snapshot 與 SQLite；遊戲顯示地點、研究定位、研究本文、圖片及關聯都不會被連帶改寫。API 使用 `PATCH /api/postcards/:id` 搭配 `{ "poi_name": "圖" }`。
 - 「再研究」：先在按鈕下方展開選填的補充欄，可加入親身經驗、現場關係、地址線索或網路上查不到的背景，再建立背景工作。補充原文會保存在 job、postcard provenance、canonical record 與本次 `research/raw/`，並完整放進研究 prompt；AI 可以用它引導查證與解讀，但沒有外部來源支持時只能明確標成使用者提供／親身觀察，不能冒充已證實事實。UI 顯示 queued／研究中／更新資料庫／完成、失敗或已中止，以及持續時間；重新載入頁面會從 SQLite 找回未完成工作並繼續 polling。
 - 「刪除」：需再次確認，只 soft delete 當前 postcard。正常列表會隱藏它，但原圖、研究檔、SQLite row、provenance、關聯及其他疑似重複明信片都保留，ID 不回收。
 - 「閱讀狀態」：獨立顯示在資料操作下方，可將已讀改回未讀，或手動標示為已讀。新建明信片預設未讀；升級前已存在的明信片一律初始化為已讀。閱讀狀態使用獨立時間欄位，不會改動 `modified_at`，因此不影響「上次修改時間」排序。
@@ -197,7 +198,7 @@ npm run verify
 - `test:unit`：純函式與領域規則，包含 line 95%、branch 80%、function 95% 的 coverage gate。
 - `test:regression`：canonical 圖片、資料筆數、來源分類、雙向關聯、JSON ↔ SQLite round-trip 與既有 bug cases。
 - `test:functional`：先 production build，再從外部邊界測試圖片 intake、關聯候選 CLI、HTTP 網站與 canonical 圖片。
-- `test:ui`：以 Playwright Chromium 在桌面與手機 viewport 操作 production UI；涵蓋 modal 捲動、鍵盤／焦點、背景關閉、Google Map 延遲載入、新增、soft delete、再研究進度、工作中止、寄件者編輯／合併／重截／刪除、入口感知的左右導覽，以及設定頁的 key 遮罩、localhost／LAN 權限、連線測試與確認移除。失敗時保留 screenshot、trace 與 video。
+- `test:ui`：以 Playwright Chromium 在桌面與手機 viewport 操作 production UI；涵蓋 modal 捲動、鍵盤／焦點、背景關閉、Google Map 延遲載入、新增、明信片名稱修正、soft delete、再研究進度、工作中止、寄件者編輯／合併／重截／刪除、入口感知的左右導覽，以及設定頁的 key 遮罩、localhost／LAN 權限、連線測試與確認移除。失敗時保留 screenshot、trace 與 video。
 - `test:quick`：開發中快速執行 unit + regression。
 - `test:watch`：修改程式時持續重跑 unit + regression，提供即時回饋。
 - 第一次在新電腦執行 UI test 前先跑 `npx playwright install chromium`。`npm test` 等同完整的 `test:all`；`npm run verify` 再加上 lint、TypeScript、DB integrity/query plans 與資料統計，是 commit 前固定入口。

@@ -134,6 +134,56 @@ test('unread postcards use a distinct frame, become read when opened, and can be
   await expect.poll(() => updates).toEqual([true, false, true]);
 });
 
+test('a postcard name can be corrected without changing its preserved game location', async ({ page }) => {
+  const payload = createArchiveFixture();
+  const postcard = payload.postcards[0];
+  const previousName = postcard.poi_name;
+  const originalLocation = structuredClone(postcard.location);
+  let submitted: Record<string, unknown> | null = null;
+  await page.unroute('**/api/archive');
+  await page.route('**/api/archive', (route) => route.fulfill({ json: payload }));
+  await page.route('**/api/postcards/*', async (route) => {
+    if (route.request().method() !== 'PATCH') return route.fallback();
+    const body = route.request().postDataJSON() as Record<string, unknown>;
+    if (!Object.hasOwn(body, 'poi_name')) return route.fallback();
+    submitted = body;
+    postcard.poi_name = String(body.poi_name);
+    postcard.modified_at = '2030-01-02T03:04:05Z';
+    postcard.poi_name_history = [{
+      previous_name: previousName,
+      next_name: postcard.poi_name,
+      reason: 'manual-edit',
+      changed_at: postcard.modified_at,
+    }];
+    await route.fulfill({ json: { postcard } });
+  });
+
+  const dialog = await openPostcard(page, previousName);
+  const location = dialog.locator('.detail-location');
+  const researchedLocationBefore = await location.evaluate((element) => element.childNodes[0]?.textContent?.trim() ?? '');
+  const gameLocationBefore = await location.locator('small').innerText();
+  await dialog.getByRole('button', { name: '編輯名稱' }).click();
+  const form = dialog.getByRole('form', { name: '編輯明信片名稱' });
+  const input = form.getByLabel('明信片名稱');
+  await expect(form).toBeVisible();
+  await expect(input).toBeFocused();
+  await expect(input).toHaveValue(previousName);
+  expect(await input.evaluate((element) => {
+    const field = element as HTMLInputElement;
+    return [field.selectionStart, field.selectionEnd];
+  })).toEqual([0, previousName.length]);
+  await input.fill('圖');
+  await form.getByRole('button', { name: '保存名稱' }).click();
+
+  await expect(form).toBeHidden();
+  await expect(dialog.getByRole('heading', { level: 2 })).toHaveText('圖');
+  await expect(location).toContainText(researchedLocationBefore);
+  await expect(location.locator('small')).toHaveText(gameLocationBefore);
+  expect(postcard.location).toEqual(originalLocation);
+  expect(submitted).toEqual({ poi_name: '圖' });
+  await expect(page.getByRole('status')).toContainText(`已將「${previousName}」更正為「圖」`);
+});
+
 test('researched locations use the local script while preserving the game text', async ({ page }) => {
   const nasuDialog = await openPostcard(page, '藤城清治美術館');
   const nasuLocation = nasuDialog.locator('.detail-location');

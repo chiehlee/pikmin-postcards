@@ -282,16 +282,49 @@ export async function setPostcardReadState(postcardId, isRead, {
   snapshotDirectory,
   databasePath = defaultDatabasePath,
 } = {}) {
-  if (typeof isRead !== "boolean") throw httpError(400, "is_read 必須是布林值");
+  return updatePostcard(postcardId, { is_read: isRead }, { snapshotDirectory, databasePath });
+}
+
+export async function updatePostcard(postcardId, changes = {}, {
+  snapshotDirectory,
+  databasePath = defaultDatabasePath,
+} = {}) {
+  if (!changes || typeof changes !== "object" || Array.isArray(changes)) {
+    throw httpError(400, "請提供有效的明信片更新內容");
+  }
+  const hasReadState = Object.hasOwn(changes, "is_read");
+  const hasPoiName = Object.hasOwn(changes, "poi_name");
+  if (!hasReadState && !hasPoiName) throw httpError(400, "請提供要更新的明信片名稱或閱讀狀態");
+  if (hasReadState && typeof changes.is_read !== "boolean") throw httpError(400, "is_read 必須是布林值");
+  const nextPoiName = hasPoiName ? normalizedPostcardName(changes.poi_name) : null;
   return serializeMutation(async () => {
     const snapshots = await loadOperationalSnapshots(databasePath, snapshotDirectory);
     const record = snapshots.postcards.postcards.find((item) => item.id === postcardId);
     if (!record || record.lifecycle?.deleted_at) throw httpError(404, `找不到有效明信片 ${postcardId}`);
-    if (record.reading?.is_read === isRead) return record;
-    record.reading = {
-      is_read: isRead,
-      read_at: isRead ? managementTimestamp() : null,
-    };
+    let changed = false;
+    let changedAt;
+    if (hasPoiName && record.poi_name !== nextPoiName) {
+      changedAt = managementTimestamp();
+      record.poi_name_history ??= [];
+      record.poi_name_history.push({
+        previous_name: record.poi_name,
+        next_name: nextPoiName,
+        reason: "manual-edit",
+        changed_at: changedAt,
+      });
+      record.poi_name = nextPoiName;
+      record.modified_at = changedAt;
+      changed = true;
+    }
+    if (hasReadState && record.reading?.is_read !== changes.is_read) {
+      changedAt ??= managementTimestamp();
+      record.reading = {
+        is_read: changes.is_read,
+        read_at: changes.is_read ? changedAt : null,
+      };
+      changed = true;
+    }
+    if (!changed) return record;
     await persistSnapshots(snapshots, { snapshotDirectory, databasePath });
     return record;
   });
@@ -1418,6 +1451,15 @@ function normalizedFriendName(value) {
   if (normalized.length > 80) throw httpError(400, "寄件者名稱不可超過 80 個字元。");
   if (/[\u0000-\u001f\u007f]/.test(normalized)) throw httpError(400, "寄件者名稱含有無效控制字元。");
   return normalized;
+}
+
+function normalizedPostcardName(value) {
+  if (typeof value !== "string") throw httpError(400, "poi_name 必須是文字");
+  const name = value.normalize("NFC").trim();
+  if (!name) throw httpError(400, "明信片名稱不可留白");
+  if (name.length > 240) throw httpError(400, "明信片名稱不可超過 240 個字元");
+  if (/\p{Cc}/u.test(name)) throw httpError(400, "明信片名稱不可包含控制字元");
+  return name;
 }
 
 function normalizedLikelyBaseArea(value) {

@@ -210,6 +210,12 @@ type Postcard = {
     recorded_at: string;
     job_id: string;
   }[];
+  poi_name_history?: {
+    previous_name: string;
+    next_name: string;
+    reason: 'manual-edit';
+    changed_at: string;
+  }[];
 };
 
 type GeocodeProvider = NonNullable<Postcard['location']['geocode']>['provider'];
@@ -472,6 +478,9 @@ export default function Home() {
   const [exactDuplicates, setExactDuplicates] = useState<ExactDuplicatePrompt[]>([]);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [postcardNameEditOpen, setPostcardNameEditOpen] = useState(false);
+  const [postcardEditName, setPostcardEditName] = useState('');
+  const [savingPostcardName, setSavingPostcardName] = useState(false);
   const [readingPostcardIds, setReadingPostcardIds] = useState<Set<string>>(() => new Set());
   const [reresearchOpen, setReresearchOpen] = useState(false);
   const [reresearchNote, setReresearchNote] = useState('');
@@ -489,6 +498,7 @@ export default function Home() {
   const [clock, setClock] = useState(() => Date.now());
   const researchTriggerRef = useRef<HTMLButtonElement | null>(null);
   const reresearchNoteRef = useRef<HTMLTextAreaElement | null>(null);
+  const postcardNameInputRef = useRef<HTMLInputElement | null>(null);
   const friendMoreTriggerRef = useRef<HTMLButtonElement | null>(null);
   const friendEditorTriggerRef = useRef<HTMLButtonElement | null>(null);
   const notifiedBatchesRef = useRef<Set<string>>(new Set());
@@ -650,6 +660,8 @@ export default function Home() {
     setMapLoadedFor(null);
     setResearchOpen(false);
     setDeleteConfirm(false);
+    setPostcardNameEditOpen(false);
+    setPostcardEditName('');
     setReresearchOpen(false);
     setReresearchNote('');
     if (navigation) setPostcardNavigation(navigation);
@@ -701,6 +713,8 @@ export default function Home() {
     setMapLoadedFor(null);
     setResearchOpen(false);
     setDeleteConfirm(false);
+    setPostcardNameEditOpen(false);
+    setPostcardEditName('');
     setReresearchOpen(false);
     setReresearchNote('');
     setPostcardNavigation(null);
@@ -887,10 +901,54 @@ export default function Home() {
 
   function toggleReresearch() {
     setDeleteConfirm(false);
+    setPostcardNameEditOpen(false);
+    setPostcardEditName('');
     setReresearchOpen((open) => {
       if (!open) window.requestAnimationFrame(() => reresearchNoteRef.current?.focus());
       return !open;
     });
+  }
+
+  function togglePostcardNameEdit() {
+    if (!active) return;
+    setDeleteConfirm(false);
+    setReresearchOpen(false);
+    setReresearchNote('');
+    setPostcardNameEditOpen((open) => {
+      if (open) {
+        setPostcardEditName('');
+        return false;
+      }
+      setPostcardEditName(active.poi_name);
+      window.requestAnimationFrame(() => {
+        postcardNameInputRef.current?.focus();
+        postcardNameInputRef.current?.select();
+      });
+      return true;
+    });
+  }
+
+  async function savePostcardName(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!active) return;
+    const previousName = active.poi_name;
+    setSavingPostcardName(true);
+    setNotice(null);
+    try {
+      const payload = await responseJson<{ postcard: Postcard }>(await fetch(`/api/postcards/${encodeURIComponent(active.id)}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ poi_name: postcardEditName }),
+      }));
+      replacePostcardLocally(payload.postcard);
+      setPostcardNameEditOpen(false);
+      setPostcardEditName('');
+      notify(`已將「${previousName}」更正為「${payload.postcard.poi_name}」；舊名稱已保留在修改紀錄。`, 'success', '明信片名稱已更新');
+    } catch (error) {
+      notify(error instanceof Error ? error.message : '無法更新明信片名稱。', 'error', '名稱更新失敗');
+    } finally {
+      setSavingPostcardName(false);
+    }
   }
 
   async function startReresearch(event: FormEvent<HTMLFormElement>) {
@@ -2058,6 +2116,16 @@ export default function Home() {
                 <div className="postcard-management-actions">
                   <button
                     type="button"
+                    className="edit-action"
+                    onClick={togglePostcardNameEdit}
+                    disabled={savingPostcardName}
+                    aria-expanded={postcardNameEditOpen}
+                    aria-controls="postcard-name-form"
+                  >
+                    {postcardNameEditOpen ? '收合編輯' : '編輯名稱'}
+                  </button>
+                  <button
+                    type="button"
                     className="research-action"
                     onClick={toggleReresearch}
                     disabled={Boolean(activeJob)}
@@ -2066,10 +2134,34 @@ export default function Home() {
                   >
                     {activeJob ? `${managementStatusLabel(activeJob.status, activeJob.workflow)} · ${elapsedLabel(activeJob, clock)}` : reresearchOpen ? '收合再研究' : '再研究'}
                   </button>
-                  <button type="button" className="delete-action" onClick={() => setDeleteConfirm(true)} disabled={deleting}>
+                  <button type="button" className="delete-action" onClick={() => { setPostcardNameEditOpen(false); setReresearchOpen(false); setDeleteConfirm(true); }} disabled={deleting}>
                     刪除
                   </button>
                 </div>
+                {postcardNameEditOpen && (
+                  <form id="postcard-name-form" className="postcard-name-form" aria-label="編輯明信片名稱" onSubmit={savePostcardName}>
+                    <label htmlFor="postcard-name">明信片名稱</label>
+                    <p>修正遊戲畫面上的明信片名稱；研究定位、遊戲顯示地點與研究內容不會改變，舊名稱會保留在修改紀錄。</p>
+                    <input
+                      id="postcard-name"
+                      ref={postcardNameInputRef}
+                      value={postcardEditName}
+                      onChange={(event) => setPostcardEditName(event.target.value)}
+                      onFocus={(event) => event.currentTarget.select()}
+                      maxLength={240}
+                      autoComplete="off"
+                    />
+                    <div className="postcard-name-footer">
+                      <small>{postcardEditName.length.toLocaleString('zh-TW')} / 240</small>
+                      <div>
+                        <button type="button" onClick={() => { setPostcardNameEditOpen(false); setPostcardEditName(''); }} disabled={savingPostcardName}>取消</button>
+                        <button type="submit" className="confirm-postcard-name" disabled={savingPostcardName || !postcardEditName.trim()}>
+                          {savingPostcardName ? '保存中…' : '保存名稱'}
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                )}
                 {reresearchOpen && !activeJob && (
                   <form id="reresearch-note-form" className="reresearch-note-form" aria-label="補充再研究資訊" onSubmit={startReresearch}>
                     <label htmlFor="reresearch-note">補充你知道的事（選填）</label>
