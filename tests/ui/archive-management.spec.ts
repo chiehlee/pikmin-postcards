@@ -149,6 +149,7 @@ test('re-research uses the dedicated research section, shows elapsed time, then 
         ? {
           ...postcard,
           modified_at: '2030-01-02T03:04:05Z',
+          reading: { is_read: false, read_at: null },
           user_contributions: [{
             kind: 'reresearch_note',
             body: userNote,
@@ -193,6 +194,7 @@ test('re-research uses the dedicated research section, shows elapsed time, then 
   await page.getByLabel('排序方向').selectOption('asc');
   await page.getByPlaceholder('名稱、地點、故事或標籤').fill(targetName);
   const targetCard = page.locator('.postcard-card').filter({ hasText: targetName });
+  await expect(targetCard).toHaveAttribute('data-read-state', 'read');
   await targetCard.getByRole('button', { name: `查看 ${targetName}` }).click();
   const dialog = page.locator('.detail-modal');
   await dialog.getByRole('button', { name: '再研究', exact: true }).click();
@@ -212,12 +214,15 @@ test('re-research uses the dedicated research section, shows elapsed time, then 
   await expect(job).toContainText(/AI 研究中 · 00:00:0[4-9]/);
   await expect(queue).toBeHidden({ timeout: 8_000 });
   await expect(dialog.locator('.research-summary-copy')).toHaveText('Playwright 驗證：再研究完成後已從管理 API 更新。');
+  await expect(dialog.getByRole('region', { name: '閱讀狀態' }).getByText('未讀', { exact: true })).toBeVisible();
+  await expect(targetCard).toHaveAttribute('data-read-state', 'unread');
   const history = dialog.locator('.user-contribution-history');
   await history.getByText('已保存的使用者補充（1）').click();
   await expect(history).toContainText(userNote);
   await expect(page.getByLabel('排序', { exact: true })).toHaveValue('modified_at');
   await expect(page.getByLabel('排序方向')).toHaveValue('desc');
   await page.keyboard.press('Escape');
+  await expect(targetCard).toHaveAttribute('data-read-state', 'unread');
   await page.getByPlaceholder('名稱、地點、故事或標籤').fill('');
   await expect(page.locator('.postcard-card').first()).toHaveAttribute('data-postcard-id', postcardId);
 });
@@ -280,6 +285,61 @@ test('new postcard closes the form after the job starts and moves progress into 
   await expect(queue).toBeHidden({ timeout: 8_000 });
   await expect(page.getByRole('dialog', { name: 'Playwright 新增明信片' })).toBeVisible();
   expect(receivedUpload).toBe(true);
+});
+
+test('a failed full research leaves its metadata postcard visible and available for retry', async ({ page }) => {
+  let metadataSaved = false;
+  let polls = 0;
+  await mockArchive(page, (payload) => {
+    if (!metadataSaved) return payload;
+    const postcard = {
+      ...payload.postcards[0],
+      id: 'pc-ui-staged',
+      poi_name: '研究失敗但已建檔',
+      modified_at: '2030-01-01T00:00:00Z',
+      reading: { is_read: false, read_at: null },
+      research: { ...(payload.postcards[0].research as Record<string, unknown>), status: 'metadata_only_pending_research' },
+    };
+    return { ...payload, postcards: [...payload.postcards, postcard] };
+  });
+  const startedAt = new Date().toISOString();
+  const job = {
+    id: 'job-ui-staged', kind: 'add', workflow: 'full_research', batch_id: 'batch-ui-staged', input_label: 'staged.png',
+    provider: 'openai_api', model: 'test-model', reasoning_effort: 'none',
+    created_at: startedAt, started_at: startedAt, completed_at: null,
+  };
+  await page.route('**/api/postcards', async (route) => {
+    if (route.request().method() !== 'POST') return route.fallback();
+    const queued = { ...job, phase: 'metadata', status: 'queued', postcard_id: null, error: null };
+    await route.fulfill({ status: 202, json: { batch_id: 'batch-ui-staged', total: 1, jobs: [queued], job: queued, duplicates: [], failures: [] } });
+  });
+  await page.route('**/api/jobs/job-ui-staged', async (route) => {
+    polls += 1;
+    metadataSaved = polls >= 2;
+    const failed = polls >= 3;
+    await route.fulfill({ json: { job: {
+      ...job,
+      phase: metadataSaved ? 'research' : 'metadata',
+      status: failed ? 'failed' : metadataSaved ? 'queued' : 'in_progress',
+      postcard_id: metadataSaved ? 'pc-ui-staged' : null,
+      error: failed ? '模擬研究服務錯誤' : null,
+    } } });
+  });
+
+  await page.goto('/');
+  await page.getByRole('button', { name: /新增明信片/ }).click();
+  const form = page.getByRole('dialog', { name: '新增明信片' });
+  await form.getByRole('radio', { name: /^新增明信片並研究/ }).check();
+  await form.locator('input[type="file"]').setInputFiles(path.resolve('public/og.png'));
+  await form.getByRole('button', { name: '新增 1 張明信片並研究' }).click();
+
+  const card = page.locator('.postcard-card[data-postcard-id="pc-ui-staged"]');
+  await expect(card).toBeVisible({ timeout: 8_000 });
+  await expect(card).toContainText('待研究');
+  await expect(page.getByRole('status')).toContainText('模擬研究服務錯誤', { timeout: 8_000 });
+  await expect(page.getByRole('status')).toContainText('明信片已建檔，可在收藏檔案中按「再研究」');
+  await card.getByRole('button', { name: '查看 研究失敗但已建檔' }).click();
+  await expect(page.getByRole('dialog', { name: '研究失敗但已建檔' }).getByRole('button', { name: '再研究', exact: true })).toBeVisible();
 });
 
 test('byte-identical upload pauses before AI and continues only as reresearch of the existing postcard', async ({ page }) => {

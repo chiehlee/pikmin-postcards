@@ -30,9 +30,10 @@ test('archive controls default to last-modified time and restore every dropdown 
   const senderFilter = page.locator('.filters label').filter({ hasText: /^來源／寄件人/ }).locator('select');
   const countryFilter = page.locator('.filters label').filter({ hasText: /^國家／地區/ }).locator('select');
   const statusFilter = page.locator('.filters label').filter({ hasText: /^收藏判斷/ }).locator('select');
+  const readingFilter = page.locator('.filters label').filter({ hasText: /^閱讀狀態/ }).locator('select');
   const sortField = page.getByLabel('排序', { exact: true });
   const sortDirection = page.getByLabel('排序方向');
-  const restoreDefaults = page.getByRole('button', { name: '恢復預設：來源、國家、收藏判斷與排序' });
+  const restoreDefaults = page.getByRole('button', { name: '恢復預設：來源、國家、收藏判斷、閱讀狀態與排序' });
 
   await expect(sortField.locator('option')).toHaveText([
     '評分',
@@ -45,6 +46,7 @@ test('archive controls default to last-modified time and restore every dropdown 
   await expect(senderFilter).toHaveValue('all');
   await expect(countryFilter).toHaveValue('all');
   await expect(statusFilter).toHaveValue('all');
+  await expect(readingFilter).toHaveValue('all');
   await expect(restoreDefaults).toBeEnabled();
   await restoreDefaults.click();
   await expect(page.locator('.management-notice')).toHaveCount(0);
@@ -66,11 +68,13 @@ test('archive controls default to last-modified time and restore every dropdown 
   await senderFilter.selectOption('self-found');
   await countryFilter.selectOption({ label: '日本' });
   await statusFilter.selectOption('candidate');
+  await readingFilter.selectOption('unread');
   await sortDirection.selectOption('asc');
   await restoreDefaults.click();
   await expect(senderFilter).toHaveValue('all');
   await expect(countryFilter).toHaveValue('all');
   await expect(statusFilter).toHaveValue('all');
+  await expect(readingFilter).toHaveValue('all');
   await expect(sortField).toHaveValue('modified_at');
   await expect(sortDirection).toHaveValue('desc');
   await expect(restoreDefaults).toBeEnabled();
@@ -132,6 +136,50 @@ test('unread postcards use a distinct frame, become read when opened, and can be
 
   await card.getByRole('button', { name: `查看 ${postcard.poi_name}` }).click();
   await expect.poll(() => updates).toEqual([true, false, true]);
+});
+
+test('reading filter combines with search and updates when an unread postcard is opened', async ({ page }) => {
+  const payload = createArchiveFixture();
+  const firstUnread = payload.postcards[0];
+  const secondUnread = payload.postcards[1];
+  firstUnread.reading = { is_read: false, read_at: null };
+  secondUnread.reading = { is_read: false, read_at: null };
+  await page.unroute('**/api/archive');
+  await page.route('**/api/archive', (route) => route.fulfill({ json: payload }));
+  await page.route('**/api/postcards/*', async (route) => {
+    if (route.request().method() !== 'PATCH') return route.fallback();
+    const body = route.request().postDataJSON() as { is_read: boolean };
+    firstUnread.reading = { is_read: body.is_read, read_at: body.is_read ? '2026-09-03T04:05:06Z' : null };
+    await route.fulfill({ json: { postcard: firstUnread } });
+  });
+
+  await page.goto('/');
+  const readingFilter = page.locator('.filters label').filter({ hasText: /^閱讀狀態/ }).locator('select');
+  const cards = page.locator('.postcard-card');
+  await page.getByLabel('選擇頁數').selectOption('2');
+  await readingFilter.selectOption('unread');
+  await expect(page.getByText('顯示 1–2，共 2 / 65 張')).toBeVisible();
+  await expect(cards).toHaveCount(2);
+  await expect(cards.first()).toHaveAttribute('data-read-state', 'unread');
+
+  await readingFilter.selectOption('read');
+  await expect(page.getByText('顯示 1–60，共 63 / 65 張')).toBeVisible();
+  await expect(cards).toHaveCount(60);
+
+  await page.getByPlaceholder('名稱、地點、故事或標籤').fill(firstUnread.poi_name);
+  await expect(cards).toHaveCount(0);
+  await readingFilter.selectOption('unread');
+  await expect(cards).toHaveCount(1);
+  await cards.first().getByRole('button', { name: `查看 ${firstUnread.poi_name}` }).click();
+  await expect(page.locator('.detail-modal')).toBeVisible();
+  await expect(cards).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await page.getByLabel('排序', { exact: true }).selectOption('found_date');
+  await page.getByRole('button', { name: '清除篩選' }).click();
+  await expect(readingFilter).toHaveValue('all');
+  await expect(page.getByPlaceholder('名稱、地點、故事或標籤')).toHaveValue('');
+  await expect(page.getByLabel('排序', { exact: true })).toHaveValue('found_date');
+  await expect(page.getByText('顯示 1–60，共 65 / 65 張')).toBeVisible();
 });
 
 test('a postcard name can be corrected without changing its preserved game location', async ({ page }) => {

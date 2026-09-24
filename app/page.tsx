@@ -55,6 +55,7 @@ type ManagementJob = {
   id: string;
   kind: 'add' | 'reresearch';
   workflow: AddWorkflow | 'full_research';
+  phase?: 'metadata' | 'research';
   batch_id: string | null;
   input_label: string | null;
   has_user_note?: boolean;
@@ -363,8 +364,8 @@ function trapDialogFocus(event: ReactKeyboardEvent<HTMLElement>) {
   }
 }
 
-function managementStatusLabel(status: ManagementJob['status'], workflow: ManagementJob['workflow'] = 'full_research') {
-  if (workflow === 'metadata_only') {
+function managementStatusLabel(status: ManagementJob['status'], workflow: ManagementJob['workflow'] = 'full_research', phase: ManagementJob['phase'] = 'research') {
+  if (phase === 'metadata' || workflow === 'metadata_only') {
     if (status === 'queued') return '等待辨識';
     if (status === 'in_progress') return 'AI 畫面辨識中';
     if (status === 'applying') return '建立收藏卡';
@@ -447,6 +448,7 @@ export default function Home() {
   const [senderFilter, setSenderFilter] = useState('all');
   const [country, setCountry] = useState('all');
   const [status, setStatus] = useState<'all' | Status>('all');
+  const [readingFilter, setReadingFilter] = useState<'all' | 'unread' | 'read'>('all');
   const [sortField, setSortField] = useState<SortField>(defaultSortField);
   const [sortDirection, setSortDirection] = useState<SortDirection>(defaultSortDirection);
   const [distanceOrigin, setDistanceOrigin] = useState<DistanceOrigin | null>(null);
@@ -572,6 +574,10 @@ export default function Home() {
             const batchSize = payload.job.batch_id
               ? jobs.filter((job) => job.batch_id === payload.job.batch_id).length
               : 1;
+            if (!current.postcard_id && payload.job.postcard_id && payload.job.status !== 'completed') {
+              await refreshArchive();
+              if (cancelled) return;
+            }
             if (payload.job.status === 'completed') {
               if (payload.job.kind === 'reresearch') {
                 setSortField(defaultSortField);
@@ -603,9 +609,9 @@ export default function Home() {
               setJobs((items) => items.map((item) => item.id === payload.job.id ? payload.job : item));
               if (payload.job.status === 'failed' && batchSize === 1) {
                 notify(
-                  payload.job.error || 'AI 工作失敗。',
+                  `${payload.job.error || 'AI 工作失敗。'}${payload.job.postcard_id ? ' 明信片已建檔，可在收藏檔案中按「再研究」。' : ''}`,
                   'error',
-                  payload.job.workflow === 'metadata_only' ? '快速建檔失敗' : '研究失敗',
+                  payload.job.phase === 'metadata' ? '畫面辨識失敗' : '研究失敗',
                 );
               }
             }
@@ -1008,7 +1014,9 @@ export default function Home() {
       ));
       setJobs((items) => items.map((item) => item.id === payload.job.id ? payload.job : item));
       notify(
-        'AI 工作已停止；原圖、intake 與工作紀錄仍保留，可以稍後重新送出。',
+        payload.job.postcard_id
+          ? 'AI 工作已停止；原圖、intake 與工作紀錄仍保留。明信片已建檔，可從收藏檔案按「再研究」。'
+          : 'AI 工作已停止；原圖、intake 與工作紀錄仍保留，可以稍後重新送出。',
         'success',
         'AI 工作已中止',
       );
@@ -1228,6 +1236,7 @@ export default function Home() {
     setSenderFilter('all');
     setCountry('all');
     setStatus('all');
+    setReadingFilter('all');
     setSortField(defaultSortField);
     setSortDirection(defaultSortDirection);
     setPage(1);
@@ -1262,6 +1271,7 @@ export default function Home() {
       })
       .filter((postcard) => country === 'all' || (postcard.location.country ?? '未正規化') === country)
       .filter((postcard) => status === 'all' || postcard.curation.status === status)
+      .filter((postcard) => readingFilter === 'all' || postcardIsRead(postcard) === (readingFilter === 'read'))
       .filter((postcard) => {
         if (!normalizedQuery) return true;
         return [
@@ -1284,7 +1294,7 @@ export default function Home() {
       direction: sortDirection,
       origin: distanceOrigin,
     });
-  }, [country, distanceOrigin, orphanedSenders, postcards, query, senderFilter, sortDirection, sortField, status]);
+  }, [country, distanceOrigin, orphanedSenders, postcards, query, readingFilter, senderFilter, sortDirection, sortField, status]);
 
   const friendGroups = useMemo(() => {
     return friendProfiles.map((profile) => ({
@@ -1329,7 +1339,7 @@ export default function Home() {
     ? postcardNavigation.ids.indexOf(active.id)
     : -1;
   const activeJob = active
-    ? jobs.find((job) => job.kind === 'reresearch' && job.postcard_id === active.id && !isTerminalJob(job))
+    ? jobs.find((job) => job.postcard_id === active.id && !isTerminalJob(job))
     : null;
   const runningJobs = useMemo(
     () => jobs.filter((job) => !isTerminalJob(job)),
@@ -1464,7 +1474,7 @@ export default function Home() {
               <p className="eyebrow">ACTIVE INTAKE &amp; RESEARCH</p>
               <h2 id="research-queue-title">處理中的明信片</h2>
             </div>
-            <p>{runningJobs.length} 項進行中 · 快速建檔與完整研究都會在完成後自動移入收藏檔案</p>
+            <p>{runningJobs.length} 項進行中 · 新增並研究會先保存畫面資訊，再補完完整研究</p>
           </div>
           <div className="research-job-grid">
             {runningJobs.map((job) => {
@@ -1490,11 +1500,11 @@ export default function Home() {
                     <span className="research-job-kind">{managementKindLabel(job)}</span>
                   </div>
                   <div className="research-job-copy">
-                    <span className="research-job-status"><i aria-hidden="true" />{managementStatusLabel(job.status, job.workflow)}</span>
+                    <span className="research-job-status"><i aria-hidden="true" />{managementStatusLabel(job.status, job.workflow, job.phase)}</span>
                     <h3>{postcard?.poi_name ?? '名稱辨識中'}</h3>
                     <p>{postcard ? `發現日期 · ${compactDate(postcard.found_date)}` : `發現日期 · 辨識中${job.input_label ? ` · ${job.input_label}` : ''}`}</p>
-                    <small>{aiProviderLabel(job.provider)} · {job.model} · {reasoningEffortLabel(job.reasoning_effort)}{job.has_user_note ? ' · 含使用者補充' : ''} · {managementStatusLabel(job.status, job.workflow)} · {elapsedLabel(job, clock)}</small>
-                    <div className="research-job-progress" role="progressbar" aria-label={`${postcard?.poi_name ?? '新明信片'}處理進度`} aria-valuetext={managementStatusLabel(job.status, job.workflow)}>
+                    <small>{aiProviderLabel(job.provider)} · {job.model} · {reasoningEffortLabel(job.reasoning_effort)}{job.has_user_note ? ' · 含使用者補充' : ''} · {managementStatusLabel(job.status, job.workflow, job.phase)} · {elapsedLabel(job, clock)}</small>
+                    <div className="research-job-progress" role="progressbar" aria-label={`${postcard?.poi_name ?? '新明信片'}處理進度`} aria-valuetext={managementStatusLabel(job.status, job.workflow, job.phase)}>
                       <span />
                     </div>
                     {job.status !== 'applying' ? (
@@ -1565,6 +1575,14 @@ export default function Home() {
               </select>
             </label>
             <label>
+              <span>閱讀狀態</span>
+              <select value={readingFilter} onChange={(event) => { setReadingFilter(event.target.value as 'all' | 'unread' | 'read'); setPage(1); }}>
+                <option value="all">全部</option>
+                <option value="unread">未讀</option>
+                <option value="read">已讀</option>
+              </select>
+            </label>
+            <label>
               <span>排序</span>
               <select aria-label="排序" value={sortField} onChange={(event) => changeSortField(event.target.value as SortField)}>
                 <option value="rating">評分</option>
@@ -1589,7 +1607,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={resetArchiveControls}
-                aria-label="恢復預設：來源、國家、收藏判斷與排序"
+                aria-label="恢復預設：來源、國家、收藏判斷、閱讀狀態與排序"
               >
                 <span aria-hidden="true">↺</span> 恢復預設
               </button>
@@ -1673,7 +1691,7 @@ export default function Home() {
           ) : (
             <div className="empty-state">
               <strong>沒有符合條件的明信片</strong>
-              <button onClick={() => { setQuery(''); setSenderFilter('all'); setCountry('all'); setStatus('all'); setPage(1); }}>清除篩選</button>
+              <button onClick={() => { setQuery(''); setSenderFilter('all'); setCountry('all'); setStatus('all'); setReadingFilter('all'); setPage(1); }}>清除篩選</button>
             </div>
           )}
 
@@ -2132,7 +2150,7 @@ export default function Home() {
                     aria-expanded={reresearchOpen}
                     aria-controls="reresearch-note-form"
                   >
-                    {activeJob ? `${managementStatusLabel(activeJob.status, activeJob.workflow)} · ${elapsedLabel(activeJob, clock)}` : reresearchOpen ? '收合再研究' : '再研究'}
+                    {activeJob ? `${managementStatusLabel(activeJob.status, activeJob.workflow, activeJob.phase)} · ${elapsedLabel(activeJob, clock)}` : reresearchOpen ? '收合再研究' : '再研究'}
                   </button>
                   <button type="button" className="delete-action" onClick={() => { setPostcardNameEditOpen(false); setReresearchOpen(false); setDeleteConfirm(true); }} disabled={deleting}>
                     刪除
@@ -2446,7 +2464,7 @@ export default function Home() {
                   />
                   <span>
                     <strong>新增明信片並研究</strong>
-                    <small>每張圖片都建立完整背景研究工作，包含定位、故事、來源、評分、參考圖片與有限關聯。</small>
+                    <small>先辨識名稱等畫面資訊並建檔，再研究定位、故事、來源、評分、參考圖片與有限關聯；研究失敗仍可再研究。</small>
                   </span>
                 </label>
               </fieldset>

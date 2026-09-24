@@ -348,6 +348,12 @@ export async function startReresearchJob(postcardId, { userNote: rawUserNote = n
   const database = await operationalDatabase();
   let job;
   try {
+    const activeJob = database.prepare(`
+      SELECT id FROM ai_jobs
+      WHERE postcard_id = ? AND status IN ('queued', 'in_progress', 'applying')
+      LIMIT 1
+    `).get(postcardId);
+    if (activeJob) throw httpError(409, "這張明信片已有研究工作進行中；請等候完成或先中止工作");
     const candidates = relatedCandidates(database, postcard);
     const skill = await readFile(skillPath, "utf8");
     const prompt = buildResearchPrompt({ kind: "reresearch", postcard, userNote, relatedCandidates: candidates });
@@ -456,15 +462,14 @@ export async function startAddJob({
     "圖片已安全保存在本機 intake；完成 AI provider 設定後可再次送出分析",
     researchProvider,
   );
-  const prompt = workflow === "metadata_only"
-    ? buildMetadataPrompt({ intakeNote: note })
-    : buildResearchPrompt({ kind: "add", intakeNote: note, relatedCandidates: [] });
+  const prompt = buildMetadataPrompt({ intakeNote: note });
   const jobDatabase = await operationalDatabase();
   let job;
   try {
     job = insertJob(jobDatabase, {
       kind: "add",
       workflow,
+      phase: "metadata",
       batchId,
       inputLabel,
       postcardId: null,
@@ -473,7 +478,8 @@ export async function startAddJob({
       prompt,
       provider: readyResearchProvider.provider,
       model: readyResearchProvider.model,
-      reasoningEffort: workflow === "metadata_only" ? metadataReasoningEffort : readyResearchProvider.reasoning_effort,
+      reasoningEffort: metadataReasoningEffort,
+      userNote: workflow === "full_research" ? normalizeUserContribution(note) : null,
     });
   } finally {
     jobDatabase.close();
@@ -520,7 +526,7 @@ export async function getJob(jobId, { refresh = true } = {}) {
   }
 
   try {
-    const result = job.workflow === "metadata_only"
+    const result = job.phase === "metadata"
       ? extractMetadataResult(response)
       : extractResearchResult(response);
     return await serializeMutation(() => applyCompletedJob(job.id, result));
@@ -576,6 +582,7 @@ export function publicJob(job) {
     id: job.id,
     kind: job.kind,
     workflow: job.workflow,
+    phase: job.phase,
     batch_id: job.batch_id,
     input_label: job.input_label,
     has_user_note: Boolean(job.user_note),
@@ -650,7 +657,7 @@ async function dispatchJob(job, {
         startedAt: new Date().toISOString(),
       }, { allowedStatuses: ["queued"] });
       if (started.status === "cancelled") return started;
-      const runner = job.workflow === "metadata_only" ? runLocalCodexMetadata : runLocalCodexResearch;
+      const runner = job.phase === "metadata" ? runLocalCodexMetadata : runLocalCodexResearch;
       const result = await runner({
         command: codexCommand,
         model,
@@ -671,7 +678,7 @@ async function dispatchJob(job, {
     const beforeDispatch = await getJob(job.id, { refresh: false });
     if (beforeDispatch.status === "cancelled") return beforeDispatch;
     const imageBytes = await readFile(imagePath);
-    const response = job.workflow === "metadata_only"
+    const response = job.phase === "metadata"
       ? await createBackgroundMetadata({
           apiKey,
           model,
@@ -727,12 +734,37 @@ async function applyCompletedJob(jobId, result) {
   jobDatabase.close();
   if (!row) throw new Error(`找不到工作 ${jobId}`);
   const completedAt = secondPrecisionTimestamp(new Date().toISOString());
-  const applied = row.kind === "reresearch"
-    ? await applyReresearch(snapshots, row, result, completedAt)
-    : row.workflow === "metadata_only"
-      ? await applyMetadataAdd(snapshots, row, result)
+  const applied = row.phase === "metadata"
+    ? await applyMetadataAdd(snapshots, row, result)
+    : row.kind === "reresearch" || row.postcard_id
+      ? await applyReresearch(snapshots, row, result, completedAt)
       : await applyAdd(snapshots, row, result);
   await persistSnapshots(snapshots);
+  if (row.kind === "add" && row.workflow === "full_research" && row.phase === "metadata") {
+    const prompt = buildResearchPrompt({
+      kind: "reresearch",
+      postcard: applied,
+      intakeNote: row.user_note ?? "",
+      relatedCandidates: relatedCandidatesFromSnapshots(snapshots, applied),
+    });
+    let next = await updateJob(jobId, {
+      status: "queued",
+      phase: "research",
+      postcardId: applied.id,
+      prompt,
+      responseId: null,
+      result: null,
+      startedAt: null,
+    }, { allowedStatuses: ["applying"] });
+    const researchProvider = await requireResearchProvider();
+    next = await updateJob(jobId, { reasoningEffort: researchProvider.reasoning_effort });
+    queueJobDispatch(next, {
+      ...researchProvider,
+      imagePath: path.join(projectRoot, `public${applied.asset.path}`),
+      mediaType: applied.asset.media_type ?? "image/png",
+    });
+    return next;
+  }
   await updateJob(jobId, {
     status: "completed",
     postcardId: applied.id,
@@ -811,6 +843,7 @@ async function applyReresearch(snapshots, job, result, completedAt) {
       result.avatar_generation = await ensureFriendAvatars(snapshots, { affectedNames: [record.sender] });
     }
   }
+  record.reading = { is_read: false, read_at: null };
   return record;
 }
 
@@ -1276,6 +1309,7 @@ async function loadOperationalSnapshots(databasePath = defaultDatabasePath, snap
 function insertJob(database, {
   kind,
   workflow = "full_research",
+  phase = workflow === "metadata_only" ? "metadata" : "research",
   batchId = null,
   inputLabel = null,
   postcardId,
@@ -1293,13 +1327,14 @@ function insertJob(database, {
   const id = `job-${randomUUID()}`;
   database.prepare(`
     INSERT INTO ai_jobs (
-      id, kind, workflow, batch_id, input_label, user_note, status, postcard_id, intake_sha256, provider, model, reasoning_effort, skill_path, skill_sha256,
+      id, kind, workflow, phase, batch_id, input_label, user_note, status, postcard_id, intake_sha256, provider, model, reasoning_effort, skill_path, skill_sha256,
       prompt, result_json, created_at, started_at, updated_at, completed_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     id,
     kind,
     workflow,
+    phase,
     batchId,
     inputLabel,
     userNote,
@@ -1328,11 +1363,14 @@ async function updateJob(id, fields, { allowedStatuses = null } = {}) {
     if (!current) throw new Error(`找不到工作 ${id}`);
     const next = {
       status: fields.status ?? current.status,
+      phase: fields.phase ?? current.phase,
       postcardId: fields.postcardId ?? current.postcard_id,
-      responseId: fields.responseId ?? current.openai_response_id,
-      result: fields.result ?? current.result,
+      responseId: Object.hasOwn(fields, "responseId") ? fields.responseId : current.openai_response_id,
+      result: Object.hasOwn(fields, "result") ? fields.result : current.result,
       error: Object.hasOwn(fields, "error") ? fields.error : current.error,
-      startedAt: fields.startedAt ?? current.started_at,
+      prompt: fields.prompt ?? current.prompt,
+      reasoningEffort: fields.reasoningEffort ?? current.reasoning_effort,
+      startedAt: Object.hasOwn(fields, "startedAt") ? fields.startedAt : current.started_at,
       completedAt: fields.completedAt ?? current.completed_at,
     };
     const statusGuard = allowedStatuses?.length
@@ -1340,15 +1378,18 @@ async function updateJob(id, fields, { allowedStatuses = null } = {}) {
       : "";
     database.prepare(`
       UPDATE ai_jobs SET
-        status = ?, postcard_id = ?, openai_response_id = ?, result_json = ?, error = ?,
-        started_at = ?, updated_at = ?, completed_at = ?
+        status = ?, phase = ?, postcard_id = ?, openai_response_id = ?, result_json = ?, error = ?,
+        prompt = ?, reasoning_effort = ?, started_at = ?, updated_at = ?, completed_at = ?
       WHERE id = ?${statusGuard}
     `).run(
       next.status,
+      next.phase,
       next.postcardId,
       next.responseId,
       next.result == null ? null : JSON.stringify(next.result),
       next.error,
+      next.prompt,
+      next.reasoningEffort,
       next.startedAt,
       new Date().toISOString(),
       next.completedAt,
@@ -1388,6 +1429,7 @@ function normalizeJobRow(row) {
   return {
     ...row,
     workflow: row.workflow ?? "full_research",
+    phase: row.phase ?? (row.workflow === "metadata_only" ? "metadata" : "research"),
     result: row.result_json ? JSON.parse(row.result_json) : null,
   };
 }

@@ -178,7 +178,7 @@ button { color: inherit; }
 .friend-expand-all:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(35,91,67,.13); }
 .friend-expand-all span { font-size: 14px; line-height: 1; }
 
-.filters { display: grid; grid-template-columns: minmax(250px, 1.6fr) repeat(6, minmax(105px, .55fr)); gap: 10px; margin-bottom: 35px; }
+.filters { display: grid; grid-template-columns: minmax(250px, 1.6fr) repeat(7, minmax(105px, .55fr)); gap: 10px; margin-bottom: 35px; }
 .filters label, .sort-reset { display: flex; flex-direction: column; gap: 7px; }
 .filters label > span, .sort-reset > span { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
 .filters input, .filters select { width: 100%; height: 45px; padding: 0 13px; border: 1px solid var(--line); border-radius: 5px; outline: none; background: rgba(255,255,255,.62); color: var(--ink); }
@@ -589,7 +589,7 @@ footer p { margin: 0; color: var(--ink); font-family: Georgia, serif; }
 .source-list a span { color: var(--muted); font: 10px Georgia, serif; }
 .hash { overflow-wrap: anywhere; margin: 22px 0 0; color: #9a9f9b; font: 8px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
 
-@media (max-width: 1120px) {
+@media (max-width: 1200px) {
   .postcard-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .filters { grid-template-columns: repeat(3, 1fr); }
   .search-box { grid-column: 1 / -1; }

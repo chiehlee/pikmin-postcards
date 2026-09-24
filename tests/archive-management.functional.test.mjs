@@ -101,6 +101,7 @@ test("GPT-5.6 job migrations preserve old jobs and accept new reasoning and canc
   const database = await openDatabase(databasePath);
   try {
     assert.equal(database.prepare("SELECT reasoning_effort FROM ai_jobs WHERE id = 'legacy-minimal'").get().reasoning_effort, "minimal");
+    assert.equal(database.prepare("SELECT phase FROM ai_jobs WHERE id = 'legacy-minimal'").get().phase, "metadata");
     const insert = database.prepare(`
       INSERT INTO ai_jobs (
         id, kind, status, model, skill_path, skill_sha256, prompt, created_at,
@@ -131,6 +132,7 @@ test("GPT-5.6 job migrations preserve old jobs and accept new reasoning and canc
     assert.ok(database.prepare("SELECT 1 FROM schema_migrations WHERE version = 18").get());
     assert.ok(database.prepare("SELECT 1 FROM schema_migrations WHERE version = 19").get());
     assert.ok(database.prepare("SELECT 1 FROM schema_migrations WHERE version = 20").get());
+    assert.ok(database.prepare("SELECT 1 FROM schema_migrations WHERE version = 21").get());
     const postcardColumns = new Set(database.prepare("PRAGMA table_info(postcards)").all().map((column) => column.name));
     assert.ok(postcardColumns.has("location_geocode_status"));
     assert.ok(postcardColumns.has("location_geocode_document_json"));
