@@ -6,7 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { createEmptySnapshots, writeSnapshots } from "./fixtures/archive-snapshots.mjs";
+import { createSyntheticSnapshots, writeSnapshots } from "./fixtures/archive-snapshots.mjs";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -31,9 +31,15 @@ test("production site serves dialogs, keyless maps, and canonical assets", { tim
   const port = await availablePort();
   const origin = `http://127.0.0.1:${port}`;
   const temporaryDirectory = await mkdtemp(path.join(os.tmpdir(), "pikmin-site-test-"));
-  const snapshotDirectory = path.join(temporaryDirectory, "data");
+  const snapshotDirectory = path.join(temporaryDirectory, "snapshots");
   const databasePath = path.join(temporaryDirectory, "archive.sqlite3");
-  await writeSnapshots(snapshotDirectory, createEmptySnapshots());
+  await writeSnapshots(snapshotDirectory, createSyntheticSnapshots());
+  const fixtureImageDirectory = path.join(temporaryDirectory, "images/fixtures");
+  await mkdir(fixtureImageDirectory, { recursive: true });
+  await Promise.all([
+    copyFile(path.join(projectRoot, "public/og.png"), path.join(fixtureImageDirectory, "pc-9001.png")),
+    copyFile(path.join(projectRoot, "public/og.png"), path.join(fixtureImageDirectory, "pc-9002.png")),
+  ]);
   const runtimeAssetDirectory = path.join(projectRoot, "public/images/runtime-test");
   const runtimeAsset = path.join(runtimeAssetDirectory, "post-build.png");
   const server = spawn(
@@ -51,6 +57,7 @@ test("production site serves dialogs, keyless maps, and canonical assets", { tim
       stdio: ["ignore", "pipe", "pipe"],
       env: {
         ...process.env,
+        PIKMIN_DATA_ROOT: temporaryDirectory,
         PIKMIN_DATABASE_PATH: databasePath,
         PIKMIN_SNAPSHOT_DIRECTORY: snapshotDirectory,
       },
@@ -90,8 +97,60 @@ test("production site serves dialogs, keyless maps, and canonical assets", { tim
     assert.equal(archiveResponse.status, 200);
     const archivePayload = await archiveResponse.json();
     assert.equal(archivePayload.api_version, 1);
-    assert.equal(archivePayload.postcards.length, 0);
+    assert.equal(archivePayload.postcards.length, 2);
+    assert.ok(archivePayload.postcards.every((postcard) => postcard.reading.is_read));
     assert.equal(Array.isArray(archivePayload.friends), true);
+
+    const postcardId = archivePayload.postcards[0].id;
+    const originalName = archivePayload.postcards[0].poi_name;
+    const originalLocation = structuredClone(archivePayload.postcards[0].location);
+    const nameResponse = await fetch(`${origin}/api/postcards/${encodeURIComponent(postcardId)}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json", origin },
+      body: JSON.stringify({ poi_name: "  圖  " }),
+    });
+    assert.equal(nameResponse.status, 200, await nameResponse.clone().text());
+    const namePayload = await nameResponse.json();
+    assert.equal(namePayload.postcard.poi_name, "圖");
+    assert.deepEqual(namePayload.postcard.location, originalLocation);
+    assert.deepEqual(namePayload.postcard.poi_name_history.at(-1), {
+      previous_name: originalName,
+      next_name: "圖",
+      reason: "manual-edit",
+      changed_at: namePayload.postcard.modified_at,
+    });
+
+    const invalidNameResponse = await fetch(`${origin}/api/postcards/${encodeURIComponent(postcardId)}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json", origin },
+      body: JSON.stringify({ poi_name: "   " }),
+    });
+    assert.equal(invalidNameResponse.status, 400);
+
+    const unreadResponse = await fetch(`${origin}/api/postcards/${encodeURIComponent(postcardId)}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json", origin },
+      body: JSON.stringify({ is_read: false }),
+    });
+    assert.equal(unreadResponse.status, 200, await unreadResponse.clone().text());
+    const unreadPayload = await unreadResponse.json();
+    assert.deepEqual(unreadPayload.postcard.reading, { is_read: false, read_at: null });
+
+    const refreshedArchive = await (await fetch(`${origin}/api/archive`)).json();
+    assert.deepEqual(
+      refreshedArchive.postcards.find((postcard) => postcard.id === postcardId).reading,
+      { is_read: false, read_at: null },
+    );
+
+    const readResponse = await fetch(`${origin}/api/postcards/${encodeURIComponent(postcardId)}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json", origin },
+      body: JSON.stringify({ is_read: true }),
+    });
+    assert.equal(readResponse.status, 200, await readResponse.clone().text());
+    const readPayload = await readResponse.json();
+    assert.equal(readPayload.postcard.reading.is_read, true);
+    assert.match(readPayload.postcard.reading.read_at, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
 
     const clientPaths = [...html.matchAll(/(?:src|href)="([^"]+\.js)"/g)]
       .map((match) => match[1]);

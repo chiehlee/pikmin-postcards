@@ -20,18 +20,54 @@ export async function geocodeFinalLocation(location, {
   respectRateLimit = endpoint === defaultEndpoint,
   now = () => new Date(),
 } = {}) {
-  const query = researchedLocationQuery(location);
-  if (!query) return unresolvedGeocode("研究地址為空，無法解析座標");
-  const result = await searchNominatim(query, {
-    countryCode: location?.country_code,
-    language: location?.language,
-    fetchImpl,
-    endpoint,
-    userAgent,
-    respectRateLimit,
-  });
-  if (!result) return unresolvedGeocode(`找不到「${query}」的座標`, query);
-  return resolvedNominatimGeocode({ result, query, precision: location?.precision, now });
+  const candidates = geocodeQueryCandidates(location);
+  if (!candidates.length) return unresolvedGeocode("研究地址為空，無法解析座標");
+  for (const query of candidates) {
+    const result = await searchNominatim(query, {
+      countryCode: location?.country_code,
+      language: location?.language,
+      fetchImpl,
+      endpoint,
+      userAgent,
+      respectRateLimit,
+    });
+    if (result) {
+      return resolvedNominatimGeocode({
+        result,
+        query,
+        precision: addressPrecisionFromNominatim(result),
+        now,
+      });
+    }
+  }
+  return unresolvedGeocode(`找不到「${candidates[0]}」或較低解析度地點的座標`, candidates[0]);
+}
+
+export function geocodeQueryCandidates(location) {
+  const address = clean(researchedLocationQuery(location));
+  if (!address) return [];
+  const code = clean(location?.country_code)?.toUpperCase();
+  const candidates = [address];
+  if (code === "TW") {
+    candidates.push(
+      address.replace(/\d+(?:之\d+)?號.*$/u, ""),
+      address.match(/^(.+?(?:市|縣).+?(?:區|鄉|鎮|市))/u)?.[1],
+      address.match(/^(.+?(?:市|縣))/u)?.[1],
+    );
+  } else if (code === "JP") {
+    candidates.push(
+      address.replace(/(?:\d+丁目.*|\d+[−－-].*|\d+番地.*)$/u, ""),
+      address.match(/^(.+?[都道府県].+?[市区町村])/u)?.[1],
+      address.match(/^(.+?[都道府県])/u)?.[1],
+    );
+  } else {
+    const parts = address.split(", ").map(clean).filter(Boolean);
+    for (let index = 1; index < parts.length - 1; index += 1) {
+      candidates.push(parts.slice(index).join(", "));
+    }
+  }
+  candidates.push(clean(location?.endonym), clean(location?.raw), clean(location?.country_endonym));
+  return unique(candidates);
 }
 
 export async function searchAddressCandidate({ poiName, location }, options = {}) {

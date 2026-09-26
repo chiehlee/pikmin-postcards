@@ -42,6 +42,27 @@ type Connection = {
   reasoning_effort?: ReasoningEffort;
 };
 
+type CodexUsageWindow = {
+  id: 'five_hour' | 'weekly' | string;
+  window_duration_minutes: number;
+  used_percent: number;
+  remaining_percent: number;
+  resets_at: string | null;
+};
+
+type CodexUsage = {
+  available: boolean;
+  source?: 'codex_app_server';
+  checked_at?: string;
+  plan_type?: string | null;
+  windows?: CodexUsageWindow[];
+  spend_control_reached?: boolean;
+  rate_limit_reached_type?: string | null;
+  reset_credits_available?: number | null;
+  reason?: string;
+  message?: string;
+};
+
 type ReasoningEffort = 'none' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 
 async function responseJson<T>(response: Response): Promise<T> {
@@ -58,6 +79,31 @@ function sourceLabel(source: Settings['api_key_source']) {
 
 function providerLabel(provider: Settings['provider']) {
   return provider === 'local_codex' ? '本機 Codex' : 'OpenAI API Key';
+}
+
+function planLabel(plan: string | null | undefined) {
+  if (!plan) return 'ChatGPT';
+  return plan.charAt(0).toUpperCase() + plan.slice(1);
+}
+
+function usageWindowLabel(window: CodexUsageWindow) {
+  if (window.id === 'five_hour' || window.window_duration_minutes === 300) return '5 小時';
+  if (window.id === 'weekly' || window.window_duration_minutes === 10_080) return '每週';
+  if (window.window_duration_minutes % 1_440 === 0) return `${window.window_duration_minutes / 1_440} 天`;
+  if (window.window_duration_minutes % 60 === 0) return `${window.window_duration_minutes / 60} 小時`;
+  return `${window.window_duration_minutes} 分鐘`;
+}
+
+function resetTimeLabel(value: string | null) {
+  if (!value) return '重設時間未提供';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '重設時間未提供';
+  return `${new Intl.DateTimeFormat('zh-TW', {
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)} 重設`;
 }
 
 const reasoningLabels: Record<ReasoningEffort, string> = {
@@ -79,6 +125,8 @@ export default function SettingsPage() {
   const [feedback, setFeedback] = useState('正在讀取 server 設定…');
   const [connection, setConnection] = useState<Connection | null>(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
+  const [codexUsage, setCodexUsage] = useState<CodexUsage | null>(null);
+  const [usageBusy, setUsageBusy] = useState(false);
 
   const refresh = useCallback(async () => {
     const payload = await responseJson<{ settings: Settings }>(await fetch('/api/settings', { cache: 'no-store' }));
@@ -87,6 +135,24 @@ export default function SettingsPage() {
     setModel(payload.settings.model);
     setReasoningEffort(payload.settings.reasoning_effort);
     return payload.settings;
+  }, []);
+
+  const refreshCodexUsage = useCallback(async () => {
+    setUsageBusy(true);
+    try {
+      const payload = await responseJson<{ provider: Settings['provider']; usage: CodexUsage }>(
+        await fetch('/api/settings/usage', { cache: 'no-store' }),
+      );
+      setCodexUsage(payload.usage);
+    } catch (error) {
+      setCodexUsage({
+        available: false,
+        reason: 'request_failed',
+        message: error instanceof Error ? error.message : 'Codex 用量讀取失敗。',
+      });
+    } finally {
+      setUsageBusy(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -107,6 +173,14 @@ export default function SettingsPage() {
     }, 0);
     return () => { cancelled = true; window.clearTimeout(timer); };
   }, [refresh]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (settings?.provider === 'local_codex') void refreshCodexUsage();
+      else setCodexUsage(null);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [refreshCodexUsage, settings?.provider]);
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -132,6 +206,8 @@ export default function SettingsPage() {
       setReasoningEffort(payload.settings.reasoning_effort);
       setApiKey('');
       setConnection(payload.connection);
+      if (payload.settings.provider === 'local_codex') void refreshCodexUsage();
+      else setCodexUsage(null);
       setFeedback(payload.connection
         ? '連線驗證成功，API key 與研究模型已保存。'
         : `${providerLabel(payload.settings.provider)}、研究模型與推理深度已保存。`);
@@ -159,6 +235,7 @@ export default function SettingsPage() {
       }));
       setSettings(payload.settings);
       setConnection(payload.connection);
+      if (payload.settings.provider === 'local_codex') void refreshCodexUsage();
       setFeedback(provider === 'local_codex'
         ? `本機 Codex 可以執行模型工作。${payload.connection.message ? ` ${payload.connection.message}` : ''}`
         : apiKey.trim() ? '這組尚未保存的 key 可以連線。' : '目前 server-side key 可以連線。');
@@ -321,40 +398,85 @@ export default function SettingsPage() {
             </label>
 
             {provider === 'openai_api' ? (
-              <label className="settings-field">
-                <span>新的／替換用 API key</span>
-                <input
-                  name="api-key"
-                  type="password"
-                  value={apiKey}
-                  onChange={(event) => setApiKey(event.target.value)}
-                  placeholder={secretAllowed ? 'sk-…（留白代表不更動）' : '只能從 localhost 輸入'}
-                  autoComplete="new-password"
-                  spellCheck={false}
-                  disabled={disabled || !secretAllowed}
-                  aria-describedby="api-key-help"
-                />
-                <small id="api-key-help">送出新 key 時會先呼叫 OpenAI 驗證；失敗就不保存。已存 key 不會重新顯示。</small>
-              </label>
+              <>
+                <label className="settings-field">
+                  <span>新的／替換用 API key</span>
+                  <input
+                    name="api-key"
+                    type="password"
+                    value={apiKey}
+                    onChange={(event) => setApiKey(event.target.value)}
+                    placeholder={secretAllowed ? 'sk-…（留白代表不更動）' : '只能從 localhost 輸入'}
+                    autoComplete="new-password"
+                    spellCheck={false}
+                    disabled={disabled || !secretAllowed}
+                    aria-describedby="api-key-help"
+                  />
+                  <small id="api-key-help">送出新 key 時會先呼叫 OpenAI 驗證；失敗就不保存。已存 key 不會重新顯示。</small>
+                </label>
+                <aside className="api-usage-note" role="note" aria-label="OpenAI API 用量說明">
+                  <strong>API Key 沒有相同的 5 小時／每週視窗</strong>
+                  <p>一般 API 使用量按 token 計費。OpenAI 有組織層級的 Usage／Costs API，但必須使用 Admin Key；本系統目前不要求或保存這種高權限金鑰。</p>
+                </aside>
+              </>
             ) : (
-              <section className="codex-setup" aria-labelledby="codex-setup-title">
-                <div className="codex-setup-heading">
-                  <div>
-                    <span className="eyebrow">LOCAL CODEX</span>
-                    <h3 id="codex-setup-title">安裝與登入</h3>
+              <>
+                <section className="codex-setup" aria-labelledby="codex-setup-title">
+                  <div className="codex-setup-heading">
+                    <div>
+                      <span className="eyebrow">LOCAL CODEX</span>
+                      <h3 id="codex-setup-title">安裝與登入</h3>
+                    </div>
+                    <span className={settings?.local_codex.available ? 'settings-pill connected' : 'settings-pill'}>
+                      {settings?.local_codex.available ? 'DETECTED' : 'CHECK SETUP'}
+                    </span>
                   </div>
-                  <span className={settings?.local_codex.available ? 'settings-pill connected' : 'settings-pill'}>
-                    {settings?.local_codex.available ? 'DETECTED' : 'CHECK SETUP'}
-                  </span>
-                </div>
-                <p>{settings?.local_codex.auth_status ?? '正在檢查 Codex CLI…'}</p>
-                <ol>
-                  <li><span>安裝／更新 Codex CLI</span><code>curl -fsSL https://chatgpt.com/codex/install.sh | sh</code></li>
-                  <li><span>使用 ChatGPT 帳號登入</span><code>codex login</code></li>
-                  <li><span>確認登入狀態</span><code>codex login status</code></li>
-                </ol>
-                <small>偵測命令：<code>{settings?.local_codex.command ?? 'codex'}</code>。研究時使用 ephemeral、read-only sandbox；Codex 不直接寫入網站資料。</small>
-              </section>
+                  <p>{settings?.local_codex.auth_status ?? '正在檢查 Codex CLI…'}</p>
+                  <ol>
+                    <li><span>安裝／更新 Codex CLI</span><code>curl -fsSL https://chatgpt.com/codex/install.sh | sh</code></li>
+                    <li><span>使用 ChatGPT 帳號登入</span><code>codex login</code></li>
+                    <li><span>確認登入狀態</span><code>codex login status</code></li>
+                  </ol>
+                  <small>偵測命令：<code>{settings?.local_codex.command ?? 'codex'}</code>。研究時使用 ephemeral、read-only sandbox；Codex 不直接寫入網站資料。</small>
+                </section>
+
+                <section className="codex-usage" aria-labelledby="codex-usage-title">
+                  <div className="codex-usage-heading">
+                    <div>
+                      <span className="eyebrow">ACCOUNT USAGE</span>
+                      <h3 id="codex-usage-title">Codex 帳戶用量</h3>
+                    </div>
+                    <div className="codex-usage-actions">
+                      {codexUsage?.available && <span className="settings-pill connected">{planLabel(codexUsage.plan_type)}</span>}
+                      <button type="button" onClick={refreshCodexUsage} disabled={usageBusy || !settings?.local_codex.authenticated}>
+                        {usageBusy ? '讀取中…' : '重新整理'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {usageBusy && !codexUsage ? (
+                    <p className="codex-usage-message"><span className="job-spinner" aria-hidden="true" />正在讀取 5 小時與每週配額…</p>
+                  ) : codexUsage?.available ? (
+                    <>
+                      <div className="codex-usage-windows">
+                        {(codexUsage.windows ?? []).map((window) => (
+                          <article key={`${window.id}-${window.window_duration_minutes}`} aria-label={`${usageWindowLabel(window)}用量`}>
+                            <div>
+                              <strong>{usageWindowLabel(window)}</strong>
+                              <b>{Math.round(window.remaining_percent)}% 可用</b>
+                            </div>
+                            <progress max={100} value={window.used_percent} aria-label={`${usageWindowLabel(window)}已使用 ${Math.round(window.used_percent)}%`} />
+                            <small>已使用 {Math.round(window.used_percent)}% · {resetTimeLabel(window.resets_at)}</small>
+                          </article>
+                        ))}
+                      </div>
+                      <p className="codex-usage-caption">這是 ChatGPT Codex 共用配額的百分比，不是剩餘可用時數；研究工作完成後可按「重新整理」取得最新狀態。</p>
+                    </>
+                  ) : (
+                    <p className="codex-usage-message">{codexUsage?.message ?? '登入 ChatGPT 後即可讀取帳戶用量。'}</p>
+                  )}
+                </section>
+              </>
             )}
 
             <div className="settings-actions">

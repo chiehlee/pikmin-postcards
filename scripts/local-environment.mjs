@@ -14,6 +14,7 @@ import {
   symlink,
   writeFile,
 } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -68,15 +69,17 @@ async function setup() {
   await mkdir(dataRoot, { recursive: true });
   for (const managed of managedPaths) await connectManagedPath(managed);
   await mkdir(path.join(dataRoot, "config"), { recursive: true });
-  await writeJsonAtomic(configPath, {
+  const runtimeConfig = {
     schema_version: 1,
     project_root: projectRoot,
     data_root: dataRoot,
     host: "0.0.0.0",
     port,
+    build_path: previousConfig?.build_path ?? null,
     installed_at: previousConfig?.installed_at ?? new Date().toISOString(),
     updated_at: new Date().toISOString(),
-  });
+  };
+  await writeJsonAtomic(configPath, runtimeConfig);
   await writeJsonAtomic(locatorPath, {
     schema_version: 1,
     data_root: dataRoot,
@@ -84,7 +87,12 @@ async function setup() {
 
   if (!skipDependencies) await runNpm(["ci"]);
   if (!skipSync) await runNpm(["run", "db:sync"]);
-  if (!skipBuild) await runNpm(["run", "build"]);
+  if (!skipBuild) {
+    await runNpm(["run", "build"]);
+    runtimeConfig.build_path = await publishRuntimeBuild();
+    runtimeConfig.updated_at = new Date().toISOString();
+    await writeJsonAtomic(configPath, runtimeConfig);
+  }
 
   console.log([
     "",
@@ -100,18 +108,36 @@ async function start() {
   assertSupportedNode();
   const config = await requireRuntimeConfig();
   await assertManagedPathsConnected();
+  const buildPath = path.resolve(config.build_path ?? path.join(projectRoot, "dist"));
+  if (!await lstatOptional(path.join(buildPath, "server/index.js"))) {
+    throw new Error(`Production build is missing: ${buildPath}. Run npm run setup:local first.`);
+  }
   await run(
-    path.join(projectRoot, "node_modules/.bin/vinext"),
-    ["start", "--hostname", config.host, "--port", String(config.port)],
+    process.execPath,
+    [
+      path.join(projectRoot, "scripts/start-production.mjs"),
+      "--hostname", config.host,
+      "--port", String(config.port),
+      "--out-dir", buildPath,
+    ],
     {
       env: {
         ...process.env,
+        PATH: serviceExecutablePath(process.env.PATH),
         PIKMIN_PROJECT_ROOT: projectRoot,
         PIKMIN_DATA_ROOT: dataRoot,
         WRANGLER_LOG_PATH: path.join(dataRoot, "logs/wrangler"),
       },
     },
   );
+}
+
+function serviceExecutablePath(currentPath = "") {
+  return [...new Set([
+    path.join(os.homedir(), ".local/bin"),
+    path.dirname(process.execPath),
+    ...currentPath.split(path.delimiter).filter(Boolean),
+  ])].join(path.delimiter);
 }
 
 async function status() {
@@ -130,6 +156,7 @@ async function status() {
     project_root: projectRoot,
     data_root: dataRoot,
     database: path.join(dataRoot, "runtime/pikmin-postcards.sqlite3"),
+    production_build: config.build_path ?? path.join(projectRoot, "dist"),
     archive_backups: path.join(dataRoot, "backups"),
     logs: path.join(dataRoot, "logs"),
     host: config.host,
@@ -137,6 +164,26 @@ async function status() {
     local_url: `http://localhost:${config.port}`,
     connections,
   }, null, 2));
+}
+
+async function publishRuntimeBuild() {
+  const source = path.join(projectRoot, "dist");
+  const buildId = (await readFile(path.join(source, "server/BUILD_ID"), "utf8")).trim();
+  if (!/^[a-zA-Z0-9._-]+$/.test(buildId)) throw new Error(`Unsafe production build ID: ${buildId}`);
+  const buildsRoot = path.join(dataRoot, "runtime/builds");
+  const target = path.join(buildsRoot, buildId);
+  if (await lstatOptional(target)) return target;
+  const temporary = path.join(buildsRoot, `.${buildId}.${process.pid}.tmp`);
+  await mkdir(buildsRoot, { recursive: true });
+  await rm(temporary, { recursive: true, force: true });
+  try {
+    await cp(source, temporary, { recursive: true, errorOnExist: true });
+    await rename(temporary, target);
+  } catch (error) {
+    await rm(temporary, { recursive: true, force: true });
+    throw error;
+  }
+  return target;
 }
 
 async function connectManagedPath({ repository, archive, initialize }) {

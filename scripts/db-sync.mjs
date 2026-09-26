@@ -1,6 +1,6 @@
 import path from "node:path";
 import { backupDatabase, defaultDatabasePath, openDatabase, projectRoot } from "../db/database.mjs";
-import { loadSnapshots, replaceDatabaseFromSnapshots } from "../db/snapshots.mjs";
+import { loadSnapshots, replaceDatabaseFromSnapshots, writeSnapshots } from "../db/snapshots.mjs";
 
 const databasePath = argument("--database")
   ? path.resolve(argument("--database"))
@@ -12,6 +12,7 @@ const database = await openDatabase(databasePath);
 
 try {
   replaceDatabaseFromSnapshots(database, snapshots);
+  await writeSnapshots(snapshots);
   const stats = {
     database: path.relative(projectRoot, databasePath),
     backup: backupPath ? path.relative(projectRoot, backupPath) : null,

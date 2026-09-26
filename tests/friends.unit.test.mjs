@@ -2,10 +2,32 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   analyzeFriendProfile,
+  canonicalMergedFriendName,
   friendEvidenceFingerprint,
   friendEvidenceForPostcard,
   rebuildFriends,
 } from "../lib/friends.mjs";
+
+test("a manually merged sender alias resolves to the active canonical profile", () => {
+  const archive = {
+    profiles: [
+      { name: "レ", lifecycle: { status: "deleted", deleted_at: "2026-09-02T00:00:00Z", merged_into: "V" } },
+      { name: "V", aliases: ["レ"] },
+      { name: "Old V", lifecycle: { status: "deleted", deleted_at: "2026-09-03T00:00:00Z", merged_into: "レ" } },
+      { name: "Retired", lifecycle: { status: "deleted", deleted_at: "2026-09-04T00:00:00Z" } },
+      { name: "Retired alias", lifecycle: { status: "deleted", deleted_at: "2026-09-04T00:00:00Z", merged_into: "Retired" } },
+      { name: "Cycle A", lifecycle: { status: "deleted", deleted_at: "2026-09-05T00:00:00Z", merged_into: "Cycle B" } },
+      { name: "Cycle B", lifecycle: { status: "deleted", deleted_at: "2026-09-05T00:00:00Z", merged_into: "Cycle A" } },
+    ],
+  };
+
+  assert.equal(canonicalMergedFriendName("レ", archive), "V");
+  assert.equal(canonicalMergedFriendName("Old V", archive), "V");
+  assert.equal(canonicalMergedFriendName("V", archive), "V");
+  assert.equal(canonicalMergedFriendName("Unrelated", archive), "Unrelated");
+  assert.equal(canonicalMergedFriendName("Retired alias", archive), "Retired alias");
+  assert.equal(canonicalMergedFriendName("Cycle A", archive), "Cycle A");
+});
 
 test("a changed visible sender ID remains a separate provisional friend", () => {
   const archive = rebuildFriends([
@@ -136,6 +158,43 @@ test("a supported legacy manual signal is preserved until stronger evidence conf
     postcard("pc-5", "Manual", "2026-08-01", taiwanLocation("高雄市", "苓雅區", "高雄市苓雅區林富里")),
   ]);
   assert.equal(analyzeFriendProfile("Manual", contradicted, previous).likely_base.area, "高雄市苓雅區");
+});
+
+test("an explicit manual base override survives new evidence and an empty override stays empty", () => {
+  const cards = [
+    postcard("pc-1", "Manual", "2026-01-01", taiwanLocation("高雄市", "苓雅區", "高雄市苓雅區意誠里")),
+    postcard("pc-2", "Manual", "2026-02-01", taiwanLocation("高雄市", "苓雅區", "高雄市苓雅區人和里")),
+    postcard("pc-3", "Manual", "2026-03-01", taiwanLocation("高雄市", "苓雅區", "高雄市苓雅區林富里")),
+  ];
+  const manual = {
+    ...legacyProfile("Manual", cards.map((card) => card.id), null),
+    manual_overrides: { likely_base_area: "臺北市北投區" },
+    modified_at: "2026-08-24T00:00:00Z",
+  };
+  const profile = analyzeFriendProfile("Manual", cards, manual);
+  assert.equal(profile.likely_base.area, "臺北市北投區");
+  assert.equal(profile.likely_base.status, "manual");
+  assert.equal(profile.base_analysis.origin, "manual_override");
+  assert.equal(profile.modified_at, manual.modified_at);
+
+  manual.manual_overrides.likely_base_area = null;
+  const cleared = analyzeFriendProfile("Manual", cards, manual);
+  assert.equal(cleared.likely_base.area, null);
+  assert.equal(cleared.likely_base.status, "manual-cleared");
+});
+
+test("soft-deleted friend profiles are never recreated by automatic evidence rebuilds", () => {
+  const deleted = {
+    ...legacyProfile("Former", ["pc-1"], null),
+    lifecycle: { status: "deleted", deleted_at: "2026-08-24T00:00:00Z", deleted_reason: "test", merged_into: null },
+  };
+  const rebuilt = rebuildFriends(
+    [postcard("pc-1", "Former", "2026-01-01")],
+    { profiles: [deleted] },
+    { affectedNames: ["Former"] },
+  );
+  assert.equal(rebuilt.profiles.length, 1);
+  assert.equal(rebuilt.profiles[0].lifecycle.deleted_at, "2026-08-24T00:00:00Z");
 });
 
 test("only affected players are recomputed and fingerprints detect effective evidence changes", () => {

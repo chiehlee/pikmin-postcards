@@ -10,13 +10,13 @@ Pikmin Bloom 明信片的本機收藏、研究與朋友活動範圍證據庫。
 
 ### 收藏檔案
 
-首頁集中提供全文搜尋、來源／寄件人與國家篩選、收藏判斷，以及加入系統時間、發現日期、評分或距離排序。每頁顯示 60 張，排序會套用到完整收藏後再分頁。
+首頁集中提供全文搜尋、來源／寄件人與國家篩選、收藏判斷、閱讀狀態（全部／未讀／已讀），以及上次修改時間、發現日期、評分或距離排序。每頁顯示 60 張，排序會套用到完整收藏後再分頁；再研究完成的明信片會更新修改時間並回到預設排序最前方。未讀卡片會以高對比深綠粗框、明亮外圈與橘點標籤提示，打開後立即轉為已讀，不造成卡片位移。
 
 ![收藏檔案首頁，顯示明信片網格、篩選與排序](docs/images/archive-overview.jpg)
 
 ### 明信片研究檔案
 
-單張檔案並列保存原始遊戲截圖、畫面 metadata、研究摘要、研究定位、故事參考圖片與管理操作；Google Map 只在使用者要求後載入。
+單張檔案並列保存原始遊戲截圖、畫面 metadata、研究摘要、研究定位、故事參考圖片與管理操作；Google Map 只在使用者要求後載入。研究摘要與定位之間的左右箭頭會依入口保留脈絡：由收藏進入時走完整篩選／排序結果（跨分頁），由朋友足跡進入時只走該寄件者的明信片順序。
 
 ![單張明信片研究檔案，並列原圖、摘要與研究定位](docs/images/postcard-detail.jpg)
 
@@ -81,6 +81,24 @@ npx --yes -p node@22.23.2 -c 'npm run local'
 - 本機：`http://localhost:3000`
 - 區網／VPN：`http://<這台 Mac 的 VPN 或區網 IP>:3000`
 
+### macOS 自動常駐與更新
+
+完成一次 `setup:local` 後，可把 production server 安裝成目前 macOS 帳號的 `launchd` 服務：
+
+```bash
+npx --yes -p node@22.23.2 -c 'npm run service:install'
+```
+
+服務會在登入後自動啟動，異常結束時也會自行恢復。它每 5 秒檢查目前 Git commit；`git commit` 或 `git pull` 讓 commit 改變後，會自動建置並切換到新版。未 commit 的編輯不會觸發更新，避免存檔到一半就反覆重建。如果仍有排隊、研究中或正在寫入 DB 的 AI 工作，版本切換會延後到工作結束；若新版無法正常啟動，會恢復上一個 production build。
+
+```bash
+npx --yes -p node@22.23.2 -c 'npm run service:status'
+npx --yes -p node@22.23.2 -c 'npm run service:restart'
+npx --yes -p node@22.23.2 -c 'npm run service:uninstall'
+```
+
+服務 log 保存在外部 archive 的 `logs/pikmin-service.log`，不會進入 Git。安裝常駐服務後，不需要另外保持 `npm run local` 的 Terminal 視窗。
+
 要改 port，重新執行 setup 即可；例如改成 4317：
 
 ```bash
@@ -107,7 +125,7 @@ npx --yes -p node@22.23.2 -c 'npm run setup:local -- --port 3000 --data-root /Vo
 
 ## 前後端與資料庫邊界
 
-瀏覽器不 import `data/*.json`、不開啟 SQLite，也不接收資料庫 path、username 或 password。首頁啟動後只透過 `/api/archive` 取得帶 `api_version: 1` 的收藏 read model，新增、刪除、再研究與圖片也分別走 server API；後端才負責資料庫連線、migration、交易、檔案路徑與圖片 bytes。若後端暫時無法連線，前端會保留明確的 loading／error／retry 狀態，不以 build 時的舊快照冒充最新資料。
+瀏覽器不 import `data/*.json`、不開啟 SQLite，也不接收資料庫 path、username 或 password。首頁啟動後只透過 `/api/archive` 取得帶 `api_version: 1` 的收藏 read model，新增、編輯、刪除、再研究與圖片也分別走 server API；後端才負責資料庫連線、migration、交易、檔案路徑與圖片 bytes。若後端暫時無法連線，前端會保留明確的 loading／error／retry 狀態，不以 build 時的舊快照冒充最新資料。
 
 目前 production adapter 是 SQLite，server 可使用下列設定切換到另一個具有相同 migrations/schema 的 SQLite 檔案：
 
@@ -123,23 +141,28 @@ SQLite 沒有 username/password。若改用 PostgreSQL、MySQL 或 HTTP database
 首頁右上角的「新增明信片」可同時選擇多張本機圖片，也可貼上多行 HTTP(S)／Dropbox 圖片網址。兩種輸入可以放在同一批，沒有人工張數上限；每張圖片仍各自通過格式、100 MiB 上限與 SHA-256 檢查，並原樣保存到本機 intake。送出時有兩條路徑：
 
 - 「新增明信片」：固定使用 GPT-5.6 支援的最低推理 `none`，只辨識畫面可見的名稱、`見つけた日`、遊戲地點、寄件人與來源介面證據，不使用 web search。卡片會先以「待研究」狀態進入收藏，之後可逐張按「再研究」。
-- 「新增明信片並研究」：每張圖片直接依 [專案收錄 SKILL](.agents/skills/pikmin-postcard-intake/SKILL.md) 完成定位、故事、來源、收藏判斷、參考圖片與有限關聯研究。
+- 「新增明信片並研究」：每張圖片先辨識名稱等畫面資訊並寫入收藏資料庫，再依 [專案收錄 SKILL](.agents/skills/pikmin-postcard-intake/SKILL.md) 完成定位、故事、來源、收藏判斷、參考圖片與有限關聯研究。完整研究失敗時，已建檔的明信片仍保留為待研究，可從卡片按「再研究」。
 
-大批次會全部先建立獨立工作，後端再以有界併發處理；預設同時執行 2 張，可用 `PIKMIN_AI_CONCURRENCY` 調整為 1–8。這不限制一批可以接收多少張，只避免本機 Codex 或 API 瞬間同時啟動過多工作。UI 會在獨立的「處理中的明信片」區塊逐張顯示原圖與進度，並只在右下角提供整批開始／完成／失敗摘要。每張 queued／in-progress 卡片可單獨中止：排隊工作會移出佇列，本機 Codex 子程序會終止，OpenAI 背景 response 已成立時會要求 API 取消；原圖、intake、prompt 與 job 紀錄仍保留，且不會寫入半套 canonical postcard。進入「更新資料庫」後不可中止，以保護原子寫入。Exact duplicate 不重跑 AI；單張錯誤或中止也不會取消同批其他工作。
+大批次會全部先建立獨立工作，後端再以有界併發處理；預設同時執行 2 張，可用 `PIKMIN_AI_CONCURRENCY` 調整為 1–8。這不限制一批可以接收多少張，只避免本機 Codex 或 API 瞬間同時啟動過多工作。UI 會在獨立的「處理中的明信片」區塊逐張顯示原圖與進度，並只在右下角提供整批開始／完成／失敗摘要。每張 queued／in-progress 卡片可單獨中止：排隊工作會移出佇列，本機 Codex 子程序會終止，OpenAI 背景 response 已成立時會要求 API 取消；原圖、intake、prompt 與 job 紀錄仍保留，且不會寫入半套 canonical postcard。進入「更新資料庫」後不可中止，以保護原子寫入。Exact SHA-256 會在 AI 啟動前要求確認：取消就停止，繼續則對既有卡片執行「再研究」，不新增 postcard ID。只要 bytes 不同就建立新卡，相同 metadata 最多只形成關聯候選；單張錯誤或中止也不會取消同批其他工作。
 
 完整研究可提議 0–3 張直接說明該地點或故事的參考圖片；後端驗證並下載到本機後，才會顯示在地圖下方。
 
-每張明信片視窗另有兩個管理操作：
+每張明信片視窗另有管理操作：
 
+- 「編輯名稱」：直接修正單張明信片的畫面名稱，不呼叫 AI。後端會保存舊名稱、人工修改原因與時間，更新 `modified_at`，並在同一個原子操作中同步 snapshot 與 SQLite；遊戲顯示地點、研究定位、研究本文、圖片及關聯都不會被連帶改寫。API 使用 `PATCH /api/postcards/:id` 搭配 `{ "poi_name": "圖" }`。
 - 「再研究」：先在按鈕下方展開選填的補充欄，可加入親身經驗、現場關係、地址線索或網路上查不到的背景，再建立背景工作。補充原文會保存在 job、postcard provenance、canonical record 與本次 `research/raw/`，並完整放進研究 prompt；AI 可以用它引導查證與解讀，但沒有外部來源支持時只能明確標成使用者提供／親身觀察，不能冒充已證實事實。UI 顯示 queued／研究中／更新資料庫／完成、失敗或已中止，以及持續時間；重新載入頁面會從 SQLite 找回未完成工作並繼續 polling。
 - 「刪除」：需再次確認，只 soft delete 當前 postcard。正常列表會隱藏它，但原圖、研究檔、SQLite row、provenance、關聯及其他疑似重複明信片都保留，ID 不回收。
+- 「閱讀狀態」：獨立顯示在資料操作下方，可將已讀改回未讀，或手動標示為已讀。新建明信片預設未讀；再研究成功後也會自動改回未讀，提醒重新閱讀更新內容；升級前已存在的明信片一律初始化為已讀。手動調整閱讀狀態使用獨立時間欄位，不會改動 `modified_at`，因此不影響「上次修改時間」排序。
 
 首頁右上角的「設定」會開啟 `/settings`。在這台 Mac 的瀏覽器使用 `http://localhost:3000/settings`，可以：
 
 - 設定、替換或移除 server-side OpenAI API key。
+- 切換本機 Codex（ChatGPT 登入）或 OpenAI API Key；本機模式會透過官方 Codex App Server 顯示 5 小時與每週視窗的已用／剩餘百分比及重設時間，不會把登入 token 或帳號資料傳到瀏覽器。
 - 選擇研究 model；新工作會在建立時保存當下的 model ID。
 - 保存前測試新 key，或測試目前已保存的連線。
 - 查看「已設定／未設定」、來源與末四碼遮罩；網站永遠不會把完整 key 讀回瀏覽器。
+
+一般 OpenAI project API key 按 token 計費，並沒有 ChatGPT Codex 訂閱的 5 小時／每週配額視窗。OpenAI 的組織 Usage／Costs API 需要 Admin Key；因其權限高於研究工作所需，本系統目前不要求或保存 Admin Key，只在 API 模式顯示這項限制。
 
 設定頁把 key 原子寫入 Git 已忽略的 `.env.local`，權限設為 `0600`，並同步目前 server process，因此由設定頁保存後不必重啟。這符合 OpenAI 的 [API key 安全建議](https://help.openai.com/en/articles/5112595-best-practices-for-api-key-safety)：key 留在 server，不部署到瀏覽器，也不提交到 repository。`.env.local` 很小且不屬於收藏資料；重新 clone 時可在 localhost 設定頁重新設定，或另行以密碼管理器備份。
 
@@ -153,7 +176,7 @@ cp .env.example .env.local
 
 再把 `OPENAI_API_KEY` 填入 `.env.local` 並重啟 server。不要使用 `NEXT_PUBLIC_` 前綴，也不要把真正的 key 貼進程式、snapshot、SQLite 或 commit。這個 repository 目前刻意不含任何 API key；之後可一起在 localhost 設定頁完成實際連線。
 
-平常不需要手動執行 production build；`setup:local` 已包含建置。若程式碼更新，重新跑同一個 setup 指令即可。建置與完整 UI 測試會改寫 production output，因此維護前先停止正在使用的 `npm run local`，完成後再啟動，避免操作期間出現短暫 500。
+平常不需要手動執行 production build；`setup:local` 已包含建置。未安裝自動常駐服務時，程式碼更新後重新跑同一個 setup 指令即可。若已安裝常駐服務，完成 commit 後會由服務安全建置並切換版本；不要同時再開一個 `npm run local`。完整 UI 測試使用獨立 port，不會取代目前的 production runtime。
 
 只在開發維護時手動執行：
 
@@ -175,7 +198,7 @@ npm run verify
 - `test:unit`：純函式與領域規則，包含 line 95%、branch 80%、function 95% 的 coverage gate。
 - `test:regression`：canonical 圖片、資料筆數、來源分類、雙向關聯、JSON ↔ SQLite round-trip 與既有 bug cases。
 - `test:functional`：先 production build，再從外部邊界測試圖片 intake、關聯候選 CLI、HTTP 網站與 canonical 圖片。
-- `test:ui`：以 Playwright Chromium 在桌面與手機 viewport 操作 production UI；涵蓋 modal 捲動、鍵盤／焦點、背景關閉、Google Map 延遲載入、新增、soft delete、再研究進度、工作中止，以及設定頁的 key 遮罩、localhost／LAN 權限、連線測試與確認移除。失敗時保留 screenshot、trace 與 video。
+- `test:ui`：以 Playwright Chromium 在桌面與手機 viewport 操作 production UI；涵蓋 modal 捲動、鍵盤／焦點、背景關閉、Google Map 延遲載入、新增、明信片名稱修正、soft delete、再研究進度、工作中止、寄件者編輯／合併／重截／刪除、入口感知的左右導覽，以及設定頁的 key 遮罩、localhost／LAN 權限、連線測試與確認移除。失敗時保留 screenshot、trace 與 video。
 - `test:quick`：開發中快速執行 unit + regression。
 - `test:watch`：修改程式時持續重跑 unit + regression，提供即時回饋。
 - 第一次在新電腦執行 UI test 前先跑 `npx playwright install chromium`。`npm test` 等同完整的 `test:all`；`npm run verify` 再加上 lint、TypeScript、DB integrity/query plans 與資料統計，是 commit 前固定入口。
@@ -195,7 +218,7 @@ npm run check:duplicate -- \
 去重順序：
 
 1. 圖片 SHA-256 完全相同：確定重複。
-2. `POI + found_date + sender／來源狀態` 完全相同：可能重複，交由人工確認。
+2. `POI + found_date + sender／來源狀態` 完全相同但 SHA-256 不同：仍建立新的 postcard，只標記為可能相關的人工確認候選。
 3. 已確認寄件人不同：不自動合併。
 
 ## 來源與寄件人判讀
@@ -235,9 +258,11 @@ Google 地圖與收藏座標是兩條獨立資料路徑：地圖只收到正規�
 
 ## 朋友足跡
 
-朋友卡預設只顯示 Mii avatar 與寄件人／遊戲 ID，讓同一個螢幕容納更多玩家；若有保守推測的據點，會在 ID 同一排顯示「可能據點」。信心、觀察數、避免寄送、研究說明與明信片收進「展開資料與明信片」。每位朋友展開後最多直接顯示 5 張明信片；超過時顯示「更多」與剩餘張數。點擊後會開啟獨立、可捲動的完整清單 popup，可用鍵盤循環焦點、Esc 或背景點擊關閉，也能從清單繼續開啟單張明信片。
+朋友卡預設只顯示 Mii avatar 與寄件人／遊戲 ID，讓同一個螢幕容納更多玩家；若有保守推測的據點，會在 ID 同一排顯示「可能據點」。信心、觀察數、避免寄送、研究說明與明信片收進「展開資料與明信片」，摘要列會直接顯示該寄件者的明信片總數。每位朋友展開後最多直接顯示 5 張明信片；超過時顯示「更多」與剩餘張數。點擊後會開啟獨立、可捲動的完整清單 popup，可用鍵盤循環焦點、Esc 或背景點擊關閉，也能從清單繼續開啟單張明信片。
 
-新增或再研究完成時，同一次 AI 畫面判讀會提供已確認寄件人 Mii 的正規化裁切框；backend 驗證信心與邊界後，自動以原圖像素產生 WebP avatar，並將來源 postcard、來源 checksum、crop box 與生成狀態寫回朋友資料和 SQLite。後續同名玩家出現更高實際 crop 像素的可靠截圖時會自動替換；ImageMagick 暫時不可用或畫面無法可靠定位時不會回滾 postcard，而會保存失敗／等待證據狀態，於下一次有效證據變動自動重試。這是 backend 的正常流程，不需要維護者執行針對特定收藏的補圖腳本。
+展開卡片後的「編輯情報」可人工修改名稱與可能據點；輸入框會預填現值，點擊即可全選。「判定可能據點」會清除這個欄位的人工覆寫，只依該寄件者目前保存的有效明信片證據重新分析；若證據仍不足，系統會忠實維持「尚未判定」並顯示原因。也可搜尋並合併寄件者，候選預設依最後系統修改時間排序。改名與合併會同步更新明信片指向，同時保存舊名稱、時間與合併軌跡；後續明信片若再次辨識到已合併的舊 ID，會自動歸入現行寄件者並保存畫面原 ID 的歷史，不會另建重複朋友。刪除寄件者只做 soft delete，不會刪除其明信片；這些卡片會保留原寄件者文字並在 UI 顯示為「無主」。
+
+新增或再研究完成時，同一次 AI 畫面判讀會提供已確認寄件人 Mii 的正規化裁切框；backend 驗證信心與邊界後，自動以原圖像素產生固定 192×192 WebP avatar，並將來源 postcard、來源 checksum、crop box 與生成狀態寫回朋友資料和 SQLite。選圖會同時考慮可信度、實際 crop 像素與原圖解析度，裁切另保留安全邊界，避免不同頭像忽大忽小或貼邊。後續同名玩家出現更高品質的可靠截圖時會自動替換；也可在「編輯情報」按「重新截圖」，強制以目前最佳來源重做。ImageMagick 暫時不可用或畫面無法可靠定位時不會回滾 postcard，而會保存失敗／等待證據狀態。這是 backend 的正常流程，不需要維護者執行針對特定收藏的補圖腳本。
 
 據點分析不是按日排程。新增已確認寄件人的明信片，或再研究真的改變該玩家的日期／研究定位證據時，系統只重算受影響的玩家；批次匯入則每位玩家最多重算一次。自動早期訊號需要同一區域至少 3 個不同日期、跨 14 天並占全部有效日期至少 60%；同日多張只算一次，短期集中另視為可能旅遊群集。Soft delete 仍保留既有朋友證據，不會因清理疑似重複明信片而扭曲玩家足跡。
 
@@ -272,6 +297,7 @@ npm run backfill:location-geocodes -- --commit
 - `../pikmin-postcards-data/research/raw/`：長版研究；repo 內的 `research/raw` 是 symlink。
 - `../pikmin-postcards-data/imports/source-bundles/`：原始 ZIP bundles；repo 內相同位置是 symlink。
 - `../pikmin-postcards-data/runtime/pikmin-postcards.sqlite3`：SQLite operational database；repo 內的 `var` 是 symlink。
+- `../pikmin-postcards-data/runtime/builds/<BUILD_ID>/`：本機 live server 使用的不可變 production build。測試或開發重新產生 repo 內的 `dist/` 時，不會換掉執行中 server 已載入的 chunks。
 - `../pikmin-postcards-data/backups/archive-*/`：可獨立驗證的 archive backups；每份都同時包含 SQLite、snapshots、所有 DB 引用圖片、intake 圖片、研究原文與來源 bundles。
 - `../pikmin-postcards-data/runtime/image-inbox/`：尚未 canonicalize 的圖片 intake，以 SHA-256 命名。
 - `../pikmin-postcards-data/logs/`：Wrangler 與本機維護 logs。

@@ -34,9 +34,10 @@ description: "接收單張或批次 Pikmin Bloom 明信片圖片、聊天附件�
 - 每一份標示為可還原的 backup 都必須把一致的 DB copy、snapshots、DB 引用的 canonical／derived 圖片、尚未 canonicalize 的 intake 圖片、研究原文與必要來源 bundles 放在同一個帶 manifest 的 archive snapshot。圖片維持 filesystem/object storage，不寫成 DB BLOB。Manifest 必須保存每檔 checksum 與 DB asset 引用驗證；任何 DB 指向的圖片缺漏都要讓 backup 失敗。不可再把單獨 `.sqlite3` 稱為完整收藏備份。
 - 遠端 URL 的 query string 不可原文寫入 DB；使用現有 image intake 保存安全 locator 與完整來源的 hash。
 - `見つけた日` 是 `found_date`，不是寄送日期。
+- `poi_name` 只保存明信片畫面實際顯示的名稱；即使只有一個字、看似泛稱或沒有語意，也不得拿遊戲地點、研究地名或推測名稱代替。使用者人工修正時以人工值作 canonical display，並保存舊值、修改原因與時間；後續再研究不得靜默覆寫人工名稱。
 - 畫面可見 `フレンドに送る` 代表 `self_found`，此時 `sender: null` 且 `sender_status: not_applicable`。
 - 已確認 `○○ より` 才能把姓名存成 sender。收到但名稱留白可標成 `received + unknown`；UI 證據不足則維持 acquisition `unknown`。
-- 每次都把畫面可見 sender ID 與現有 friends／postcards 重新比對。不同字串預設為不同的 provisional player，即使 Mii、地點或時間看似相同也不自動建立 alias 或合併；只有使用者明確提出個案合併時才改 player identity。名稱改變本身不能證明是同一人。
+- 每次都把畫面可見 sender ID 與現有 friends／postcards 重新比對。不同字串預設為不同的 provisional player，即使 Mii、地點或時間看似相同也不自動建立 alias 或合併；只有使用者明確提出個案合併時才改 player identity。唯一例外是 DB 已保存使用者核准的 `merged_into`／alias：新卡再次出現該舊 ID 時，backend 必須沿合併鏈寫入現行 active profile，同時在 postcard 的 sender history／provenance 保留畫面原 ID。名稱改變本身不能證明是同一人。
 - `sender: null` 本身絕不等於未知寄件人。
 - raw location、研究後當地原名、台灣繁中譯名、完整地址、顯示精度、座標／地圖查詢與信心分開保存。`location.raw` 必須逐字保留遊戲畫面；`location.endonym` 使用當地原文。每個國家都先以官方場館、政府、營運者或其他可靠來源尋找 POI／現物的實際完整地址，`location.address_local` 保存來源能支持的最深層級，`location.precision` 必須與該層級一致；無法證實時才按 `full_address → road → locality → district → city → region → country → unknown` 逐級退回，並在 unresolved questions 記錄缺少的證據，不得從 raw location、郵遞區號片段或地圖搜尋結果猜門牌。臺灣與日本依當地習慣連寫地址、不附國名；其他國家依當地習慣排列、只用半形逗號加空格 `, `，並把當地語言國名放在最後。非中文、日文地點的 `zh_tw` 必須翻譯到與 `address_local` 相同精度，依臺灣繁中地址順序排列並包含國名；中文或日文的 `zh_tw` 維持 null。`location.display` 只作為共用 formatter 組成的快取，所有國家都優先顯示最深的 `address_local`，過長交由 UI 折行／省略而不是丟失地址。Google Map query 使用 `address_local` 與必要的當地國名，由 Google 獨立解析 marker；不得拿 raw、括號譯名或永久座標冒充 Google 解析結果。尚未研究完成時用 `language: und`、`name_status: provisional`、`precision: unknown` 與低信心，不假裝已確認。沒有可靠證據時，不把搜尋結果寫成精確地址或座標。
 - 明信片拍到紀念碑、遺址標、復刻物或移設物時，canonical `location` 定位畫面中的現物；所紀念事件、原建物或原物件的歷史位置另存於 research facts／inferences／unresolved questions，並分別表達精度與信心。不得把現物的精確地址或座標冒充歷史事件的精確位置，也不因歷史基址未定就降低現物定位的信心。
@@ -107,13 +108,13 @@ npm run check:duplicate -- \
 
 依序處理：
 
-1. 相同 SHA-256：同一份 screenshot bytes 與 canonical asset，不新增 postcard；保留新的 intake source／occurrence provenance。
+1. 相同 SHA-256：同一份 screenshot bytes 與 canonical asset；在進入任何 AI 工作前停止並詢問使用者是否要繼續。取消時不新增 postcard、不呼叫 AI；繼續時以既有 postcard ID 走正式「再研究」流程，仍不建立新的 postcard。無論選擇哪一項，都保留新的 intake source／occurrence provenance。
 2. 相同 `POI + found_date + location + sender／acquisition identity` 但 bytes 不同：一定先建立新的 postcard ID，再標成 candidate 並視需要建立雙向 `same-metadata-different-image`；candidate 不表示應刪除。
 3. POI 相同但 location 不同：不是 duplicate candidate；同名 Wayspot 在不同地點是正常資料。只有名稱變體且其他證據指向同一處時，才考慮雙向 `same-poi-name-variant`。
 4. 已確認寄件人不同，或 `self_found` 與 `received unknown` 不同：不可靜默合併。
-5. sender ID 與既有名稱不同：先建立另一個 friend profile；可回報疑似改名線索，但除非使用者明確要求，不把兩個 profile 或其觀察歷史合併。
+5. sender ID 與既有名稱不同：先查 DB 是否已有使用者核准的合併軌跡。若有，就沿 `merged_into` 鏈使用現行 active profile，保留畫面原 ID 與 sender history；若沒有，才建立另一個 friend profile。可回報疑似改名線索，但除非使用者明確要求，不把兩個 profile 或其觀察歷史合併。
 
-任何 probable／visual duplicate 都不得阻止新 screenshot 建立 postcard ID。只有 exact SHA-256 重複時共用 canonical record 並新增 provenance；若使用者之後指定移除或合併，再依該個案操作。
+任何 probable／visual duplicate 都不得阻止新 screenshot 建立 postcard ID。只要 bytes 不同，即使 POI、發現日期、寄件人或遊戲地點相同，也必須先當成新的 postcard 收錄。只有 exact SHA-256 重複時才共用 canonical record，並依上一步由使用者決定取消或轉為再研究；若使用者之後指定移除或合併，再依該個案操作。
 
 ### 4. 研究地點與故事
 
@@ -159,7 +160,7 @@ npm run related:candidates -- --id pc-XXXX --limit 8
 
 朋友據點採 **evidence-change event**，不做每日／每週排程，也不為每張卡呼叫另一輪 AI。只有新增已確認寄件人的 postcard，或再研究實際改變該 postcard 的 `found_date`／研究定位欄位時，才用正規化欄位重算受影響的 sender；只改研究文字不重算。批次匯入先收齊異動，每個 sender 最多重算一次。Soft delete 不移除朋友證據、不觸發據點降級，因為原始觀察仍需保留。
 
-自動據點只建立保守的 `early-signal`：同一天不論有幾張都只算一個日期；同一地理層級至少 3 個不同 `found_date`、首末跨至少 14 天、占該玩家全部有效日期至少 60%，而且不能與同層候選並列第一。優先使用可反覆比較的行政區／城市層級，不用單一 POI 或完整門牌當生活據點。未達門檻時維持 low confidence／needs-review，14 天內的多日集中只標成 possible trip cluster。既有人工判斷在至少 2 個日期仍支持且沒有更強矛盾時保留；不同 sender 字串仍是不同玩家。每次分析保存 evidence postcard IDs、規則版本與只含 sender、日期、正規化地點／座標的 fingerprint，讓不相關的研究文字更新不會造成重算。
+自動據點只建立保守的 `early-signal`：同一天不論有幾張都只算一個日期；同一地理層級至少 3 個不同 `found_date`、首末跨至少 14 天、占該玩家全部有效日期至少 60%，而且不能與同層候選並列第一。優先使用可反覆比較的行政區／城市層級，不用單一 POI 或完整門牌當生活據點。未達門檻時維持 low confidence／needs-review，14 天內的多日集中只標成 possible trip cluster。既有人工判斷在至少 2 個日期仍支持且沒有更強矛盾時保留；未經使用者合併的不同 sender 字串仍是不同玩家，已核准合併的舊 ID 則沿合併鏈歸入現行 profile。每次分析保存 evidence postcard IDs、規則版本與只含 sender、日期、正規化地點／座標的 fingerprint，讓不相關的研究文字更新不會造成重算。
 
 Friends 頁面的 Mii avatar 使用最高品質、可確認寄件人的證據截圖產生。這是 backend intake／再研究完成流程的一部分，不得依賴維護者事後手動補圖：同一次 AI 畫面判讀應在 `visible.sender_avatar_crop` 回傳方形框的 `center_x`、`center_y`、`size`（相對原始截圖的 0–1 座標）與 confidence；看不清時回傳 null，不可猜測。Backend 只接受 confirmed sender、high／medium confidence 且完全在圖片邊界內的框，再以 ImageMagick 做原圖像素裁切、原子寫入朋友 avatar metadata 與 DB。avatar 失敗不得回滾已成功的 postcard，但必須在 friend profile 保存 `avatar_generation` 狀態，下一次有效證據變動時自動重試。
 
@@ -172,7 +173,7 @@ npm run backfill:location-geocodes -- --commit
 
 位置回填預設是 dry-run，以 `var/location-geocode-cache.json` 續跑並輸出 `var/location-backfill-report.json`；只有目標集合全部解析、地址格式 validation、snapshot → SQLite round-trip 與 integrity check 通過後才可 `--commit`。正式寫入前必須建立完整 archive backup。候選 POI 只有正規化名稱嚴格相符且地址解析度更深時才能提升地址；翻譯查詢必須回到同一 provider object ID，不能因同名或泛稱換成另一個地點。
 
-這是可丟棄後重建的 derived asset，不是身份證明。每次加入同一名稱的新證據，都比較實際 crop 像素尺寸與判讀信心；更好的候選應由 backend 自動更新 avatar path／checksum／crop provenance，但保留原始 postcard assets。不同 sender ID 的 Mii 看似相同時仍維持兩個 profile，等待使用者個案合併指示。
+這是可丟棄後重建的 derived asset，不是身份證明。每次加入同一名稱的新證據，都比較實際 crop 像素尺寸與判讀信心；更好的候選應由 backend 自動更新 avatar path／checksum／crop provenance，但保留原始 postcard assets。不同 sender ID 的 Mii 看似相同時仍維持兩個 profile，等待使用者個案合併指示；DB 已有使用者核准的 merge 時，後續舊 ID 證據歸入合併目標，不再另建 profile。
 
 ### 6. Canonicalize 並同步網站／DB
 
@@ -192,14 +193,15 @@ npm run backfill:location-geocodes -- --commit
 
 網站管理操作與 CLI 收錄共用本 Skill 的證據、圖片、定位、研究、duplicate 及 relation 規則，不建立較寬鬆的第二套捷徑：
 
-1. **新增與批次**：UI 必須明確提供「新增明信片」與「新增明信片並研究」，本機檔案使用可多選 input，遠端圖片以每行一個 URL 接受多筆；兩者可同批送出且不設張數上限。先逐張落地 `var/image-inbox/`、驗證格式／大小並計算 SHA-256，再判斷 exact duplicate。即使 AI provider 尚未設定，已驗證的圖片仍保留在 intake；不得因 AI 無法啟動而遺失來源。Exact duplicate 不再呼叫 AI，也不建立新的 postcard ID；非 exact duplicate 依 `metadata_only` 或 `full_research` 建立背景工作。部分失敗時回傳每張的安全 label 與錯誤，已建立的工作繼續執行。
+1. **新增與批次**：UI 必須明確提供「新增明信片」與「新增明信片並研究」，本機檔案使用可多選 input，遠端圖片以每行一個 URL 接受多筆；兩者可同批送出且不設張數上限。先逐張落地 `var/image-inbox/`、驗證格式／大小並計算 SHA-256，再判斷 exact duplicate。即使 AI provider 尚未設定，已驗證的圖片仍保留在 intake；不得因 AI 無法啟動而遺失來源。Exact duplicate 必須在呼叫 AI 前以既有 postcard 資訊要求使用者確認：取消則停止；繼續則以既有 ID 建立 `reresearch` 工作，兩者都不建立新的 postcard ID。只要 bytes 不同，不得用相同名稱、日期、寄件人、地點或視覺相似阻擋新增，必須依 `metadata_only` 或 `full_research` 建立新的 postcard 背景工作；metadata 相同只可在建檔後形成 candidate／relation。部分失敗時回傳每張的安全 label 與錯誤，已建立的工作繼續執行。
 2. **Soft delete**：只在被操作的 postcard 寫入 lifecycle／`deleted_at` 與原因，正常列表與查詢預設隱藏該 record。不得連帶刪除、隱藏或改寫 related postcards、朋友證據、原圖、研究檔、來源、provenance 或 DB row；已使用的 postcard ID 永不回收。若未來加入 restore，應清除 lifecycle 而不是複製舊 record。
-3. **再研究**：第一次按「再研究」只在按鈕下方展開選填的使用者補充欄，確認後才建立工作；空白補充仍可開始原本的完整研究。畫面可見 metadata、`location.raw`、asset checksum、原始研究檔、既有故事參考圖片、使用者補充與 provenance 都是不可靜默覆寫的證據。每則補充保存原文、時間與 job ID；每次都重新評估研究定位，含位置 hint 時按第 4 節查證並輸出完整 location，通過後端正規化與 geocoding 才可更新 canonical 地址、座標、地址精度及座標精度。新結果使用帶日期的新 research status 與新的 `research/raw/` 檔，新增 provenance 指回再研究前的 detail path；只有通過 schema、location、acquisition、source URL、參考圖片下載／格式／安全邊界與 relation candidate 驗證後才更新 canonical snapshot／DB。
-4. **有限關聯**：送給模型的 related candidates 必須來自 SQLite 索引的有限集合（預設最多 8），不得把整個 archive 或全部長版研究塞進 prompt。模型只能從候選集合選 relation；寫入時再次檢查 ID、未刪除狀態、一句具體 note 與雙向一致性。
-5. **非同步工作**：每個 add／reresearch job 保存 kind、`workflow`、batch ID、輸入 label、再研究使用者補充原文、status、建立／開始／完成時間、model、reasoning effort、完整自動 prompt、SKILL path／SHA-256、OpenAI response ID、結果或錯誤。狀態依序為 queued／in_progress／applying／completed、failed 或 cancelled；UI 每秒顯示 elapsed time，定期 poll，reload 後也要從 DB 恢復全部未完成工作，不得用固定 `LIMIT` 截掉大批次。queued／in_progress 卡片必須可單獨中止：先以 DB conditional update 原子標成 cancelled，再移除尚未 dispatch 的項目、終止本機 Codex 子程序，或在已有 response ID 時呼叫 OpenAI response cancellation；provider 的晚到結果不得覆蓋 cancelled 或進入 canonical apply。applying 代表已取得原子寫入權，不允許中止。中止只停止 AI，必須保留 job、prompt、使用者補充、原圖與 intake，方便稽核或重新送出。至少一個工作成功建立後立即關閉新增 modal；只有整批都無法建立工作時才保留 modal 供修正。進行中的 job 放在獨立於收藏檔案的「處理中的明信片」區塊，沒有未完成 job 時整區隱藏；新 job 以安全的 job image endpoint 顯示已保存原圖，但仍只能標示「名稱辨識中／發現日期辨識中」，input label 只能作工作辨識，不得冒充正式 metadata。快速建檔使用「等待辨識／AI 畫面辨識中／建立收藏卡」，完整研究使用研究狀態；右下角只顯示可關閉、會自動消失的批次開始／完成／失敗／中止摘要，不為 20 張圖片連續噴出 20 個通知。只有 validated result 能進入 applying；失敗或中止保留 job 與 intake，不留下半套 canonical record。
-6. **API key、設定頁與網路邊界**：`OPENAI_API_KEY` 只能存在 server process 或 Git 已忽略的 `.env.local`，不得送進 client bundle、API response、snapshot、SQLite、prompt、job、error、log 或 Git。設定 API 只可回傳 `api_key_configured`、遮罩末四碼、來源、model 與權限狀態，不得回傳可重建 key 的內容。新／替換 key 必須先以 OpenAI server endpoint 驗證成功才用原子寫入保存，檔案權限固定為 `0600`，並同步目前 process 讓新工作不必重啟；移除時同時清除檔案與目前 process。因網站目前是 HTTP，只有 request hostname 為 localhost／loopback 且通過 same-origin 時可提交、測試尚未保存或移除 key；LAN／VPN 只能修改 model、查看安全狀態或用已保存的 server key 測試連線。若 key 來自外部啟動環境，UI 移除後必須提示重啟時可能恢復。若改為多人或公開網路，先加入 HTTPS、身分驗證、授權、rate limit 與支出限制。
-7. **原子更新與回饋**：OpenAI background response 完成不等於資料已寫入；必須先進入 applying，保存新的 research raw file，建立完整 archive backup，驗證 snapshot ↔ SQLite round-trip，再標 completed。任何可重複出現的 schema、prompt、研究或 UI 問題都回到本 Skill、自動 prompt builder 與對應 test 一起修正。
-8. **前後端與備份邊界**：首頁初始資料也必須由 archive API 取得；API 未完成時顯示 loading，失敗時顯示 error／retry，不把 build-time JSON 打進 client bundle 作 fallback。Server 讀寫時才解析 DB 與圖片 storage 設定。每次 mutation／DB export 使用同一套 archive backup primitive，完整備份使用 hard-link 或 copy-on-write 節省不可變圖片空間可以接受，但 backup 目錄必須能在 live 圖片移除後仍獨立讀取，並能以 manifest 重新驗證所有 DB asset references。
+3. **人工名稱修正**：UI 與 same-origin server API 可同步修改單張 postcard 的 `poi_name`，不啟動 AI。輸入須正規化並拒絕空白、控制字元或過長內容；真正變更時更新 `modified_at`，在 `poi_name_history` 追加 previous／next name、`manual-edit` 與時間，再以既有原子持久化流程同步 snapshot／SQLite。完全相同的值是 no-op，不新增歷史。不得連帶改寫 `location.raw`、研究定位、研究本文、原圖、關聯或朋友證據。
+4. **再研究**：第一次按「再研究」只在按鈕下方展開選填的使用者補充欄，確認後才建立工作；空白補充仍可開始原本的完整研究。畫面可見 metadata、`location.raw`、asset checksum、原始研究檔、既有故事參考圖片、使用者補充與 provenance 都是不可靜默覆寫的證據。每則補充保存原文、時間與 job ID；每次都重新評估研究定位，含位置 hint 時按第 4 節查證並輸出完整 location，通過後端正規化與 geocoding 才可更新 canonical 地址、座標、地址精度及座標精度。新結果使用帶日期的新 research status 與新的 `research/raw/` 檔，新增 provenance 指回再研究前的 detail path；只有通過 schema、location、acquisition、source URL、參考圖片下載／格式／安全邊界與 relation candidate 驗證後才更新 canonical snapshot／DB。
+5. **有限關聯**：送給模型的 related candidates 必須來自 SQLite 索引的有限集合（預設最多 8），不得把整個 archive 或全部長版研究塞進 prompt。模型只能從候選集合選 relation；寫入時再次檢查 ID、未刪除狀態、一句具體 note 與雙向一致性。
+6. **非同步工作**：每個 add／reresearch job 保存 kind、`workflow`、batch ID、輸入 label、再研究使用者補充原文、status、建立／開始／完成時間、model、reasoning effort、完整自動 prompt、SKILL path／SHA-256、OpenAI response ID、結果或錯誤。狀態依序為 queued／in_progress／applying／completed、failed 或 cancelled；UI 每秒顯示 elapsed time，定期 poll，reload 後也要從 DB 恢復全部未完成工作，不得用固定 `LIMIT` 截掉大批次。queued／in_progress 卡片必須可單獨中止：先以 DB conditional update 原子標成 cancelled，再移除尚未 dispatch 的項目、終止本機 Codex 子程序，或在已有 response ID 時呼叫 OpenAI response cancellation；provider 的晚到結果不得覆蓋 cancelled 或進入 canonical apply。applying 代表已取得原子寫入權，不允許中止。中止只停止 AI，必須保留 job、prompt、使用者補充、原圖與 intake，方便稽核或重新送出。至少一個工作成功建立後立即關閉新增 modal；只有整批都無法建立工作時才保留 modal 供修正。進行中的 job 放在獨立於收藏檔案的「處理中的明信片」區塊，沒有未完成 job 時整區隱藏；新 job 以安全的 job image endpoint 顯示已保存原圖，但仍只能標示「名稱辨識中／發現日期辨識中」，input label 只能作工作辨識，不得冒充正式 metadata。快速建檔使用「等待辨識／AI 畫面辨識中／建立收藏卡」，完整研究使用研究狀態；右下角只顯示可關閉、會自動消失的批次開始／完成／失敗／中止摘要，不為 20 張圖片連續噴出 20 個通知。只有 validated result 能進入 applying；失敗或中止保留 job 與 intake，不留下半套 canonical record。
+7. **API key、設定頁與網路邊界**：`OPENAI_API_KEY` 只能存在 server process 或 Git 已忽略的 `.env.local`，不得送進 client bundle、API response、snapshot、SQLite、prompt、job、error、log 或 Git。設定 API 只可回傳 `api_key_configured`、遮罩末四碼、來源、model 與權限狀態，不得回傳可重建 key 的內容。新／替換 key 必須先以 OpenAI server endpoint 驗證成功才用原子寫入保存，檔案權限固定為 `0600`，並同步目前 process 讓新工作不必重啟；移除時同時清除檔案與目前 process。因網站目前是 HTTP，只有 request hostname 為 localhost／loopback 且通過 same-origin 時可提交、測試尚未保存或移除 key；LAN／VPN 只能修改 model、查看安全狀態或用已保存的 server key 測試連線。若 key 來自外部啟動環境，UI 移除後必須提示重啟時可能恢復。若改為多人或公開網路，先加入 HTTPS、身分驗證、授權、rate limit 與支出限制。
+8. **原子更新與回饋**：OpenAI background response 完成不等於資料已寫入；必須先進入 applying，保存新的 research raw file，建立完整 archive backup，驗證 snapshot ↔ SQLite round-trip，再標 completed。任何可重複出現的 schema、prompt、研究或 UI 問題都回到本 Skill、自動 prompt builder 與對應 test 一起修正。
+9. **前後端與備份邊界**：首頁初始資料也必須由 archive API 取得；API 未完成時顯示 loading，失敗時顯示 error／retry，不把 build-time JSON 打進 client bundle 作 fallback。Server 讀寫時才解析 DB 與圖片 storage 設定。每次 mutation／DB export 使用同一套 archive backup primitive，完整備份使用 hard-link 或 copy-on-write 節省不可變圖片空間可以接受，但 backup 目錄必須能在 live 圖片移除後仍獨立讀取，並能以 manifest 重新驗證所有 DB asset references。
 
 ### 7. 測試、驗證與交付
 

@@ -1,9 +1,9 @@
 import { createHash, randomUUID } from "node:crypto";
 import { constants } from "node:fs";
-import { copyFile, mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, readdir, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { validateAcquisition } from "../lib/acquisition.mjs";
-import { friendEvidenceForPostcard, rebuildFriends } from "../lib/friends.mjs";
+import { canonicalMergedFriendName, friendEvidenceForPostcard, rebuildFriends } from "../lib/friends.mjs";
 import { normalizeResearchedLocation, validateLocationNaming } from "../lib/location-names.mjs";
 import { normalizeUserContribution } from "../lib/user-contribution.mjs";
 import { resolveStoredLocalPath } from "../db/asset-paths.mjs";
@@ -56,11 +56,17 @@ export async function archiveOverview({
     database.close();
   }
   const all = snapshots.postcards.postcards;
+  const deletedFriendNames = new Set(
+    snapshots.friends.profiles
+      .filter((profile) => profile.lifecycle?.deleted_at && !profile.lifecycle?.merged_into)
+      .map((profile) => profile.name),
+  );
   const researchProvider = await researchProviderConfiguration();
   return {
     api_version: 1,
     postcards: all.filter((record) => !record.lifecycle?.deleted_at),
-    friends: snapshots.friends.profiles,
+    friends: snapshots.friends.profiles.filter((profile) => !profile.lifecycle?.deleted_at),
+    orphaned_sender_names: [...deletedFriendNames].sort((left, right) => left.localeCompare(right, "zh-Hant")),
     totals: {
       active: all.filter((record) => !record.lifecycle?.deleted_at).length,
       deleted: all.filter((record) => record.lifecycle?.deleted_at).length,
@@ -76,6 +82,186 @@ export async function archiveOverview({
   };
 }
 
+export async function editFriendProfile(friendName, changes = {}, {
+  snapshotDirectory,
+  databasePath = defaultDatabasePath,
+} = {}) {
+  return serializeMutation(async () => {
+    const snapshots = await loadOperationalSnapshots(databasePath, snapshotDirectory);
+    const sourceName = normalizedFriendName(friendName);
+    const profile = activeFriendProfile(snapshots, sourceName);
+    const nextName = changes.name === undefined ? sourceName : normalizedFriendName(changes.name);
+    if (nextName !== sourceName && snapshots.friends.profiles.some((candidate) => candidate.name === nextName)) {
+      throw httpError(409, `寄件者「${nextName}」已存在；請使用合併寄件者。`);
+    }
+    const changedAt = managementTimestamp();
+    const previousProfiles = snapshots.friends.profiles.filter((candidate) => candidate.name !== sourceName);
+    const profileSeed = {
+      ...profile,
+      name: nextName,
+      modified_at: changedAt,
+      aliases: nextName === sourceName
+        ? [...(profile.aliases ?? [])]
+        : uniqueStrings([...(profile.aliases ?? []), sourceName]),
+    };
+    if (changes.likely_base_area !== undefined) {
+      profileSeed.manual_overrides = {
+        ...(profile.manual_overrides ?? {}),
+        likely_base_area: normalizedLikelyBaseArea(changes.likely_base_area),
+      };
+    }
+    for (const postcard of snapshots.postcards.postcards) {
+      if (nextName === sourceName || postcard.sender !== sourceName) continue;
+      recordSenderChange(postcard, sourceName, nextName, "rename", changedAt);
+    }
+    snapshots.friends = rebuildFriends(
+      snapshots.postcards.postcards,
+      { ...snapshots.friends, profiles: [...previousProfiles, profileSeed] },
+      { affectedNames: [nextName] },
+    );
+    const updated = activeFriendProfile(snapshots, nextName);
+    updated.modified_at = changedAt;
+    await persistSnapshots(snapshots, { snapshotDirectory, databasePath });
+    return updated;
+  });
+}
+
+export async function mergeFriendProfiles(sourceFriendName, targetFriendName, {
+  snapshotDirectory,
+  databasePath = defaultDatabasePath,
+} = {}) {
+  return serializeMutation(async () => {
+    const snapshots = await loadOperationalSnapshots(databasePath, snapshotDirectory);
+    const sourceName = normalizedFriendName(sourceFriendName);
+    const targetName = normalizedFriendName(targetFriendName);
+    if (sourceName === targetName) throw httpError(400, "不能把寄件者合併到自己。");
+    const source = activeFriendProfile(snapshots, sourceName);
+    const target = activeFriendProfile(snapshots, targetName);
+    const changedAt = managementTimestamp();
+    for (const postcard of snapshots.postcards.postcards) {
+      if (postcard.sender !== sourceName) continue;
+      recordSenderChange(postcard, sourceName, targetName, "merge", changedAt);
+    }
+    const deletedSource = {
+      ...source,
+      modified_at: changedAt,
+      lifecycle: {
+        status: "deleted",
+        deleted_at: changedAt,
+        deleted_reason: `已合併至 ${targetName}`,
+        merged_into: targetName,
+      },
+    };
+    const targetSeed = {
+      ...target,
+      modified_at: changedAt,
+      aliases: uniqueStrings([...(target.aliases ?? []), ...(source.aliases ?? []), sourceName]),
+      merge_history: [
+        ...(target.merge_history ?? []),
+        { source_name: sourceName, merged_at: changedAt },
+      ],
+    };
+    const unaffected = snapshots.friends.profiles.filter((profile) => ![sourceName, targetName].includes(profile.name));
+    snapshots.friends = rebuildFriends(
+      snapshots.postcards.postcards,
+      { ...snapshots.friends, profiles: [...unaffected, targetSeed, deletedSource] },
+      { affectedNames: [targetName] },
+    );
+    const updated = activeFriendProfile(snapshots, targetName);
+    updated.modified_at = changedAt;
+    const avatarGeneration = await ensureFriendAvatars(snapshots, {
+      affectedNames: [targetName],
+      force: true,
+    });
+    await persistSnapshots(snapshots, { snapshotDirectory, databasePath });
+    return { friend: updated, merged_friend: deletedSource, avatar_generation: avatarGeneration };
+  });
+}
+
+export async function recropFriendAvatar(friendName, {
+  snapshotDirectory,
+  databasePath = defaultDatabasePath,
+  avatarOptions = {},
+} = {}) {
+  return serializeMutation(async () => {
+    const snapshots = await loadOperationalSnapshots(databasePath, snapshotDirectory);
+    const name = normalizedFriendName(friendName);
+    activeFriendProfile(snapshots, name);
+    const report = await ensureFriendAvatars(snapshots, {
+      ...avatarOptions,
+      affectedNames: [name],
+      force: true,
+    });
+    const profile = activeFriendProfile(snapshots, name);
+    profile.modified_at = managementTimestamp();
+    await persistSnapshots(snapshots, { snapshotDirectory, databasePath });
+    return { friend: profile, avatar_generation: report };
+  });
+}
+
+export async function reassessFriendBase(friendName, {
+  snapshotDirectory,
+  databasePath = defaultDatabasePath,
+} = {}) {
+  return serializeMutation(async () => {
+    const snapshots = await loadOperationalSnapshots(databasePath, snapshotDirectory);
+    const name = normalizedFriendName(friendName);
+    const profile = activeFriendProfile(snapshots, name);
+    const assessedAt = managementTimestamp();
+    const manualOverrides = { ...(profile.manual_overrides ?? {}) };
+    delete manualOverrides.likely_base_area;
+    const profileSeed = {
+      ...profile,
+      modified_at: assessedAt,
+      base_assessment_history: [
+        ...(profile.base_assessment_history ?? []),
+        {
+          assessed_at: assessedAt,
+          trigger: "user_requested_reassessment",
+          previous_likely_base: profile.likely_base,
+        },
+      ],
+    };
+    if (Object.keys(manualOverrides).length) profileSeed.manual_overrides = manualOverrides;
+    else delete profileSeed.manual_overrides;
+    snapshots.friends = rebuildFriends(
+      snapshots.postcards.postcards,
+      {
+        ...snapshots.friends,
+        profiles: snapshots.friends.profiles.map((candidate) => candidate.name === name ? profileSeed : candidate),
+      },
+      { affectedNames: [name] },
+    );
+    const updated = activeFriendProfile(snapshots, name);
+    updated.modified_at = assessedAt;
+    await persistSnapshots(snapshots, { snapshotDirectory, databasePath });
+    return updated;
+  });
+}
+
+export async function softDeleteFriend(friendName, reason = "使用者由網站移除寄件者情報", {
+  snapshotDirectory,
+  databasePath = defaultDatabasePath,
+} = {}) {
+  return serializeMutation(async () => {
+    const snapshots = await loadOperationalSnapshots(databasePath, snapshotDirectory);
+    const name = normalizedFriendName(friendName);
+    const profile = snapshots.friends.profiles.find((candidate) => candidate.name === name);
+    if (!profile) throw httpError(404, `找不到寄件者「${name}」`);
+    if (profile.lifecycle?.deleted_at) return profile;
+    const deletedAt = managementTimestamp();
+    profile.modified_at = deletedAt;
+    profile.lifecycle = {
+      status: "deleted",
+      deleted_at: deletedAt,
+      deleted_reason: normalizedDeletionReason(reason),
+      merged_into: null,
+    };
+    await persistSnapshots(snapshots, { snapshotDirectory, databasePath });
+    return profile;
+  });
+}
+
 export async function softDeletePostcard(postcardId, reason = "使用者由網站移除", {
   snapshotDirectory,
   databasePath = defaultDatabasePath,
@@ -87,6 +273,58 @@ export async function softDeletePostcard(postcardId, reason = "使用者由網�
     if (record.lifecycle?.deleted_at) return record;
     const deletedAt = new Date().toISOString();
     record.lifecycle = { status: "deleted", deleted_at: deletedAt, deleted_reason: reason };
+    await persistSnapshots(snapshots, { snapshotDirectory, databasePath });
+    return record;
+  });
+}
+
+export async function setPostcardReadState(postcardId, isRead, {
+  snapshotDirectory,
+  databasePath = defaultDatabasePath,
+} = {}) {
+  return updatePostcard(postcardId, { is_read: isRead }, { snapshotDirectory, databasePath });
+}
+
+export async function updatePostcard(postcardId, changes = {}, {
+  snapshotDirectory,
+  databasePath = defaultDatabasePath,
+} = {}) {
+  if (!changes || typeof changes !== "object" || Array.isArray(changes)) {
+    throw httpError(400, "請提供有效的明信片更新內容");
+  }
+  const hasReadState = Object.hasOwn(changes, "is_read");
+  const hasPoiName = Object.hasOwn(changes, "poi_name");
+  if (!hasReadState && !hasPoiName) throw httpError(400, "請提供要更新的明信片名稱或閱讀狀態");
+  if (hasReadState && typeof changes.is_read !== "boolean") throw httpError(400, "is_read 必須是布林值");
+  const nextPoiName = hasPoiName ? normalizedPostcardName(changes.poi_name) : null;
+  return serializeMutation(async () => {
+    const snapshots = await loadOperationalSnapshots(databasePath, snapshotDirectory);
+    const record = snapshots.postcards.postcards.find((item) => item.id === postcardId);
+    if (!record || record.lifecycle?.deleted_at) throw httpError(404, `找不到有效明信片 ${postcardId}`);
+    let changed = false;
+    let changedAt;
+    if (hasPoiName && record.poi_name !== nextPoiName) {
+      changedAt = managementTimestamp();
+      record.poi_name_history ??= [];
+      record.poi_name_history.push({
+        previous_name: record.poi_name,
+        next_name: nextPoiName,
+        reason: "manual-edit",
+        changed_at: changedAt,
+      });
+      record.poi_name = nextPoiName;
+      record.modified_at = changedAt;
+      changed = true;
+    }
+    if (hasReadState && record.reading?.is_read !== changes.is_read) {
+      changedAt ??= managementTimestamp();
+      record.reading = {
+        is_read: changes.is_read,
+        read_at: changes.is_read ? changedAt : null,
+      };
+      changed = true;
+    }
+    if (!changed) return record;
     await persistSnapshots(snapshots, { snapshotDirectory, databasePath });
     return record;
   });
@@ -110,6 +348,12 @@ export async function startReresearchJob(postcardId, { userNote: rawUserNote = n
   const database = await operationalDatabase();
   let job;
   try {
+    const activeJob = database.prepare(`
+      SELECT id FROM ai_jobs
+      WHERE postcard_id = ? AND status IN ('queued', 'in_progress', 'applying')
+      LIMIT 1
+    `).get(postcardId);
+    if (activeJob) throw httpError(409, "這張明信片已有研究工作進行中；請等候完成或先中止工作");
     const candidates = relatedCandidates(database, postcard);
     const skill = await readFile(skillPath, "utf8");
     const prompt = buildResearchPrompt({ kind: "reresearch", postcard, userNote, relatedCandidates: candidates });
@@ -143,11 +387,12 @@ export async function startAddBatch({ inputs, note = "", workflow = "metadata_on
   const researchProvider = await researchProviderConfiguration();
   const skill = await readFile(skillPath, "utf8");
   const jobs = [];
+  const duplicates = [];
   const failures = [];
   for (const [index, input] of inputs.entries()) {
     const inputLabel = input.label?.trim() || uploadInputLabel(input, index);
     try {
-      jobs.push(await startAddJob({
+      const outcome = await startAddJob({
         file: input.file,
         sourceUrl: input.sourceUrl,
         note,
@@ -156,7 +401,9 @@ export async function startAddBatch({ inputs, note = "", workflow = "metadata_on
         inputLabel,
         researchProvider,
         skill,
-      }));
+      });
+      if (outcome.duplicate) duplicates.push(outcome.duplicate);
+      else jobs.push(outcome.job);
     } catch (error) {
       failures.push({
         input_label: inputLabel,
@@ -165,11 +412,11 @@ export async function startAddBatch({ inputs, note = "", workflow = "metadata_on
       });
     }
   }
-  if (!jobs.length) {
+  if (!jobs.length && !duplicates.length) {
     const first = failures[0];
     throw httpError(first?.status ?? 400, first?.error ?? "沒有圖片成功建立工作");
   }
-  return { batchId, workflow, jobs, failures, total: inputs.length };
+  return { batchId, workflow, jobs, duplicates, failures, total: inputs.length };
 }
 
 /** @param {{ file?: File | null, sourceUrl?: string | null, note?: string, workflow?: "metadata_only" | "full_research", batchId?: string | null, inputLabel?: string | null, researchProvider?: object, skill?: string }} input */
@@ -192,24 +439,20 @@ export async function startAddJob({
   try {
     staged = await stageImage(source, database);
     if (staged.canonicalPostcardId) {
-      const prompt = workflow === "metadata_only"
-        ? buildMetadataPrompt({ intakeNote: note })
-        : buildResearchPrompt({ kind: "add", intakeNote: note, relatedCandidates: [] });
-      return insertJob(database, {
-        kind: "add",
-        workflow,
-        batchId,
-        inputLabel,
-        postcardId: staged.canonicalPostcardId,
-        intakeSha256: staged.sha256,
-        skill,
-        prompt,
-        provider: researchProvider.provider,
-        model: researchProvider.model,
-        reasoningEffort: workflow === "metadata_only" ? metadataReasoningEffort : researchProvider.reasoning_effort,
-        status: "completed",
-        result: { exact_duplicate: true, postcard_id: staged.canonicalPostcardId },
-      });
+      const postcard = database.prepare(`
+        SELECT postcards.id, postcards.poi_name, postcards.found_date, assets.path AS asset_path
+        FROM postcards
+        JOIN assets ON assets.sha256 = postcards.asset_sha256
+        WHERE postcards.id = ?
+      `).get(staged.canonicalPostcardId);
+      return { duplicate: {
+        input_label: inputLabel,
+        postcard_id: staged.canonicalPostcardId,
+        poi_name: postcard?.poi_name ?? staged.canonicalPostcardId,
+        found_date: postcard?.found_date ?? null,
+        asset_path: postcard?.asset_path ?? null,
+        sha256: staged.sha256,
+      } };
     }
   } finally {
     database.close();
@@ -219,15 +462,14 @@ export async function startAddJob({
     "圖片已安全保存在本機 intake；完成 AI provider 設定後可再次送出分析",
     researchProvider,
   );
-  const prompt = workflow === "metadata_only"
-    ? buildMetadataPrompt({ intakeNote: note })
-    : buildResearchPrompt({ kind: "add", intakeNote: note, relatedCandidates: [] });
+  const prompt = buildMetadataPrompt({ intakeNote: note });
   const jobDatabase = await operationalDatabase();
   let job;
   try {
     job = insertJob(jobDatabase, {
       kind: "add",
       workflow,
+      phase: "metadata",
       batchId,
       inputLabel,
       postcardId: null,
@@ -236,7 +478,8 @@ export async function startAddJob({
       prompt,
       provider: readyResearchProvider.provider,
       model: readyResearchProvider.model,
-      reasoningEffort: workflow === "metadata_only" ? metadataReasoningEffort : readyResearchProvider.reasoning_effort,
+      reasoningEffort: metadataReasoningEffort,
+      userNote: workflow === "full_research" ? normalizeUserContribution(note) : null,
     });
   } finally {
     jobDatabase.close();
@@ -246,7 +489,7 @@ export async function startAddJob({
     imagePath: path.resolve(projectRoot, staged.localPath),
     mediaType: staged.mediaType,
   });
-  return job;
+  return { job };
 }
 
 export async function getJob(jobId, { refresh = true } = {}) {
@@ -283,7 +526,7 @@ export async function getJob(jobId, { refresh = true } = {}) {
   }
 
   try {
-    const result = job.workflow === "metadata_only"
+    const result = job.phase === "metadata"
       ? extractMetadataResult(response)
       : extractResearchResult(response);
     return await serializeMutation(() => applyCompletedJob(job.id, result));
@@ -339,6 +582,7 @@ export function publicJob(job) {
     id: job.id,
     kind: job.kind,
     workflow: job.workflow,
+    phase: job.phase,
     batch_id: job.batch_id,
     input_label: job.input_label,
     has_user_note: Boolean(job.user_note),
@@ -413,7 +657,7 @@ async function dispatchJob(job, {
         startedAt: new Date().toISOString(),
       }, { allowedStatuses: ["queued"] });
       if (started.status === "cancelled") return started;
-      const runner = job.workflow === "metadata_only" ? runLocalCodexMetadata : runLocalCodexResearch;
+      const runner = job.phase === "metadata" ? runLocalCodexMetadata : runLocalCodexResearch;
       const result = await runner({
         command: codexCommand,
         model,
@@ -434,7 +678,7 @@ async function dispatchJob(job, {
     const beforeDispatch = await getJob(job.id, { refresh: false });
     if (beforeDispatch.status === "cancelled") return beforeDispatch;
     const imageBytes = await readFile(imagePath);
-    const response = job.workflow === "metadata_only"
+    const response = job.phase === "metadata"
       ? await createBackgroundMetadata({
           apiKey,
           model,
@@ -476,9 +720,9 @@ async function applyCompletedJob(jobId, result) {
   let claimed;
   try {
     claimed = claimDatabase.prepare(`
-      UPDATE ai_jobs SET status = 'applying', updated_at = ?
+      UPDATE ai_jobs SET status = 'applying', result_json = ?, updated_at = ?
       WHERE id = ? AND status IN ('queued', 'in_progress')
-    `).run(new Date().toISOString(), jobId).changes;
+    `).run(JSON.stringify(result), new Date().toISOString(), jobId).changes;
   } finally {
     claimDatabase.close();
   }
@@ -489,22 +733,48 @@ async function applyCompletedJob(jobId, result) {
   const row = selectJob(jobDatabase, jobId);
   jobDatabase.close();
   if (!row) throw new Error(`找不到工作 ${jobId}`);
-  const applied = row.kind === "reresearch"
-    ? await applyReresearch(snapshots, row, result)
-    : row.workflow === "metadata_only"
-      ? await applyMetadataAdd(snapshots, row, result)
+  const completedAt = secondPrecisionTimestamp(new Date().toISOString());
+  const applied = row.phase === "metadata"
+    ? await applyMetadataAdd(snapshots, row, result)
+    : row.kind === "reresearch" || row.postcard_id
+      ? await applyReresearch(snapshots, row, result, completedAt)
       : await applyAdd(snapshots, row, result);
   await persistSnapshots(snapshots);
+  if (row.kind === "add" && row.workflow === "full_research" && row.phase === "metadata") {
+    const prompt = buildResearchPrompt({
+      kind: "reresearch",
+      postcard: applied,
+      intakeNote: row.user_note ?? "",
+      relatedCandidates: relatedCandidatesFromSnapshots(snapshots, applied),
+    });
+    let next = await updateJob(jobId, {
+      status: "queued",
+      phase: "research",
+      postcardId: applied.id,
+      prompt,
+      responseId: null,
+      result: null,
+      startedAt: null,
+    }, { allowedStatuses: ["applying"] });
+    const researchProvider = await requireResearchProvider();
+    next = await updateJob(jobId, { reasoningEffort: researchProvider.reasoning_effort });
+    queueJobDispatch(next, {
+      ...researchProvider,
+      imagePath: path.join(projectRoot, `public${applied.asset.path}`),
+      mediaType: applied.asset.media_type ?? "image/png",
+    });
+    return next;
+  }
   await updateJob(jobId, {
     status: "completed",
     postcardId: applied.id,
     result,
-    completedAt: new Date().toISOString(),
+    completedAt,
   });
   return getJob(jobId, { refresh: false });
 }
 
-async function applyReresearch(snapshots, job, result) {
+async function applyReresearch(snapshots, job, result, completedAt) {
   const record = snapshots.postcards.postcards.find((item) => item.id === job.postcard_id);
   if (!record || record.lifecycle?.deleted_at) throw new Error("再研究目標已不存在或已刪除");
   const previousFriendEvidence = JSON.stringify(friendEvidenceForPostcard(record));
@@ -528,7 +798,9 @@ async function applyReresearch(snapshots, job, result) {
   record.location = location;
   record.research = normalizedResearch(result.research, sourcePath, researchImages);
   record.research.status = `ui-reresearched-${localDate()}`;
-  const avatarCrop = result.visible.sender === record.sender
+  record.modified_at = completedAt;
+  const visibleSender = canonicalMergedFriendName(result.visible.sender, snapshots.friends);
+  const avatarCrop = visibleSender === record.sender
     ? normalizeAvatarCropHint(result.visible.sender_avatar_crop)
     : null;
   record.visual = {
@@ -571,14 +843,18 @@ async function applyReresearch(snapshots, job, result) {
       result.avatar_generation = await ensureFriendAvatars(snapshots, { affectedNames: [record.sender] });
     }
   }
+  record.reading = { is_read: false, read_at: null };
   return record;
 }
 
 async function applyMetadataAdd(snapshots, job, result) {
   const { visible, acquisition, location, avatarCrop } = metadataIntakeFields(result);
+  const sender = acquisition.sender_status === "confirmed"
+    ? canonicalMergedFriendName(visible.sender, snapshots.friends)
+    : visible.sender;
   const intake = await intakeForJob(job);
+  validateAcquisition({ id: job.postcard_id ?? "new-postcard", sender, acquisition });
   const promoted = await promoteIntakeAsset(snapshots, job, intake, visible.found_date);
-  validateAcquisition({ id: promoted.id, sender: visible.sender, acquisition });
   const sourcePath = await writeMetadataFile(promoted.id, job.id, visible, acquisition);
   const record = {
     id: promoted.id,
@@ -587,7 +863,9 @@ async function applyMetadataAdd(snapshots, job, result) {
     received_at: null,
     archived_on: promoted.archivedOn,
     archived_at: promoted.archivedAt,
-    sender: visible.sender,
+    modified_at: promoted.archivedAt,
+    reading: { is_read: false, read_at: null },
+    sender,
     location,
     asset: promoted.asset,
     curation: {
@@ -609,6 +887,9 @@ async function applyMetadataAdd(snapshots, job, result) {
     acquisition,
     visual: { sender_avatar_crop: avatarCrop },
   };
+  if (visible.sender && sender !== visible.sender) {
+    recordSenderChange(record, visible.sender, sender, "merged-alias-normalization", promoted.archivedAt);
+  }
   const matches = metadataMatches(snapshots.postcards.postcards, record);
   snapshots.postcards.postcards.push(record);
   if (record.sender && record.acquisition.sender_status === "confirmed") {
@@ -625,13 +906,16 @@ async function applyMetadataAdd(snapshots, job, result) {
 async function applyAdd(snapshots, job, result) {
   const intake = await intakeForJob(job);
   const foundDate = result.visible.found_date;
-  const promoted = await promoteIntakeAsset(snapshots, job, intake, foundDate);
-  const { id, archivedAt, archivedOn: date } = promoted;
   const location = await resolvedLocation(result.location, result.visible.game_location, result.research.sources);
   const acquisition = result.acquisition;
-  const sender = result.visible.sender;
+  const visibleSender = result.visible.sender;
+  const sender = acquisition.sender_status === "confirmed"
+    ? canonicalMergedFriendName(visibleSender, snapshots.friends)
+    : visibleSender;
   validateResult(result, location);
-  validateAcquisition({ id, sender, acquisition });
+  validateAcquisition({ id: job.postcard_id ?? "new-postcard", sender, acquisition });
+  const promoted = await promoteIntakeAsset(snapshots, job, intake, foundDate);
+  const { id, archivedAt, archivedOn: date } = promoted;
   const preservedImages = await preserveResearchImages({
     postcardId: id,
     jobId: job.id,
@@ -647,6 +931,8 @@ async function applyAdd(snapshots, job, result) {
     received_at: null,
     archived_on: date,
     archived_at: archivedAt,
+    modified_at: archivedAt,
+    reading: { is_read: false, read_at: null },
     sender,
     location,
     asset: promoted.asset,
@@ -673,6 +959,9 @@ async function applyAdd(snapshots, job, result) {
         : null,
     },
   };
+  if (visibleSender && sender !== visibleSender) {
+    recordSenderChange(record, visibleSender, sender, "merged-alias-normalization", archivedAt);
+  }
   const matches = metadataMatches(snapshots.postcards.postcards, record);
   snapshots.postcards.postcards.push(record);
   if (record.sender && record.acquisition.sender_status === "confirmed") {
@@ -709,7 +998,7 @@ async function intakeForJob(job) {
 }
 
 async function promoteIntakeAsset(snapshots, job, intake, foundDate) {
-  const id = nextPostcardId(snapshots.postcards.postcards);
+  const id = await nextPostcardId(snapshots.postcards.postcards);
   const archivedAt = secondPrecisionTimestamp(job.created_at);
   const archivedOn = localDate(new Date(archivedAt));
   const folderDate = foundDate ?? archivedOn;
@@ -760,6 +1049,10 @@ export function updateFriendProfilesForEvidenceChange(snapshots, affectedNames) 
     snapshots.friends,
     { affectedNames: names },
   );
+  const changedAt = managementTimestamp();
+  for (const profile of snapshots.friends.profiles) {
+    if (names.includes(profile.name) && !profile.lifecycle?.deleted_at) profile.modified_at = changedAt;
+  }
   return snapshots.friends;
 }
 
@@ -1016,6 +1309,7 @@ async function loadOperationalSnapshots(databasePath = defaultDatabasePath, snap
 function insertJob(database, {
   kind,
   workflow = "full_research",
+  phase = workflow === "metadata_only" ? "metadata" : "research",
   batchId = null,
   inputLabel = null,
   postcardId,
@@ -1033,13 +1327,14 @@ function insertJob(database, {
   const id = `job-${randomUUID()}`;
   database.prepare(`
     INSERT INTO ai_jobs (
-      id, kind, workflow, batch_id, input_label, user_note, status, postcard_id, intake_sha256, provider, model, reasoning_effort, skill_path, skill_sha256,
+      id, kind, workflow, phase, batch_id, input_label, user_note, status, postcard_id, intake_sha256, provider, model, reasoning_effort, skill_path, skill_sha256,
       prompt, result_json, created_at, started_at, updated_at, completed_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     id,
     kind,
     workflow,
+    phase,
     batchId,
     inputLabel,
     userNote,
@@ -1068,11 +1363,14 @@ async function updateJob(id, fields, { allowedStatuses = null } = {}) {
     if (!current) throw new Error(`找不到工作 ${id}`);
     const next = {
       status: fields.status ?? current.status,
+      phase: fields.phase ?? current.phase,
       postcardId: fields.postcardId ?? current.postcard_id,
-      responseId: fields.responseId ?? current.openai_response_id,
-      result: fields.result ?? current.result,
+      responseId: Object.hasOwn(fields, "responseId") ? fields.responseId : current.openai_response_id,
+      result: Object.hasOwn(fields, "result") ? fields.result : current.result,
       error: Object.hasOwn(fields, "error") ? fields.error : current.error,
-      startedAt: fields.startedAt ?? current.started_at,
+      prompt: fields.prompt ?? current.prompt,
+      reasoningEffort: fields.reasoningEffort ?? current.reasoning_effort,
+      startedAt: Object.hasOwn(fields, "startedAt") ? fields.startedAt : current.started_at,
       completedAt: fields.completedAt ?? current.completed_at,
     };
     const statusGuard = allowedStatuses?.length
@@ -1080,15 +1378,18 @@ async function updateJob(id, fields, { allowedStatuses = null } = {}) {
       : "";
     database.prepare(`
       UPDATE ai_jobs SET
-        status = ?, postcard_id = ?, openai_response_id = ?, result_json = ?, error = ?,
-        started_at = ?, updated_at = ?, completed_at = ?
+        status = ?, phase = ?, postcard_id = ?, openai_response_id = ?, result_json = ?, error = ?,
+        prompt = ?, reasoning_effort = ?, started_at = ?, updated_at = ?, completed_at = ?
       WHERE id = ?${statusGuard}
     `).run(
       next.status,
+      next.phase,
       next.postcardId,
       next.responseId,
       next.result == null ? null : JSON.stringify(next.result),
       next.error,
+      next.prompt,
+      next.reasoningEffort,
       next.startedAt,
       new Date().toISOString(),
       next.completedAt,
@@ -1128,6 +1429,7 @@ function normalizeJobRow(row) {
   return {
     ...row,
     workflow: row.workflow ?? "full_research",
+    phase: row.phase ?? (row.workflow === "metadata_only" ? "metadata" : "research"),
     result: row.result_json ? JSON.parse(row.result_json) : null,
   };
 }
@@ -1146,8 +1448,20 @@ async function persistSnapshots(snapshots, {
   await writeSnapshots(snapshots, snapshotDirectory);
 }
 
-function nextPostcardId(postcards) {
-  const max = postcards.reduce((value, record) => Math.max(value, Number.parseInt(record.id.replace(/^pc-/, ""), 10) || 0), 0);
+export async function nextPostcardId(postcards, {
+  imageDirectory = path.join(projectRoot, "public/images/postcards"),
+} = {}) {
+  const usedIds = postcards.map((record) => record.id);
+  try {
+    const entries = await readdir(imageDirectory, { recursive: true });
+    for (const entry of entries) {
+      const match = path.basename(entry).match(/^(pc-\d+)\.[^.]+$/i);
+      if (match) usedIds.push(match[1].toLowerCase());
+    }
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
+  const max = usedIds.reduce((value, id) => Math.max(value, Number.parseInt(id.replace(/^pc-/, ""), 10) || 0), 0);
   return `pc-${String(max + 1).padStart(4, "0")}`;
 }
 
@@ -1166,6 +1480,59 @@ function secondPrecisionTimestamp(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) throw new Error("AI 工作缺少有效的建立時間");
   return date.toISOString().replace(/\.\d{3}Z$/, "Z");
+}
+
+function managementTimestamp() {
+  return new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
+}
+
+function normalizedFriendName(value) {
+  if (typeof value !== "string") throw httpError(400, "寄件者名稱必須是文字。");
+  const normalized = value.trim().replace(/\s+/g, " ");
+  if (!normalized) throw httpError(400, "寄件者名稱不可空白。");
+  if (normalized.length > 80) throw httpError(400, "寄件者名稱不可超過 80 個字元。");
+  if (/[\u0000-\u001f\u007f]/.test(normalized)) throw httpError(400, "寄件者名稱含有無效控制字元。");
+  return normalized;
+}
+
+function normalizedPostcardName(value) {
+  if (typeof value !== "string") throw httpError(400, "poi_name 必須是文字");
+  const name = value.normalize("NFC").trim();
+  if (!name) throw httpError(400, "明信片名稱不可留白");
+  if (name.length > 240) throw httpError(400, "明信片名稱不可超過 240 個字元");
+  if (/\p{Cc}/u.test(name)) throw httpError(400, "明信片名稱不可包含控制字元");
+  return name;
+}
+
+function normalizedLikelyBaseArea(value) {
+  if (value == null) return null;
+  if (typeof value !== "string") throw httpError(400, "可能據點必須是文字。");
+  const normalized = value.trim().replace(/\s+/g, " ");
+  if (normalized.length > 240) throw httpError(400, "可能據點不可超過 240 個字元。");
+  return normalized || null;
+}
+
+function normalizedDeletionReason(value) {
+  if (typeof value !== "string") return "使用者由網站移除寄件者情報";
+  return value.trim().slice(0, 500) || "使用者由網站移除寄件者情報";
+}
+
+function activeFriendProfile(snapshots, name) {
+  const profile = snapshots.friends.profiles.find((candidate) => candidate.name === name);
+  if (!profile || profile.lifecycle?.deleted_at) throw httpError(404, `找不到有效寄件者「${name}」`);
+  return profile;
+}
+
+function recordSenderChange(postcard, previousName, nextName, reason, changedAt) {
+  postcard.sender_history ??= [];
+  postcard.sender_history.push({
+    previous_name: previousName,
+    next_name: nextName,
+    reason,
+    changed_at: changedAt,
+  });
+  postcard.sender = nextName;
+  postcard.modified_at = changedAt;
 }
 
 function uniqueStrings(values = []) {

@@ -4,6 +4,7 @@ import {
   addressPrecisionFromNominatim,
   canonicalAddressFromNominatim,
   geocodeFinalLocation,
+  geocodeQueryCandidates,
   locationComponentsFromNominatim,
   resolvedNominatimGeocode,
   searchAddressCandidate,
@@ -68,6 +69,52 @@ test("final-address geocoding records numeric coordinates and complete provenanc
     osm_id: "12345",
     error: null,
   });
+});
+
+test("geocoding falls back from an unsupported Taiwan landmark address to its researched district", async () => {
+  const queries = [];
+  const districtResult = {
+    ...taipeiResult,
+    display_name: "北投區, 臺北市, 臺灣",
+    addresstype: "city_district",
+    address: { city_district: "北投區", city: "臺北市", country: "臺灣", country_code: "tw" },
+  };
+  const result = await geocodeFinalLocation({
+    address_local: "臺北市北投區北投路一段20號旁西安橋下",
+    endonym: "西安橋下",
+    raw: "Beitou, Taipei",
+    country_code: "TW",
+    country_endonym: "臺灣",
+    language: "zh-Hant-TW",
+    precision: "full_address",
+  }, {
+    endpoint: "https://geocoder.example/search",
+    respectRateLimit: false,
+    now: () => new Date("2026-08-25T01:02:03.000Z"),
+    fetchImpl: async (url) => {
+      const query = new URL(url).searchParams.get("q");
+      queries.push(query);
+      return Response.json(query === "臺北市北投區" ? [districtResult] : []);
+    },
+  });
+
+  assert.deepEqual(queries.slice(0, 3), [
+    "臺北市北投區北投路一段20號旁西安橋下",
+    "臺北市北投區北投路一段",
+    "臺北市北投區",
+  ]);
+  assert.equal(result.geocode.query, "臺北市北投區");
+  assert.equal(result.geocode.precision, "district");
+  assert.equal(result.latitude, 25.031517);
+});
+
+test("fallback candidates preserve country-aware order and remain deterministic", () => {
+  assert.deepEqual(geocodeQueryCandidates({
+    address_local: "青森県平川市尾上栄松",
+    raw: "Hirakawa, Aomori",
+    country_code: "JP",
+    country_endonym: "日本",
+  }), ["青森県平川市尾上栄松", "青森県平川市", "青森県", "Hirakawa, Aomori", "日本"]);
 });
 
 test("address formatters use local conventions and a same-resolution zh-TW form", () => {

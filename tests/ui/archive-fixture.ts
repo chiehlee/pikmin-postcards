@@ -4,6 +4,7 @@ export type ArchivePayload = {
   api_version: number;
   postcards: FixturePostcard[];
   friends: FixtureFriend[];
+  orphaned_sender_names: string[];
   totals: { active: number; deleted: number };
   capabilities: {
     management: boolean;
@@ -28,6 +29,7 @@ type FixturePostcard = Record<string, unknown> & {
 
 type FixtureFriend = Record<string, unknown> & {
   name: string;
+  modified_at: string;
   evidence_postcard_ids: string[];
   likely_base: {
     area: string | null;
@@ -70,6 +72,7 @@ export function createArchiveFixture(): ArchivePayload {
 
   const friends = friendNames.map((name) => ({
     name,
+    modified_at: `2026-08-24T${String(20 - friendNames.indexOf(name)).padStart(2, '0')}:00:00Z`,
     evidence_postcard_ids: postcards.filter((card) => card.sender === name).map((card) => card.id),
     likely_base: name === '菎娜'
       ? { area: '臺北市北投區', status: 'early-signal', confidence: 'medium', confidence_label: '中', reason: '合成測試的保守據點訊號。' }
@@ -81,6 +84,7 @@ export function createArchiveFixture(): ArchivePayload {
     api_version: 1,
     postcards,
     friends,
+    orphaned_sender_names: [],
     totals: { active: postcards.length, deleted: 0 },
     capabilities: {
       management: true,
@@ -117,6 +121,8 @@ function postcard(sequence: number, poiName: string, rawLocation: string, sender
     received_at: null,
     archived_on: '2026-08-24',
     archived_at: archivedAt,
+    modified_at: archivedAt,
+    reading: { is_read: true, read_at: archivedAt },
     sender,
     acquisition: sender
       ? { type: 'received', sender_status: 'confirmed', confidence: 'high', evidence: ['sender-visible'] }

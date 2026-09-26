@@ -24,6 +24,18 @@ test("postcard and long-form research dialogs retain independent scroll containe
   assert.match(postcardScroll, /overflow-y:\s*auto/);
   assert.match(postcardScroll, /overscroll-behavior:\s*contain/);
 
+  const postcardShell = cssRule(css, ".modal-copy-shell");
+  assert.match(postcardShell, /position:\s*relative/);
+  assert.match(postcardShell, /overflow:\s*hidden/);
+  const postcardNavigation = cssRule(css, ".postcard-context-navigation");
+  assert.match(postcardNavigation, /position:\s*absolute/);
+  assert.match(postcardNavigation, /top:\s*62%/);
+  assert.match(postcardNavigation, /pointer-events:\s*none/);
+  const postcardNavigationButton = cssRule(css, ".postcard-context-navigation button");
+  assert.match(postcardNavigationButton, /width:\s*40px/);
+  assert.match(postcardNavigationButton, /height:\s*40px/);
+  assert.match(postcardNavigationButton, /border-radius:\s*50%/);
+
   const researchScroll = cssRule(css, ".research-modal-scroll");
   assert.match(researchScroll, /min-height:\s*0/);
   assert.match(researchScroll, /overflow-y:\s*auto/);
@@ -36,11 +48,13 @@ test("postcard and long-form research dialogs retain independent scroll containe
   assert.match(page, /researchTriggerRef\.current\?\.focus\(\)/);
   assert.match(page, /friend\.cards\.slice\(0, friendPostcardsPreviewLimit\)/);
   assert.match(page, /<details[\s\S]*?className="friend-details"[\s\S]*?<summary>[\s\S]*?展開資料與明信片/);
+  assert.match(page, /className="friend-postcard-count">\{friend\.cards\.length\} 張/);
   assert.match(page, /open=\{expandedFriendNames\.has\(friend\.name\)\}/);
   assert.match(page, /onToggle=\{\(event\) => setFriendExpanded\(friend\.name, event\.currentTarget\.open\)\}/);
   assert.match(page, /className="research-modal friend-postcards-modal"[\s\S]*?role="dialog"[\s\S]*?aria-modal="true"/);
   assert.match(page, /className="research-modal-scroll friend-postcards-modal-scroll"/);
   assert.match(page, /friendMoreTriggerRef\.current\?\.focus\(\)/);
+  assert.match(page, /className="modal-copy-shell"[\s\S]*?className="modal-copy"[\s\S]*?className="postcard-context-navigation"/);
   assert.doesNotMatch(page, /<details className="detail-story">/);
   const researchNotePosition = page.indexOf('<section className="detail-story">');
   const mapPosition = page.indexOf('{activeMapTarget && (');

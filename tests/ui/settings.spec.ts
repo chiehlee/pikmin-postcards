@@ -60,6 +60,38 @@ function settings(overrides: Partial<SettingsPayload> = {}): SettingsPayload {
 async function mockSettings(page: Page, initial: SettingsPayload) {
   let current = initial;
   const requests: Array<{ method: string; body: Record<string, unknown> }> = [];
+  let usageRequests = 0;
+  await page.route('**/api/settings/usage', async (route) => {
+    usageRequests += 1;
+    await route.fulfill({ json: {
+      provider: current.provider,
+      usage: current.provider === 'local_codex' ? {
+        available: true,
+        source: 'codex_app_server',
+        checked_at: '2026-08-29T00:00:00.000Z',
+        plan_type: 'plus',
+        windows: [
+          {
+            id: 'five_hour',
+            window_duration_minutes: 300,
+            used_percent: 39,
+            remaining_percent: 61,
+            resets_at: '2026-08-29T06:38:44.000Z',
+          },
+          {
+            id: 'weekly',
+            window_duration_minutes: 10_080,
+            used_percent: 30,
+            remaining_percent: 70,
+            resets_at: '2026-09-04T03:17:27.000Z',
+          },
+        ],
+      } : {
+        available: false,
+        reason: 'openai_api_uses_token_billing',
+      },
+    } });
+  });
   await page.route('**/api/settings', async (route) => {
     const method = route.request().method();
     if (method === 'GET') {
@@ -127,7 +159,7 @@ async function mockSettings(page: Page, initial: SettingsPayload) {
       },
     } });
   });
-  return { requests };
+  return { requests, get usageRequests() { return usageRequests; } };
 }
 
 test('archive header exposes the settings page', async ({ page }) => {
@@ -224,4 +256,37 @@ test('local Codex selection shows setup commands, persists provider, and runs a 
     { method: 'PUT', body: { provider: 'local_codex', model: 'gpt-5.6-sol', reasoning_effort: 'xhigh' } },
     { method: 'TEST', body: { provider: 'local_codex', model: 'gpt-5.6-sol', reasoning_effort: 'xhigh' } },
   ]);
+});
+
+test('local Codex settings show five-hour and weekly account usage with manual refresh', async ({ page }) => {
+  const state = await mockSettings(page, settings({
+    provider: 'local_codex',
+    provider_ready: true,
+    model: 'gpt-5.6-sol',
+    model_suggestions: ['gpt-5.6-sol', 'gpt-5.6-terra'],
+  }));
+  await page.goto('/settings');
+
+  const usage = page.getByRole('region', { name: 'Codex 帳戶用量' });
+  await expect(usage).toBeVisible();
+  await expect(usage.getByText('Plus', { exact: true })).toBeVisible();
+  await expect(usage.getByRole('article', { name: '5 小時用量' })).toContainText('61% 可用');
+  await expect(usage.getByRole('article', { name: '5 小時用量' })).toContainText('已使用 39%');
+  await expect(usage.getByRole('progressbar', { name: '5 小時已使用 39%' })).toHaveAttribute('value', '39');
+  await expect(usage.getByRole('article', { name: '每週用量' })).toContainText('70% 可用');
+  await expect(usage.getByText('這是 ChatGPT Codex 共用配額的百分比')).toBeVisible();
+  await expect.poll(() => state.usageRequests).toBe(1);
+
+  await usage.getByRole('button', { name: '重新整理' }).click();
+  await expect.poll(() => state.usageRequests).toBe(2);
+});
+
+test('OpenAI API settings explain why ChatGPT subscription windows are unavailable', async ({ page }) => {
+  const state = await mockSettings(page, settings());
+  await page.goto('/settings');
+
+  const note = page.getByRole('note', { name: 'OpenAI API 用量說明' });
+  await expect(note).toContainText('API Key 沒有相同的 5 小時／每週視窗');
+  await expect(note).toContainText('必須使用 Admin Key');
+  expect(state.usageRequests).toBe(0);
 });

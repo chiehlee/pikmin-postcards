@@ -1,4 +1,4 @@
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -12,58 +12,242 @@ const maxCapturedBytes = 4 * 1024 * 1024;
 export const defaultCodexCommand = "codex";
 export const defaultCodexResearchModel = "gpt-5.6-sol";
 export const defaultCodexReasoningEffort = "high";
+const codexAppServerStartupDelayMs = 750;
+
+export async function localCodexUsage({
+  command = process.env.PIKMIN_CODEX_COMMAND?.trim() || defaultCodexCommand,
+  requestImpl = requestCodexRateLimits,
+  checkedAt = new Date(),
+} = {}) {
+  const result = await requestImpl({ command });
+  return normalizeCodexRateLimits(result, { checkedAt });
+}
+
+export function normalizeCodexRateLimits(result, { checkedAt = new Date() } = {}) {
+  const limits = result?.rateLimitsByLimitId?.codex ?? result?.rateLimits;
+  if (!limits || typeof limits !== "object") {
+    throw new Error("Codex App Server 未回傳帳戶用量");
+  }
+  const windows = [limits.primary, limits.secondary]
+    .filter((window) => window && Number.isFinite(Number(window.windowDurationMins)))
+    .map((window) => normalizeCodexUsageWindow(window));
+  if (windows.length === 0) throw new Error("Codex App Server 未回傳可用的配額視窗");
+  const resetCredits = result?.rateLimitResetCredits;
+  return {
+    available: true,
+    source: "codex_app_server",
+    checked_at: new Date(checkedAt).toISOString(),
+    plan_type: typeof limits.planType === "string" ? limits.planType : null,
+    windows,
+    spend_control_reached: Boolean(limits.spendControlReached),
+    rate_limit_reached_type: typeof limits.rateLimitReachedType === "string"
+      ? limits.rateLimitReachedType
+      : null,
+    reset_credits_available: Number.isFinite(Number(resetCredits?.availableCount))
+      ? Number(resetCredits.availableCount)
+      : null,
+  };
+}
+
+export function requestCodexRateLimits({
+  command = defaultCodexCommand,
+  spawnImpl = spawn,
+  startupDelayMs = codexAppServerStartupDelayMs,
+  timeoutMs = 15_000,
+} = {}) {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    let stdoutBuffer = "";
+    let stderrBuffer = "";
+    let initializeSent = false;
+    const child = spawnImpl(command, ["app-server"], {
+      cwd: projectRoot,
+      env: { ...process.env, NO_COLOR: "1", TERM: "dumb" },
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+
+    const startupTimer = setTimeout(() => {
+      initializeSent = true;
+      send({
+        id: 1,
+        method: "initialize",
+        params: {
+          clientInfo: {
+            name: "pikmin-postcards",
+            title: "Pikmin Postcards",
+            version: "0.1.0",
+          },
+          capabilities: { experimentalApi: true },
+        },
+      });
+    }, startupDelayMs);
+    const timeoutTimer = setTimeout(() => {
+      finish(new Error("讀取 Codex 帳戶用量逾時"));
+    }, timeoutMs);
+
+    child.stdout?.setEncoding("utf8");
+    child.stderr?.setEncoding("utf8");
+    child.stdout?.on("data", (chunk) => {
+      stdoutBuffer += chunk;
+      let newlineIndex;
+      while ((newlineIndex = stdoutBuffer.indexOf("\n")) >= 0) {
+        const line = stdoutBuffer.slice(0, newlineIndex).trim();
+        stdoutBuffer = stdoutBuffer.slice(newlineIndex + 1);
+        if (!line) continue;
+        let message;
+        try {
+          message = JSON.parse(line);
+        } catch {
+          continue;
+        }
+        if (message.id === 1) {
+          if (message.error) {
+            finish(new Error("Codex App Server 初始化失敗"));
+            return;
+          }
+          send({ method: "initialized" });
+          send({ id: 2, method: "account/rateLimits/read", params: null });
+        } else if (message.id === 2) {
+          if (message.error) {
+            finish(new Error("Codex App Server 無法讀取帳戶用量"));
+            return;
+          }
+          finish(null, message.result);
+          return;
+        }
+      }
+    });
+    child.stderr?.on("data", (chunk) => {
+      stderrBuffer = `${stderrBuffer}${chunk}`.slice(-4_000);
+    });
+    child.stdin?.on("error", (error) => finish(error));
+    child.once("error", (error) => finish(error));
+    child.once("exit", (code, signal) => {
+      if (settled) return;
+      const detail = sanitizedOutput(stderrBuffer, { limit: 500, fromEnd: true });
+      finish(new Error(detail || `Codex App Server 提前結束（${signal || code || "unknown"}）`));
+    });
+
+    function send(message) {
+      if (settled || !child.stdin?.writable) return;
+      child.stdin.write(`${JSON.stringify(message)}\n`);
+    }
+
+    function finish(error, value) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(startupTimer);
+      clearTimeout(timeoutTimer);
+      if (child.exitCode === null && child.signalCode === null) child.kill("SIGTERM");
+      if (error) reject(error);
+      else resolve(value);
+    }
+
+    if (startupDelayMs <= 0 && !initializeSent) {
+      clearTimeout(startupTimer);
+      initializeSent = true;
+      send({
+        id: 1,
+        method: "initialize",
+        params: {
+          clientInfo: { name: "pikmin-postcards", title: "Pikmin Postcards", version: "0.1.0" },
+          capabilities: { experimentalApi: true },
+        },
+      });
+    }
+  });
+}
+
+function normalizeCodexUsageWindow(window) {
+  const durationMinutes = Number(window.windowDurationMins);
+  const usedPercent = clampPercentage(window.usedPercent);
+  const resetsAtSeconds = Number(window.resetsAt);
+  return {
+    id: durationMinutes === 300
+      ? "five_hour"
+      : durationMinutes === 10_080 ? "weekly" : `minutes_${durationMinutes}`,
+    window_duration_minutes: durationMinutes,
+    used_percent: usedPercent,
+    remaining_percent: Math.max(0, Math.min(100, 100 - usedPercent)),
+    resets_at: Number.isFinite(resetsAtSeconds)
+      ? new Date(resetsAtSeconds * 1_000).toISOString()
+      : null,
+  };
+}
+
+function clampPercentage(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return 0;
+  return Math.max(0, Math.min(100, numeric));
+}
 
 export async function localCodexStatus({
-  command = process.env.PIKMIN_CODEX_COMMAND?.trim() || defaultCodexCommand,
+  command = process.env.PIKMIN_CODEX_COMMAND?.trim() || null,
+  commandCandidates = defaultCodexCommandCandidates(),
   execFileImpl = execFileAsync,
 } = {}) {
-  try {
-    const versionResult = await execFileImpl(command, ["--version"], commandOptions(8_000));
-    const version = firstLine(versionResult.stdout || versionResult.stderr);
-    let login;
+  const candidates = command ? [command] : commandCandidates;
+  let lastError = null;
+  for (const candidate of candidates) {
     try {
-      login = await execFileImpl(command, ["login", "status"], commandOptions(12_000));
-    } catch (error) {
+      const versionResult = await execFileImpl(candidate, ["--version"], commandOptions(8_000));
+      const version = firstLine(versionResult.stdout || versionResult.stderr);
+      let login;
+      try {
+        login = await execFileImpl(candidate, ["login", "status"], commandOptions(12_000));
+      } catch (error) {
+        return {
+          installed: true,
+          authenticated: false,
+          available: false,
+          command: candidate,
+          version,
+          auth_status: sanitizedMessage(error) || "尚未登入",
+        };
+      }
+      const authStatus = firstLine(login.stdout || login.stderr) || "登入狀態未知";
+      const authenticated = /logged in/i.test(authStatus);
       return {
         installed: true,
-        authenticated: false,
-        available: false,
-        command,
+        authenticated,
+        available: authenticated,
+        command: candidate,
         version,
-        auth_status: sanitizedMessage(error) || "尚未登入",
+        auth_status: authStatus,
       };
+    } catch (error) {
+      lastError = error;
+      if (error?.code !== "ENOENT") break;
     }
-    const authStatus = firstLine(login.stdout || login.stderr) || "登入狀態未知";
-    const authenticated = /logged in/i.test(authStatus);
-    return {
-      installed: true,
-      authenticated,
-      available: authenticated,
-      command,
-      version,
-      auth_status: authStatus,
-    };
-  } catch (error) {
-    return {
-      installed: false,
-      authenticated: false,
-      available: false,
-      command,
-      version: null,
-      auth_status: error?.code === "ENOENT" ? "找不到 Codex CLI" : sanitizedMessage(error),
-    };
   }
+  return {
+    installed: false,
+    authenticated: false,
+    available: false,
+    command: command || defaultCodexCommand,
+    version: null,
+    auth_status: lastError?.code === "ENOENT" ? "找不到 Codex CLI" : sanitizedMessage(lastError),
+  };
+}
+
+export function defaultCodexCommandCandidates({ home = os.homedir() } = {}) {
+  return [...new Set([
+    defaultCodexCommand,
+    path.join(home, ".local/bin/codex"),
+    path.join(home, ".codex/packages/standalone/current/bin/codex"),
+  ])];
 }
 
 export async function verifyLocalCodexConnection({
-  command = process.env.PIKMIN_CODEX_COMMAND?.trim() || defaultCodexCommand,
+  command = process.env.PIKMIN_CODEX_COMMAND?.trim() || null,
   model = process.env.PIKMIN_CODEX_MODEL?.trim() || defaultCodexResearchModel,
   reasoningEffort = process.env.PIKMIN_CODEX_REASONING_EFFORT?.trim() || defaultCodexReasoningEffort,
   workingDirectory = projectRoot,
   statusImpl = localCodexStatus,
   runCommand = runCodexCommand,
 } = {}) {
-  const status = await statusImpl({ command });
+  const status = await statusImpl(command ? { command } : {});
+  const resolvedCommand = status.command || command || defaultCodexCommand;
   if (!status.installed) throw httpError(503, "找不到 Codex CLI；請先依設定頁指令安裝");
   if (!status.authenticated) throw httpError(503, "Codex CLI 尚未登入；請先執行 codex login");
 
@@ -77,7 +261,7 @@ export async function verifyLocalCodexConnection({
     required: ["ok", "message"],
   };
   const probe = await runStructuredCodex({
-    command,
+    command: resolvedCommand,
     model,
     reasoningEffort,
     workingDirectory,

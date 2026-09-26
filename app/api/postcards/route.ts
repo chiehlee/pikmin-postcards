@@ -30,7 +30,8 @@ export async function POST(request: Request) {
       workflow: batch.workflow,
       total: batch.total,
       jobs,
-      job: jobs[0],
+      job: jobs[0] ?? null,
+      duplicates: batch.duplicates,
       failures: batch.failures.map(({ input_label, error }) => ({ input_label, error })),
     }, jobs.every((job) => job.status === 'completed') ? 200 : 202);
   } catch (error) {

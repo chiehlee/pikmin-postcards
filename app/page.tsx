@@ -14,8 +14,8 @@ import {
 import { researchedLocationDisplay, researchedLocationQuery } from '../lib/location-names.mjs';
 import { googleMapsEmbedUrl, googleMapsSearchUrl } from '../lib/map-links.mjs';
 import {
-  archiveTimestamp,
   distanceKilometers,
+  modifiedTimestamp,
   paginateRecords,
   postcardCoordinates,
   sortPostcards,
@@ -23,20 +23,21 @@ import {
 
 const postcardsPerPage = 60;
 const friendPostcardsPreviewLimit = 5;
-const defaultSortField: SortField = 'archived_on';
+const defaultSortField: SortField = 'modified_at';
 const defaultSortDirection: SortDirection = 'desc';
 
 type Status = 'keep' | 'representative' | 'candidate' | 'delete' | 'unreviewed';
 type AcquisitionType = 'self_found' | 'received' | 'unknown';
-type SortField = 'rating' | 'found_date' | 'archived_on' | 'distance';
+type SortField = 'rating' | 'found_date' | 'modified_at' | 'distance';
 type SortDirection = 'asc' | 'desc';
 type ReasoningEffort = 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 type AddWorkflow = 'metadata_only' | 'full_research';
 type DistanceOrigin = {
   latitude: number;
   longitude: number;
-  source: 'device' | 'manual';
+  source: 'device' | 'manual' | 'postcard';
   accuracy?: number;
+  label?: string;
 };
 type MapTarget = {
   query: string;
@@ -54,6 +55,7 @@ type ManagementJob = {
   id: string;
   kind: 'add' | 'reresearch';
   workflow: AddWorkflow | 'full_research';
+  phase?: 'metadata' | 'research';
   batch_id: string | null;
   input_label: string | null;
   has_user_note?: boolean;
@@ -75,9 +77,24 @@ type ManagementNotice = {
   title: string;
   message: string;
 };
+type ExactDuplicatePrompt = {
+  input_label: string;
+  postcard_id: string;
+  poi_name: string;
+  found_date: string | null;
+  asset_path: string | null;
+  sha256: string;
+};
+
+type PostcardNavigation = {
+  source: 'archive' | 'friend';
+  ids: string[];
+  label: string;
+};
 
 type FriendProfile = {
   name: string;
+  modified_at: string;
   evidence_postcard_ids: string[];
   likely_base: {
     area: string | null;
@@ -99,6 +116,11 @@ type Postcard = {
   received_at: string | null;
   archived_on: string;
   archived_at?: string | null;
+  modified_at?: string | null;
+  reading?: {
+    is_read: boolean;
+    read_at: string | null;
+  };
   sender: string | null;
   acquisition: {
     type: AcquisitionType;
@@ -189,6 +211,12 @@ type Postcard = {
     recorded_at: string;
     job_id: string;
   }[];
+  poi_name_history?: {
+    previous_name: string;
+    next_name: string;
+    reason: 'manual-edit';
+    changed_at: string;
+  }[];
 };
 
 type GeocodeProvider = NonNullable<Postcard['location']['geocode']>['provider'];
@@ -223,6 +251,21 @@ function compactArchiveTime(postcard: Postcard) {
   }).format(new Date(postcard.archived_at));
 }
 
+function compactModifiedTime(postcard: Postcard) {
+  const timestamp = modifiedTimestamp(postcard);
+  if (!timestamp) return '時間未記錄';
+  if (!timestamp.includes('T')) return `${compactDate(timestamp)} · 時間未記錄`;
+  return new Intl.DateTimeFormat('zh-TW', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).format(new Date(timestamp));
+}
+
 function liveAssetUrl(publicPath: string) {
   return publicPath.startsWith('/images/')
     ? `/api/assets?path=${encodeURIComponent(publicPath)}`
@@ -242,15 +285,17 @@ function hostname(url: string) {
   }
 }
 
-function acquisitionLabel(postcard: Postcard) {
+function acquisitionLabel(postcard: Postcard, orphaned = false) {
   if (postcard.acquisition.type === 'self_found') return '自己發現';
+  if (postcard.sender && orphaned) return `朋友寄來・無主（原寄件人：${postcard.sender}）`;
   if (postcard.sender) return `朋友寄來・${postcard.sender}`;
   if (postcard.acquisition.type === 'received') return '朋友寄來・寄件人未知';
   return '來源待確認';
 }
 
-function senderLine(postcard: Postcard) {
+function senderLine(postcard: Postcard, orphaned = false) {
   if (postcard.acquisition.type === 'self_found') return '來源：自己發現';
+  if (postcard.sender && orphaned) return `寄件人：無主（原寄件人：${postcard.sender}）`;
   if (postcard.sender) return `寄件人：${postcard.sender}`;
   if (postcard.acquisition.type === 'received') return '寄件人：未知';
   return '來源：待確認';
@@ -319,8 +364,8 @@ function trapDialogFocus(event: ReactKeyboardEvent<HTMLElement>) {
   }
 }
 
-function managementStatusLabel(status: ManagementJob['status'], workflow: ManagementJob['workflow'] = 'full_research') {
-  if (workflow === 'metadata_only') {
+function managementStatusLabel(status: ManagementJob['status'], workflow: ManagementJob['workflow'] = 'full_research', phase: ManagementJob['phase'] = 'research') {
+  if (phase === 'metadata' || workflow === 'metadata_only') {
     if (status === 'queued') return '等待辨識';
     if (status === 'in_progress') return 'AI 畫面辨識中';
     if (status === 'applying') return '建立收藏卡';
@@ -363,6 +408,29 @@ function reasoningEffortLabel(effort: ReasoningEffort) {
   return ({ none: 'None', minimal: 'Minimal', low: 'Low', medium: 'Medium', high: 'High', xhigh: 'XHigh', max: 'Max' } as const)[effort];
 }
 
+function postcardIsRead(postcard: Postcard) {
+  return postcard.reading?.is_read !== false;
+}
+
+function withPostcardReadState(postcard: Postcard, isRead: boolean) {
+  return {
+    ...postcard,
+    reading: {
+      is_read: isRead,
+      read_at: isRead ? new Date().toISOString() : null,
+    },
+  };
+}
+
+function readingTimestampLabel(postcard: Postcard) {
+  if (!postcardIsRead(postcard)) return '保留為未讀；下次打開時會自動標示為已讀。';
+  if (!postcard.reading?.read_at) return '這張明信片已經讀過。';
+  return `最近閱讀：${new Intl.DateTimeFormat('zh-TW', {
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+  }).format(new Date(postcard.reading.read_at))}`;
+}
+
 async function responseJson<T>(response: Response): Promise<T> {
   const payload = await response.json().catch(() => ({})) as { error?: string } & T;
   if (!response.ok) throw new Error(payload.error ?? `HTTP ${response.status}`);
@@ -372,6 +440,7 @@ async function responseJson<T>(response: Response): Promise<T> {
 export default function Home() {
   const [postcards, setPostcards] = useState<Postcard[]>([]);
   const [friendProfiles, setFriendProfiles] = useState<FriendProfile[]>([]);
+  const [orphanedSenderNames, setOrphanedSenderNames] = useState<string[]>([]);
   const [archiveReady, setArchiveReady] = useState(false);
   const [archiveError, setArchiveError] = useState<string | null>(null);
   const [view, setView] = useState<'archive' | 'friends'>('archive');
@@ -379,6 +448,7 @@ export default function Home() {
   const [senderFilter, setSenderFilter] = useState('all');
   const [country, setCountry] = useState('all');
   const [status, setStatus] = useState<'all' | Status>('all');
+  const [readingFilter, setReadingFilter] = useState<'all' | 'unread' | 'read'>('all');
   const [sortField, setSortField] = useState<SortField>(defaultSortField);
   const [sortDirection, setSortDirection] = useState<SortDirection>(defaultSortDirection);
   const [distanceOrigin, setDistanceOrigin] = useState<DistanceOrigin | null>(null);
@@ -388,17 +458,32 @@ export default function Home() {
   const [manualLongitude, setManualLongitude] = useState('');
   const [page, setPage] = useState(1);
   const [active, setActive] = useState<Postcard | null>(null);
+  const [postcardNavigation, setPostcardNavigation] = useState<PostcardNavigation | null>(null);
   const [mapLoadedFor, setMapLoadedFor] = useState<string | null>(null);
   const [researchOpen, setResearchOpen] = useState(false);
   const [activeFriendName, setActiveFriendName] = useState<string | null>(null);
+  const [editingFriendName, setEditingFriendName] = useState<string | null>(null);
+  const [friendEditName, setFriendEditName] = useState('');
+  const [friendEditBase, setFriendEditBase] = useState('');
+  const [friendMergeOpen, setFriendMergeOpen] = useState(false);
+  const [friendMergeQuery, setFriendMergeQuery] = useState('');
+  const [friendMergeTarget, setFriendMergeTarget] = useState('');
+  const [friendDeleteConfirm, setFriendDeleteConfirm] = useState(false);
+  const [friendAction, setFriendAction] = useState<'save' | 'base' | 'merge' | 'avatar' | 'delete' | null>(null);
   const [expandedFriendNames, setExpandedFriendNames] = useState<Set<string>>(() => new Set());
   const [addOpen, setAddOpen] = useState(false);
   const [adding, setAdding] = useState(false);
   const [addWorkflow, setAddWorkflow] = useState<AddWorkflow>('metadata_only');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [sourceUrls, setSourceUrls] = useState('');
+  const [addNote, setAddNote] = useState('');
+  const [exactDuplicates, setExactDuplicates] = useState<ExactDuplicatePrompt[]>([]);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [postcardNameEditOpen, setPostcardNameEditOpen] = useState(false);
+  const [postcardEditName, setPostcardEditName] = useState('');
+  const [savingPostcardName, setSavingPostcardName] = useState(false);
+  const [readingPostcardIds, setReadingPostcardIds] = useState<Set<string>>(() => new Set());
   const [reresearchOpen, setReresearchOpen] = useState(false);
   const [reresearchNote, setReresearchNote] = useState('');
   const [startingReresearch, setStartingReresearch] = useState(false);
@@ -415,7 +500,9 @@ export default function Home() {
   const [clock, setClock] = useState(() => Date.now());
   const researchTriggerRef = useRef<HTMLButtonElement | null>(null);
   const reresearchNoteRef = useRef<HTMLTextAreaElement | null>(null);
+  const postcardNameInputRef = useRef<HTMLInputElement | null>(null);
   const friendMoreTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const friendEditorTriggerRef = useRef<HTMLButtonElement | null>(null);
   const notifiedBatchesRef = useRef<Set<string>>(new Set());
 
   const notify = useCallback((
@@ -430,11 +517,13 @@ export default function Home() {
     const payload = await responseJson<{
       postcards: Postcard[];
       friends: FriendProfile[];
+      orphaned_sender_names?: string[];
       capabilities: ArchiveCapabilities;
       jobs?: ManagementJob[];
     }>(await fetch('/api/archive', { cache: 'no-store' }));
     setPostcards(payload.postcards);
     setFriendProfiles(payload.friends);
+    setOrphanedSenderNames(payload.orphaned_sender_names ?? []);
     setCapabilities(payload.capabilities);
     setJobs((current) => current.length ? current : payload.jobs ?? []);
     setArchiveError(null);
@@ -485,7 +574,16 @@ export default function Home() {
             const batchSize = payload.job.batch_id
               ? jobs.filter((job) => job.batch_id === payload.job.batch_id).length
               : 1;
+            if (!current.postcard_id && payload.job.postcard_id && payload.job.status !== 'completed') {
+              await refreshArchive();
+              if (cancelled) return;
+            }
             if (payload.job.status === 'completed') {
+              if (payload.job.kind === 'reresearch') {
+                setSortField(defaultSortField);
+                setSortDirection(defaultSortDirection);
+                setPage(1);
+              }
               const updated = await refreshArchive(active?.id === payload.job.postcard_id ? payload.job.postcard_id : null);
               if (cancelled) return;
               if (batchSize === 1 && payload.job.kind === 'add' && payload.job.postcard_id) {
@@ -511,9 +609,9 @@ export default function Home() {
               setJobs((items) => items.map((item) => item.id === payload.job.id ? payload.job : item));
               if (payload.job.status === 'failed' && batchSize === 1) {
                 notify(
-                  payload.job.error || 'AI 工作失敗。',
+                  `${payload.job.error || 'AI 工作失敗。'}${payload.job.postcard_id ? ' 明信片已建檔，可在收藏檔案中按「再研究」。' : ''}`,
                   'error',
-                  payload.job.workflow === 'metadata_only' ? '快速建檔失敗' : '研究失敗',
+                  payload.job.phase === 'metadata' ? '畫面辨識失敗' : '研究失敗',
                 );
               }
             }
@@ -564,23 +662,78 @@ export default function Home() {
     return () => timers.forEach((timer) => window.clearTimeout(timer));
   }, [jobs, notify]);
 
-  function openPostcard(postcard: Postcard) {
+  function openPostcard(postcard: Postcard, navigation?: PostcardNavigation) {
     setMapLoadedFor(null);
     setResearchOpen(false);
     setDeleteConfirm(false);
+    setPostcardNameEditOpen(false);
+    setPostcardEditName('');
     setReresearchOpen(false);
     setReresearchNote('');
-    setActive(postcard);
+    if (navigation) setPostcardNavigation(navigation);
+    if (postcardIsRead(postcard)) {
+      setActive(postcard);
+      return;
+    }
+    const opened = withPostcardReadState(postcard, true);
+    replacePostcardLocally(opened);
+    setActive(opened);
+    void persistPostcardReadState(postcard, opened);
+  }
+
+  function replacePostcardLocally(updated: Postcard) {
+    setPostcards((items) => items.map((item) => item.id === updated.id ? updated : item));
+    setActive((current) => current?.id === updated.id ? updated : current);
+  }
+
+  async function persistPostcardReadState(previous: Postcard, updated: Postcard) {
+    setReadingPostcardIds((current) => new Set(current).add(updated.id));
+    try {
+      const payload = await responseJson<{ postcard: Postcard }>(await fetch(`/api/postcards/${encodeURIComponent(updated.id)}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ is_read: postcardIsRead(updated) }),
+      }));
+      replacePostcardLocally(payload.postcard);
+    } catch (error) {
+      replacePostcardLocally(previous);
+      notify(error instanceof Error ? error.message : '無法更新閱讀狀態。', 'error', '閱讀狀態更新失敗');
+    } finally {
+      setReadingPostcardIds((current) => {
+        const next = new Set(current);
+        next.delete(updated.id);
+        return next;
+      });
+    }
+  }
+
+  async function toggleActiveReadState() {
+    if (!active || readingPostcardIds.has(active.id)) return;
+    const previous = active;
+    const updated = withPostcardReadState(previous, !postcardIsRead(previous));
+    replacePostcardLocally(updated);
+    await persistPostcardReadState(previous, updated);
   }
 
   const closePostcard = useCallback(() => {
     setMapLoadedFor(null);
     setResearchOpen(false);
     setDeleteConfirm(false);
+    setPostcardNameEditOpen(false);
+    setPostcardEditName('');
     setReresearchOpen(false);
     setReresearchNote('');
+    setPostcardNavigation(null);
     setActive(null);
   }, []);
+
+  function navigatePostcard(direction: -1 | 1) {
+    if (!active || !postcardNavigation) return;
+    const index = postcardNavigation.ids.indexOf(active.id);
+    const nextId = postcardNavigation.ids[index + direction];
+    const next = postcards.find((postcard) => postcard.id === nextId);
+    if (next) openPostcard(next);
+  }
 
   const closeResearch = useCallback(() => {
     setResearchOpen(false);
@@ -598,16 +751,210 @@ export default function Home() {
   }
 
   function openPostcardFromFriendPopup(postcard: Postcard) {
+    const navigation = activeFriendGroup
+      ? { source: 'friend' as const, ids: activeFriendGroup.cards.map((card) => card.id), label: activeFriendGroup.name }
+      : undefined;
     setActiveFriendName(null);
-    openPostcard(postcard);
+    openPostcard(postcard, navigation);
+  }
+
+  const closeFriendEditor = useCallback(() => {
+    setEditingFriendName(null);
+    setFriendMergeOpen(false);
+    setFriendMergeQuery('');
+    setFriendMergeTarget('');
+    setFriendDeleteConfirm(false);
+    setFriendAction(null);
+    window.requestAnimationFrame(() => friendEditorTriggerRef.current?.focus());
+  }, []);
+
+  function openFriendEditor(friend: { name: string; baseArea: string | null }, trigger: HTMLButtonElement) {
+    friendEditorTriggerRef.current = trigger;
+    setEditingFriendName(friend.name);
+    setFriendEditName(friend.name);
+    setFriendEditBase(friend.baseArea ?? '');
+    setFriendMergeOpen(false);
+    setFriendMergeQuery('');
+    setFriendMergeTarget('');
+    setFriendDeleteConfirm(false);
+    setNotice(null);
+  }
+
+  async function saveFriendInformation(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!editingFriendName) return;
+    setFriendAction('save');
+    setNotice(null);
+    try {
+      const previousName = editingFriendName;
+      const payload = await responseJson<{ friend: FriendProfile }>(await fetch(
+        `/api/friends/${encodeURIComponent(previousName)}`,
+        {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ name: friendEditName, likely_base_area: friendEditBase }),
+        },
+      ));
+      await refreshArchive();
+      setExpandedFriendNames((current) => {
+        if (!current.has(previousName)) return current;
+        const next = new Set(current);
+        next.delete(previousName);
+        next.add(payload.friend.name);
+        return next;
+      });
+      closeFriendEditor();
+      notify(`已更新「${payload.friend.name}」的名稱與可能據點。`, 'success', '寄件者情報已保存');
+    } catch (error) {
+      notify(error instanceof Error ? error.message : '無法保存寄件者情報。', 'error', '保存失敗');
+    } finally {
+      setFriendAction(null);
+    }
+  }
+
+  async function mergeSelectedFriend() {
+    if (!editingFriendName || !friendMergeTarget) return;
+    setFriendAction('merge');
+    setNotice(null);
+    try {
+      await responseJson(await fetch(`/api/friends/${encodeURIComponent(editingFriendName)}/merge`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ target_name: friendMergeTarget }),
+      }));
+      const sourceName = editingFriendName;
+      const targetName = friendMergeTarget;
+      await refreshArchive();
+      closeFriendEditor();
+      notify(`「${sourceName}」已合併至「${targetName}」；明信片與異動紀錄均已保留。`, 'success', '寄件者已合併');
+    } catch (error) {
+      notify(error instanceof Error ? error.message : '無法合併寄件者。', 'error', '合併失敗');
+    } finally {
+      setFriendAction(null);
+    }
+  }
+
+  async function recropEditingFriendAvatar() {
+    if (!editingFriendName) return;
+    setFriendAction('avatar');
+    setNotice(null);
+    try {
+      const payload = await responseJson<{ avatar_generation: { status: string }[] }>(await fetch(
+        `/api/friends/${encodeURIComponent(editingFriendName)}/avatar`,
+        { method: 'POST' },
+      ));
+      await refreshArchive();
+      const generated = payload.avatar_generation.some((entry) => entry.status === 'generated');
+      notify(
+        generated
+          ? `已從「${editingFriendName}」畫質最佳的可用明信片重新裁切 Mii。`
+          : '目前沒有足夠可信的 Mii 裁切提示；既有頭像沒有被低品質結果覆寫。',
+        generated ? 'success' : 'error',
+        generated ? 'Mii 頭像已更新' : '無法重新截圖',
+      );
+    } catch (error) {
+      notify(error instanceof Error ? error.message : '無法重新截取 Mii。', 'error', '重新截圖失敗');
+    } finally {
+      setFriendAction(null);
+    }
+  }
+
+  async function reassessEditingFriendBase() {
+    if (!editingFriendName) return;
+    setFriendAction('base');
+    setNotice(null);
+    try {
+      const payload = await responseJson<{ friend: FriendProfile }>(await fetch(
+        `/api/friends/${encodeURIComponent(editingFriendName)}/base`,
+        { method: 'POST' },
+      ));
+      await refreshArchive();
+      setFriendEditBase(payload.friend.likely_base.area ?? '');
+      notify(
+        payload.friend.likely_base.area
+          ? `依目前有效證據，可能據點判定為「${payload.friend.likely_base.area}」。`
+          : `目前仍沒有足夠證據判定可能據點：${payload.friend.likely_base.reason}`,
+        'success',
+        payload.friend.likely_base.area ? '可能據點已重新判定' : '重新判定完成・尚未判定',
+      );
+    } catch (error) {
+      notify(error instanceof Error ? error.message : '無法重新判定可能據點。', 'error', '判定失敗');
+    } finally {
+      setFriendAction(null);
+    }
+  }
+
+  async function deleteEditingFriend() {
+    if (!editingFriendName) return;
+    setFriendAction('delete');
+    setNotice(null);
+    try {
+      const deletedName = editingFriendName;
+      await responseJson(await fetch(`/api/friends/${encodeURIComponent(deletedName)}`, {
+        method: 'DELETE',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ reason: '使用者由網站 soft delete 寄件者情報' }),
+      }));
+      await refreshArchive();
+      closeFriendEditor();
+      notify(`「${deletedName}」已從朋友足跡隱藏；所屬明信片保留並顯示為無主。`, 'success', '寄件者已 soft delete');
+    } catch (error) {
+      notify(error instanceof Error ? error.message : '無法刪除寄件者情報。', 'error', '刪除失敗');
+    } finally {
+      setFriendAction(null);
+    }
   }
 
   function toggleReresearch() {
     setDeleteConfirm(false);
+    setPostcardNameEditOpen(false);
+    setPostcardEditName('');
     setReresearchOpen((open) => {
       if (!open) window.requestAnimationFrame(() => reresearchNoteRef.current?.focus());
       return !open;
     });
+  }
+
+  function togglePostcardNameEdit() {
+    if (!active) return;
+    setDeleteConfirm(false);
+    setReresearchOpen(false);
+    setReresearchNote('');
+    setPostcardNameEditOpen((open) => {
+      if (open) {
+        setPostcardEditName('');
+        return false;
+      }
+      setPostcardEditName(active.poi_name);
+      window.requestAnimationFrame(() => {
+        postcardNameInputRef.current?.focus();
+        postcardNameInputRef.current?.select();
+      });
+      return true;
+    });
+  }
+
+  async function savePostcardName(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!active) return;
+    const previousName = active.poi_name;
+    setSavingPostcardName(true);
+    setNotice(null);
+    try {
+      const payload = await responseJson<{ postcard: Postcard }>(await fetch(`/api/postcards/${encodeURIComponent(active.id)}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ poi_name: postcardEditName }),
+      }));
+      replacePostcardLocally(payload.postcard);
+      setPostcardNameEditOpen(false);
+      setPostcardEditName('');
+      notify(`已將「${previousName}」更正為「${payload.postcard.poi_name}」；舊名稱已保留在修改紀錄。`, 'success', '明信片名稱已更新');
+    } catch (error) {
+      notify(error instanceof Error ? error.message : '無法更新明信片名稱。', 'error', '名稱更新失敗');
+    } finally {
+      setSavingPostcardName(false);
+    }
   }
 
   async function startReresearch(event: FormEvent<HTMLFormElement>) {
@@ -667,7 +1014,9 @@ export default function Home() {
       ));
       setJobs((items) => items.map((item) => item.id === payload.job.id ? payload.job : item));
       notify(
-        'AI 工作已停止；原圖、intake 與工作紀錄仍保留，可以稍後重新送出。',
+        payload.job.postcard_id
+          ? 'AI 工作已停止；原圖、intake 與工作紀錄仍保留。明信片已建檔，可從收藏檔案按「再研究」。'
+          : 'AI 工作已停止；原圖、intake 與工作紀錄仍保留，可以稍後重新送出。',
         'success',
         'AI 工作已中止',
       );
@@ -691,7 +1040,8 @@ export default function Home() {
         batch_id: string;
         total: number;
         jobs: ManagementJob[];
-        job: ManagementJob;
+        job: ManagementJob | null;
+        duplicates: ExactDuplicatePrompt[];
         failures: { input_label: string; error: string }[];
       }>(await fetch('/api/postcards', {
         method: 'POST',
@@ -705,26 +1055,31 @@ export default function Home() {
         ...payload.jobs,
       ]);
       setClock(Date.now());
-      setAddOpen(false);
       setSelectedFiles([]);
       setSourceUrls('');
       const runningCount = payload.jobs.filter((job) => !isTerminalJob(job)).length;
-      const duplicateCount = payload.jobs.filter((job) => job.result?.exact_duplicate).length;
-      if (!runningCount) {
-        const updated = await refreshArchive();
-        const duplicate = payload.jobs.length === 1
-          ? updated.find((postcard) => postcard.id === payload.job.postcard_id)
-          : null;
-        if (duplicate) setActive(duplicate);
+      const duplicateCount = payload.duplicates?.length ?? 0;
+      if (duplicateCount) {
+        setExactDuplicates(payload.duplicates);
         notify(
-          `${duplicateCount} 張圖片已存在，沒有重複建立明信片。${payload.failures.length ? `另有 ${payload.failures.length} 張未能處理。` : ''}`,
+          `${duplicateCount} 張圖片與既有原圖完全相同；尚未啟動這些圖片的 AI 工作，請在新增視窗中選擇是否改為再研究。${runningCount ? `另有 ${runningCount} 個新圖片工作已排入佇列。` : ''}`,
           payload.failures.length ? 'error' : 'success',
-          '批次檢查完成',
+          '需要確認完全相同的圖片',
+        );
+        return;
+      }
+      setAddOpen(false);
+      setAddNote('');
+      if (!runningCount) {
+        notify(
+          `${payload.failures.length} 張圖片未能處理。`,
+          'error',
+          '批次處理失敗',
         );
       } else {
         const accepted = payload.jobs.length;
         notify(
-          `已接收 ${payload.total} 張：${runningCount} 個 AI 工作已排入佇列${duplicateCount ? `，${duplicateCount} 張已存在` : ''}${payload.failures.length ? `，${payload.failures.length} 張失敗` : ''}。`,
+          `已接收 ${payload.total} 張：${runningCount} 個 AI 工作已排入佇列${payload.failures.length ? `，${payload.failures.length} 張失敗` : ''}。`,
           payload.failures.length ? 'error' : 'success',
           addWorkflow === 'metadata_only' ? '批次快速建檔已開始' : '批次新增與研究已開始',
         );
@@ -736,6 +1091,70 @@ export default function Home() {
       setAdding(false);
     }
   }
+
+  async function continueExactDuplicatesAsReresearch() {
+    setAdding(true);
+    setNotice(null);
+    const uniqueDuplicates = [...new Map(exactDuplicates.map((duplicate) => [duplicate.postcard_id, duplicate])).values()];
+    const results = await Promise.allSettled(uniqueDuplicates.map(async (duplicate) => {
+      const payload = await responseJson<{ job: ManagementJob }>(await fetch(
+        `/api/postcards/${encodeURIComponent(duplicate.postcard_id)}/research`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ user_note: addNote.trim() || null }),
+        },
+      ));
+      return { duplicate, job: payload.job };
+    }));
+    const started = results.flatMap((result) => result.status === 'fulfilled' ? [result.value] : []);
+    const failedIds = new Set(results.flatMap((result, index) => result.status === 'rejected' ? [uniqueDuplicates[index].postcard_id] : []));
+    if (started.length) {
+      setJobs((items) => [
+        ...items.filter((job) => !started.some((entry) => entry.job.id === job.id)),
+        ...started.map((entry) => entry.job),
+      ]);
+      setClock(Date.now());
+    }
+    if (failedIds.size) {
+      setExactDuplicates((items) => items.filter((item) => failedIds.has(item.postcard_id)));
+      const firstFailure = results.find((result) => result.status === 'rejected');
+      notify(
+        firstFailure?.status === 'rejected' && firstFailure.reason instanceof Error
+          ? firstFailure.reason.message
+          : `${failedIds.size} 張既有明信片無法開始再研究。`,
+        'error',
+        '無法開始再研究',
+      );
+      setAdding(false);
+      return;
+    }
+    setExactDuplicates([]);
+    setAddNote('');
+    setAddOpen(false);
+    setAdding(false);
+    notify(
+      `${started.length} 張完全相同的圖片沒有重複建檔；既有明信片已加入再研究佇列。`,
+      'success',
+      '已改為再研究',
+    );
+  }
+
+  function cancelExactDuplicateResearch() {
+    setExactDuplicates([]);
+    setAddNote('');
+    setAddOpen(false);
+    notify('這些重複圖片沒有新增明信片，也沒有啟動 AI 研究。原始上傳紀錄仍保留於 intake。', 'success', '已取消重複圖片');
+  }
+
+  const closeAddDialog = useCallback(() => {
+    if (adding) return;
+    setAddOpen(false);
+    setSelectedFiles([]);
+    setSourceUrls('');
+    setAddNote('');
+    setExactDuplicates([]);
+  }, [adding]);
 
   function requestDeviceLocation() {
     if (typeof window === 'undefined' || !window.isSecureContext) {
@@ -795,10 +1214,29 @@ export default function Home() {
     if (nextField === 'distance' && !distanceOrigin) requestDeviceLocation();
   }
 
+  function applyPostcardDistanceOrigin(postcard: Postcard) {
+    const coordinates = postcardCoordinates(postcard);
+    if (!coordinates) return;
+    setDistanceOrigin({ ...coordinates, source: 'postcard', label: postcard.poi_name });
+    setManualLatitude(String(coordinates.latitude));
+    setManualLongitude(String(coordinates.longitude));
+    setLocationFeedback(`已使用「${postcard.poi_name}」的研究座標作為距離起點；座標只保存在目前頁面記憶體。`);
+    setSortField('distance');
+    setSortDirection('asc');
+    setQuery('');
+    setPage(1);
+    setView('archive');
+    closePostcard();
+    window.requestAnimationFrame(() => {
+      document.getElementById('archive')?.scrollIntoView({ block: 'start' });
+    });
+  }
+
   function resetArchiveControls() {
     setSenderFilter('all');
     setCountry('all');
     setStatus('all');
+    setReadingFilter('all');
     setSortField(defaultSortField);
     setSortDirection(defaultSortDirection);
     setPage(1);
@@ -817,6 +1255,7 @@ export default function Home() {
     () => [...new Set(postcards.map((postcard) => postcard.location.country ?? '未正規化'))],
     [postcards],
   );
+  const orphanedSenders = useMemo(() => new Set(orphanedSenderNames), [orphanedSenderNames]);
 
   const filtered = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase('zh-Hant');
@@ -832,6 +1271,7 @@ export default function Home() {
       })
       .filter((postcard) => country === 'all' || (postcard.location.country ?? '未正規化') === country)
       .filter((postcard) => status === 'all' || postcard.curation.status === status)
+      .filter((postcard) => readingFilter === 'all' || postcardIsRead(postcard) === (readingFilter === 'read'))
       .filter((postcard) => {
         if (!normalizedQuery) return true;
         return [
@@ -842,7 +1282,7 @@ export default function Home() {
           postcard.location.endonym,
           postcard.location.zh_tw ?? '',
           postcard.research.summary,
-          acquisitionLabel(postcard),
+          acquisitionLabel(postcard, Boolean(postcard.sender && orphanedSenders.has(postcard.sender))),
           ...postcard.curation.tags,
         ]
           .join(' ')
@@ -854,11 +1294,12 @@ export default function Home() {
       direction: sortDirection,
       origin: distanceOrigin,
     });
-  }, [country, distanceOrigin, postcards, query, senderFilter, sortDirection, sortField, status]);
+  }, [country, distanceOrigin, orphanedSenders, postcards, query, readingFilter, senderFilter, sortDirection, sortField, status]);
 
   const friendGroups = useMemo(() => {
     return friendProfiles.map((profile) => ({
       name: profile.name,
+      modifiedAt: profile.modified_at,
       avatar: profile.avatar,
       cards: postcards
         .filter((postcard) => profile.evidence_postcard_ids.includes(postcard.id))
@@ -870,18 +1311,35 @@ export default function Home() {
       avoid: profile.avoid_send.areas.length ? profile.avoid_send.areas.join('、') : '無正式建議',
     }));
   }, [friendProfiles, postcards]);
+  const friendMergeCandidates = useMemo(() => {
+    const normalizedQuery = friendMergeQuery.trim().toLocaleLowerCase('zh-Hant');
+    return friendGroups
+      .filter((friend) => friend.name !== editingFriendName)
+      .filter((friend) => !normalizedQuery || [friend.name, friend.baseArea ?? '']
+        .join(' ')
+        .toLocaleLowerCase('zh-Hant')
+        .includes(normalizedQuery))
+      .sort((left, right) => (
+        String(right.modifiedAt ?? '').localeCompare(String(left.modifiedAt ?? ''))
+        || left.name.localeCompare(right.name, 'zh-Hant')
+      ));
+  }, [editingFriendName, friendGroups, friendMergeQuery]);
   const activeFriendGroup = activeFriendName
     ? friendGroups.find((friend) => friend.name === activeFriendName) ?? null
     : null;
   const allFriendsExpanded = friendGroups.length > 0
     && friendGroups.every((friend) => expandedFriendNames.has(friend.name));
   const activeMapTarget = active ? mapTargetFor(active) : null;
+  const activeCoordinates = active ? postcardCoordinates(active) : null;
   const activeMapIsLoaded = !!active && mapLoadedFor === active.id;
-  const chronologicalSort = sortField === 'found_date' || sortField === 'archived_on';
+  const chronologicalSort = sortField === 'found_date' || sortField === 'modified_at';
   const filteredCoordinateCount = filtered.filter((postcard) => postcardCoordinates(postcard)).length;
   const pagination = paginateRecords(filtered, page, postcardsPerPage);
+  const activeNavigationIndex = active && postcardNavigation
+    ? postcardNavigation.ids.indexOf(active.id)
+    : -1;
   const activeJob = active
-    ? jobs.find((job) => job.kind === 'reresearch' && job.postcard_id === active.id && !isTerminalJob(job))
+    ? jobs.find((job) => job.postcard_id === active.id && !isTerminalJob(job))
     : null;
   const runningJobs = useMemo(
     () => jobs.filter((job) => !isTerminalJob(job)),
@@ -907,13 +1365,14 @@ export default function Home() {
   }
 
   useEffect(() => {
-    if (!active && !addOpen && !activeFriendGroup) return;
+    if (!active && !addOpen && !activeFriendGroup && !editingFriendName) return;
     const close = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       if (researchOpen) closeResearch();
       else if (active) closePostcard();
+      else if (editingFriendName) closeFriendEditor();
       else if (activeFriendGroup) closeFriendPostcards();
-      else setAddOpen(false);
+      else closeAddDialog();
     };
     document.body.classList.add('modal-open');
     window.addEventListener('keydown', close);
@@ -921,7 +1380,7 @@ export default function Home() {
       document.body.classList.remove('modal-open');
       window.removeEventListener('keydown', close);
     };
-  }, [active, activeFriendGroup, addOpen, closeFriendPostcards, closePostcard, closeResearch, researchOpen]);
+  }, [active, activeFriendGroup, addOpen, closeAddDialog, closeFriendEditor, closeFriendPostcards, closePostcard, closeResearch, editingFriendName, researchOpen]);
 
   return (
     <main>
@@ -947,6 +1406,8 @@ export default function Home() {
             setAddWorkflow('metadata_only');
             setSelectedFiles([]);
             setSourceUrls('');
+            setAddNote('');
+            setExactDuplicates([]);
             setAddOpen(true);
             setNotice(null);
           }}>
@@ -1013,7 +1474,7 @@ export default function Home() {
               <p className="eyebrow">ACTIVE INTAKE &amp; RESEARCH</p>
               <h2 id="research-queue-title">處理中的明信片</h2>
             </div>
-            <p>{runningJobs.length} 項進行中 · 快速建檔與完整研究都會在完成後自動移入收藏檔案</p>
+            <p>{runningJobs.length} 項進行中 · 新增並研究會先保存畫面資訊，再補完完整研究</p>
           </div>
           <div className="research-job-grid">
             {runningJobs.map((job) => {
@@ -1039,11 +1500,11 @@ export default function Home() {
                     <span className="research-job-kind">{managementKindLabel(job)}</span>
                   </div>
                   <div className="research-job-copy">
-                    <span className="research-job-status"><i aria-hidden="true" />{managementStatusLabel(job.status, job.workflow)}</span>
+                    <span className="research-job-status"><i aria-hidden="true" />{managementStatusLabel(job.status, job.workflow, job.phase)}</span>
                     <h3>{postcard?.poi_name ?? '名稱辨識中'}</h3>
                     <p>{postcard ? `發現日期 · ${compactDate(postcard.found_date)}` : `發現日期 · 辨識中${job.input_label ? ` · ${job.input_label}` : ''}`}</p>
-                    <small>{aiProviderLabel(job.provider)} · {job.model} · {reasoningEffortLabel(job.reasoning_effort)}{job.has_user_note ? ' · 含使用者補充' : ''} · {managementStatusLabel(job.status, job.workflow)} · {elapsedLabel(job, clock)}</small>
-                    <div className="research-job-progress" role="progressbar" aria-label={`${postcard?.poi_name ?? '新明信片'}處理進度`} aria-valuetext={managementStatusLabel(job.status, job.workflow)}>
+                    <small>{aiProviderLabel(job.provider)} · {job.model} · {reasoningEffortLabel(job.reasoning_effort)}{job.has_user_note ? ' · 含使用者補充' : ''} · {managementStatusLabel(job.status, job.workflow, job.phase)} · {elapsedLabel(job, clock)}</small>
+                    <div className="research-job-progress" role="progressbar" aria-label={`${postcard?.poi_name ?? '新明信片'}處理進度`} aria-valuetext={managementStatusLabel(job.status, job.workflow, job.phase)}>
                       <span />
                     </div>
                     {job.status !== 'applying' ? (
@@ -1114,11 +1575,19 @@ export default function Home() {
               </select>
             </label>
             <label>
+              <span>閱讀狀態</span>
+              <select value={readingFilter} onChange={(event) => { setReadingFilter(event.target.value as 'all' | 'unread' | 'read'); setPage(1); }}>
+                <option value="all">全部</option>
+                <option value="unread">未讀</option>
+                <option value="read">已讀</option>
+              </select>
+            </label>
+            <label>
               <span>排序</span>
               <select aria-label="排序" value={sortField} onChange={(event) => changeSortField(event.target.value as SortField)}>
                 <option value="rating">評分</option>
                 <option value="found_date">發現日期</option>
-                <option value="archived_on">加入系統時間</option>
+                <option value="modified_at">上次修改時間</option>
                 <option value="distance">距離</option>
               </select>
             </label>
@@ -1138,7 +1607,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={resetArchiveControls}
-                aria-label="恢復預設：來源、國家、收藏判斷與排序"
+                aria-label="恢復預設：來源、國家、收藏判斷、閱讀狀態與排序"
               >
                 <span aria-hidden="true">↺</span> 恢復預設
               </button>
@@ -1181,12 +1650,18 @@ export default function Home() {
             <div className="postcard-grid">
               {pagination.items.map((postcard) => {
                 const distance = distanceOrigin ? distanceKilometers(postcard, distanceOrigin) : null;
-                const displayedDate = sortField === 'archived_on' ? archiveTimestamp(postcard) : postcard.found_date;
-                const displayedDateLabel = sortField === 'archived_on' ? '加入系統' : '發現';
+                const displayedDate = sortField === 'modified_at' ? modifiedTimestamp(postcard) : postcard.found_date;
+                const displayedDateLabel = sortField === 'modified_at' ? '修改' : '發現';
                 return (
-                  <article className="postcard-card" data-postcard-id={postcard.id} key={postcard.id}>
-                    <button className="image-button" onClick={() => openPostcard(postcard)} aria-label={`查看 ${postcard.poi_name}`}>
+                  <article
+                    className={`postcard-card ${postcardIsRead(postcard) ? 'postcard-card-read' : 'postcard-card-unread'}`}
+                    data-postcard-id={postcard.id}
+                    data-read-state={postcardIsRead(postcard) ? 'read' : 'unread'}
+                    key={postcard.id}
+                  >
+                    <button className="image-button" onClick={() => openPostcard(postcard, { source: 'archive', ids: filtered.map((item) => item.id), label: '目前明信片排序' })} aria-label={`查看 ${postcard.poi_name}`}>
                       <img src={postcard.asset.path} onError={(event) => recoverRuntimeAsset(event, postcard.asset.path)} alt={`${postcard.poi_name} 原始遊戲截圖`} loading="lazy" decoding="async" />
+                      {!postcardIsRead(postcard) && <span className="unread-badge"><i aria-hidden="true" />未讀</span>}
                       <span className="rating">{postcard.curation.rating == null ? '未評分' : <>{postcard.curation.rating.toFixed(1)} <b>★</b></>}</span>
                       <span className="open-hint">查看檔案 ↗</span>
                     </button>
@@ -1196,12 +1671,12 @@ export default function Home() {
                           {postcard.research.status === 'metadata_only_pending_research' ? '待研究' : statusLabels[postcard.curation.status]}
                         </span>
                         <time dateTime={displayedDate ?? undefined}>
-                          {displayedDateLabel} · {sortField === 'archived_on' ? compactArchiveTime(postcard) : compactDate(displayedDate)}
+                          {displayedDateLabel} · {sortField === 'modified_at' ? compactModifiedTime(postcard) : compactDate(displayedDate)}
                         </time>
                       </div>
-                      <h3><button onClick={() => openPostcard(postcard)}>{postcard.poi_name}</button></h3>
+                      <h3><button onClick={() => openPostcard(postcard, { source: 'archive', ids: filtered.map((item) => item.id), label: '目前明信片排序' })}>{postcard.poi_name}</button></h3>
                       <p className="place" title={researchedLocationDisplay(postcard.location)}>{researchedLocationDisplay(postcard.location)}</p>
-                      <p className="sender">{senderLine(postcard)}</p>
+                      <p className="sender">{senderLine(postcard, Boolean(postcard.sender && orphanedSenders.has(postcard.sender)))}</p>
                       {sortField === 'distance' && (
                         <p className={`distance ${distance == null ? 'distance-missing' : ''}`}>
                           {distance == null ? '尚無可計算座標' : `距離 ${distance < 10 ? distance.toFixed(1) : Math.round(distance)} km`}
@@ -1216,7 +1691,7 @@ export default function Home() {
           ) : (
             <div className="empty-state">
               <strong>沒有符合條件的明信片</strong>
-              <button onClick={() => { setQuery(''); setSenderFilter('all'); setCountry('all'); setStatus('all'); setPage(1); }}>清除篩選</button>
+              <button onClick={() => { setQuery(''); setSenderFilter('all'); setCountry('all'); setStatus('all'); setReadingFilter('all'); setPage(1); }}>清除篩選</button>
             </div>
           )}
 
@@ -1275,7 +1750,7 @@ export default function Home() {
                 <div className="friend-topline">
                   <div className="avatar">
                     {friend.avatar?.path
-                      ? <img src={friend.avatar.path} onError={(event) => recoverRuntimeAsset(event, friend.avatar!.path)} alt={`${friend.name} 的 Mii 頭像`} loading="lazy" decoding="async" />
+                      ? <img src={`${friend.avatar.path}?v=${encodeURIComponent(friend.modifiedAt)}`} onError={(event) => recoverRuntimeAsset(event, friend.avatar!.path)} alt={`${friend.name} 的 Mii 頭像`} loading="lazy" decoding="async" />
                       : friend.name.slice(0, 1)}
                   </div>
                   <div className="friend-identity">
@@ -1292,9 +1767,15 @@ export default function Home() {
                   onToggle={(event) => setFriendExpanded(friend.name, event.currentTarget.open)}
                 >
                   <summary>
-                    <span>展開資料與明信片</span>
+                    <span>
+                      展開資料與明信片
+                      <small className="friend-postcard-count">{friend.cards.length} 張</small>
+                    </span>
                   </summary>
                   <div className="friend-details-body">
+                    <div className="friend-details-actions">
+                      <button type="button" onClick={(event) => openFriendEditor(friend, event.currentTarget)}>編輯情報</button>
+                    </div>
                     <dl>
                       <div><dt>研究信心</dt><dd><span className={`confidence confidence-${friend.confidence}`}>信心 {friend.confidence}</span></dd></div>
                       <div><dt>據點訊號</dt><dd>{friend.signal}</dd></div>
@@ -1304,7 +1785,7 @@ export default function Home() {
                     <p className="friend-note">{friend.note}</p>
                     <div className="timeline">
                       {friend.cards.slice(0, friendPostcardsPreviewLimit).map((postcard) => (
-                        <button key={postcard.id} onClick={() => openPostcard(postcard)}>
+                        <button key={postcard.id} onClick={() => openPostcard(postcard, { source: 'friend', ids: friend.cards.map((card) => card.id), label: friend.name })}>
                           <time>{postcard.found_date ? postcard.found_date.slice(5).replace('-', '/') : '日期？'}</time>
                           <span>{postcard.poi_name}</span>
                           <small>{researchedLocationDisplay(postcard.location)}</small>
@@ -1378,6 +1859,127 @@ export default function Home() {
         </div>
       )}
 
+      {editingFriendName && (
+        <div
+          className="research-modal-backdrop friend-editor-backdrop"
+          role="presentation"
+          onMouseDown={(event) => { if (event.target === event.currentTarget) closeFriendEditor(); }}
+        >
+          <section
+            className="friend-editor-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="friend-editor-title"
+            onKeyDown={trapDialogFocus}
+          >
+            <header className="friend-editor-header">
+              <div>
+                <p className="eyebrow">FRIEND INFORMATION</p>
+                <h2 id="friend-editor-title">編輯情報</h2>
+                <p>人工修正會保留在資料庫；之後新增證據時不會覆蓋你指定的可能據點。</p>
+              </div>
+              <button type="button" onClick={closeFriendEditor} aria-label="關閉寄件者編輯" autoFocus>×</button>
+            </header>
+            <form className="friend-editor-form" onSubmit={saveFriendInformation}>
+              <label htmlFor="friend-edit-name">名稱</label>
+              <input
+                id="friend-edit-name"
+                value={friendEditName}
+                onChange={(event) => setFriendEditName(event.target.value)}
+                onClick={(event) => event.currentTarget.select()}
+                maxLength={80}
+                required
+              />
+              <label htmlFor="friend-edit-base">可能據點</label>
+              <input
+                id="friend-edit-base"
+                value={friendEditBase}
+                onChange={(event) => setFriendEditBase(event.target.value)}
+                onClick={(event) => event.currentTarget.select()}
+                maxLength={240}
+                placeholder="尚未判定；留白可人工清除"
+              />
+              <div className="friend-editor-primary-actions">
+                <button type="submit" className="friend-save-action" disabled={Boolean(friendAction)}>
+                  {friendAction === 'save' ? '保存中…' : '保存情報'}
+                </button>
+                <button type="button" onClick={reassessEditingFriendBase} disabled={Boolean(friendAction)} title="依這位寄件者目前保存的有效明信片證據重新判定">
+                  {friendAction === 'base' ? '判定中…' : '判定可能據點'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setFriendMergeOpen((open) => !open); setFriendDeleteConfirm(false); }}
+                  aria-expanded={friendMergeOpen}
+                  aria-controls="friend-merge-panel"
+                  disabled={Boolean(friendAction)}
+                >
+                  合併寄件者
+                </button>
+                <button type="button" onClick={recropEditingFriendAvatar} disabled={Boolean(friendAction)}>
+                  {friendAction === 'avatar' ? '重新截圖中…' : '重新截圖'}
+                </button>
+              </div>
+            </form>
+            {friendMergeOpen && (
+              <section id="friend-merge-panel" className="friend-merge-panel" aria-labelledby="friend-merge-title">
+                <div>
+                  <p className="eyebrow">MERGE FRIEND</p>
+                  <h3 id="friend-merge-title">把「{editingFriendName}」合併至</h3>
+                </div>
+                <label htmlFor="friend-merge-search">搜尋寄件者</label>
+                <input
+                  id="friend-merge-search"
+                  type="search"
+                  value={friendMergeQuery}
+                  onChange={(event) => setFriendMergeQuery(event.target.value)}
+                  placeholder="名稱或可能據點"
+                />
+                <div className="friend-merge-list" role="radiogroup" aria-label="選擇合併目標">
+                  {friendMergeCandidates.length ? friendMergeCandidates.map((candidate) => (
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={friendMergeTarget === candidate.name}
+                      className={friendMergeTarget === candidate.name ? 'selected' : ''}
+                      key={candidate.name}
+                      onClick={() => setFriendMergeTarget(candidate.name)}
+                    >
+                      <span>
+                        <strong>{candidate.name}</strong>
+                        <small>{candidate.baseArea ? `可能據點 · ${candidate.baseArea}` : '可能據點未確認'}</small>
+                      </span>
+                      <time dateTime={candidate.modifiedAt}>{new Date(candidate.modifiedAt).toLocaleString('zh-TW')}</time>
+                    </button>
+                  )) : <p className="friend-merge-empty">沒有符合搜尋條件的寄件者。</p>}
+                </div>
+                <div className="friend-merge-footer">
+                  <small>預設依寄件者最後系統修改時間排序。合併會改指明信片，但保留原名稱與合併軌跡。</small>
+                  <button type="button" onClick={mergeSelectedFriend} disabled={!friendMergeTarget || Boolean(friendAction)}>
+                    {friendAction === 'merge' ? '合併中…' : '確認合併'}
+                  </button>
+                </div>
+              </section>
+            )}
+            <div className="friend-editor-danger">
+              <div>
+                <strong>刪除寄件者情報</strong>
+                <small>只 soft delete 這筆寄件者；明信片不刪除，並改以無主狀態顯示。</small>
+              </div>
+              {!friendDeleteConfirm ? (
+                <button type="button" onClick={() => { setFriendDeleteConfirm(true); setFriendMergeOpen(false); }} disabled={Boolean(friendAction)}>刪除</button>
+              ) : (
+                <div className="friend-delete-confirmation" role="alertdialog" aria-label={`確認刪除寄件者 ${editingFriendName}`}>
+                  <button type="button" onClick={() => setFriendDeleteConfirm(false)} disabled={Boolean(friendAction)}>取消</button>
+                  <button type="button" onClick={deleteEditingFriend} disabled={Boolean(friendAction)}>
+                    {friendAction === 'delete' ? '刪除中…' : '確認 soft delete'}
+                  </button>
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
+
       {active && (
         <>
           <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closePostcard(); }}>
@@ -1393,6 +1995,7 @@ export default function Home() {
                 <img src={active.asset.path} onError={(event) => recoverRuntimeAsset(event, active.asset.path)} alt={`${active.poi_name} 原始遊戲截圖`} />
                 <a href={liveAssetUrl(active.asset.path)} target="_blank" rel="noreferrer">開啟原始尺寸 ↗</a>
               </div>
+              <div className="modal-copy-shell">
               <div className="modal-copy">
               <div className="detail-meta">
                 <span className={`status status-${active.curation.status}`}>
@@ -1411,7 +2014,7 @@ export default function Home() {
                   <strong>{active.found_date ?? '未確認'}</strong>
                   <small>加入系統 · {compactArchiveTime(active)}</small>
                 </div>
-                <div><span>來源／寄件人</span><strong>{acquisitionLabel(active)}</strong></div>
+                <div><span>來源／寄件人</span><strong>{acquisitionLabel(active, Boolean(active.sender && orphanedSenders.has(active.sender)))}</strong></div>
                 <div><span>收藏評分</span><strong>{active.curation.rating == null ? '未評分' : `${active.curation.rating.toFixed(1)} / 5`}</strong></div>
                 <div><span>建議</span><strong>{active.curation.recommendation ?? '尚未整理'}</strong></div>
               </div>
@@ -1452,9 +2055,19 @@ export default function Home() {
                       <h3 id="location-map-title">研究定位</h3>
                       <p>{activeMapTarget.label}</p>
                     </div>
-                    <a href={googleMapsSearchUrl(activeMapTarget.query)} target="_blank" rel="noreferrer">
-                      Google Maps ↗
-                    </a>
+                    <div className="location-map-actions">
+                      <button
+                        type="button"
+                        onClick={() => applyPostcardDistanceOrigin(active)}
+                        disabled={!activeCoordinates}
+                        title={activeCoordinates ? '回到收藏檔案並依此座標由近到遠排序' : '這張明信片尚無可用的研究座標'}
+                      >
+                        {activeCoordinates ? '以此為距離起點' : '尚無研究座標'}
+                      </button>
+                      <a href={googleMapsSearchUrl(activeMapTarget.query)} target="_blank" rel="noreferrer">
+                        Google Maps ↗
+                      </a>
+                    </div>
                   </div>
                   {activeMapIsLoaded ? (
                     <iframe
@@ -1521,18 +2134,52 @@ export default function Home() {
                 <div className="postcard-management-actions">
                   <button
                     type="button"
+                    className="edit-action"
+                    onClick={togglePostcardNameEdit}
+                    disabled={savingPostcardName}
+                    aria-expanded={postcardNameEditOpen}
+                    aria-controls="postcard-name-form"
+                  >
+                    {postcardNameEditOpen ? '收合編輯' : '編輯名稱'}
+                  </button>
+                  <button
+                    type="button"
                     className="research-action"
                     onClick={toggleReresearch}
                     disabled={Boolean(activeJob)}
                     aria-expanded={reresearchOpen}
                     aria-controls="reresearch-note-form"
                   >
-                    {activeJob ? `${managementStatusLabel(activeJob.status, activeJob.workflow)} · ${elapsedLabel(activeJob, clock)}` : reresearchOpen ? '收合再研究' : '再研究'}
+                    {activeJob ? `${managementStatusLabel(activeJob.status, activeJob.workflow, activeJob.phase)} · ${elapsedLabel(activeJob, clock)}` : reresearchOpen ? '收合再研究' : '再研究'}
                   </button>
-                  <button type="button" className="delete-action" onClick={() => setDeleteConfirm(true)} disabled={deleting}>
+                  <button type="button" className="delete-action" onClick={() => { setPostcardNameEditOpen(false); setReresearchOpen(false); setDeleteConfirm(true); }} disabled={deleting}>
                     刪除
                   </button>
                 </div>
+                {postcardNameEditOpen && (
+                  <form id="postcard-name-form" className="postcard-name-form" aria-label="編輯明信片名稱" onSubmit={savePostcardName}>
+                    <label htmlFor="postcard-name">明信片名稱</label>
+                    <p>修正遊戲畫面上的明信片名稱；研究定位、遊戲顯示地點與研究內容不會改變，舊名稱會保留在修改紀錄。</p>
+                    <input
+                      id="postcard-name"
+                      ref={postcardNameInputRef}
+                      value={postcardEditName}
+                      onChange={(event) => setPostcardEditName(event.target.value)}
+                      onFocus={(event) => event.currentTarget.select()}
+                      maxLength={240}
+                      autoComplete="off"
+                    />
+                    <div className="postcard-name-footer">
+                      <small>{postcardEditName.length.toLocaleString('zh-TW')} / 240</small>
+                      <div>
+                        <button type="button" onClick={() => { setPostcardNameEditOpen(false); setPostcardEditName(''); }} disabled={savingPostcardName}>取消</button>
+                        <button type="submit" className="confirm-postcard-name" disabled={savingPostcardName || !postcardEditName.trim()}>
+                          {savingPostcardName ? '保存中…' : '保存名稱'}
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                )}
                 {reresearchOpen && !activeJob && (
                   <form id="reresearch-note-form" className="reresearch-note-form" aria-label="補充再研究資訊" onSubmit={startReresearch}>
                     <label htmlFor="reresearch-note">補充你知道的事（選填）</label>
@@ -1582,6 +2229,22 @@ export default function Home() {
                   </div>
                 )}
               </section>
+              <section className={`postcard-read-state ${postcardIsRead(active) ? 'is-read' : 'is-unread'}`} aria-label="閱讀狀態">
+                <div>
+                  <p className="eyebrow">READ STATUS</p>
+                  <strong>{postcardIsRead(active) ? '已讀' : '未讀'}</strong>
+                  <small>{readingTimestampLabel(active)}</small>
+                </div>
+                <button
+                  type="button"
+                  onClick={toggleActiveReadState}
+                  disabled={readingPostcardIds.has(active.id)}
+                >
+                  {readingPostcardIds.has(active.id)
+                    ? '更新中…'
+                    : postcardIsRead(active) ? '標示為未讀' : '標示為已讀'}
+                </button>
+              </section>
               <div className="tag-list">{active.curation.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
               {!!active.related_postcards?.length && (
                 <div className="related-list">
@@ -1611,6 +2274,32 @@ export default function Home() {
                 ))}
               </div>
               <p className="hash">SHA-256 · {active.asset.sha256}</p>
+              </div>
+              {postcardNavigation && activeNavigationIndex >= 0 && (
+                <nav
+                  className="postcard-context-navigation"
+                  aria-label={postcardNavigation.source === 'friend'
+                    ? `切換寄件者 ${postcardNavigation.label} 的明信片，目前第 ${activeNavigationIndex + 1} 張，共 ${postcardNavigation.ids.length} 張`
+                    : `切換目前明信片排序，目前第 ${activeNavigationIndex + 1} 張，共 ${postcardNavigation.ids.length} 張`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => navigatePostcard(-1)}
+                    disabled={activeNavigationIndex <= 0}
+                    aria-label="上一張明信片"
+                  >
+                    ←
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigatePostcard(1)}
+                    disabled={activeNavigationIndex >= postcardNavigation.ids.length - 1}
+                    aria-label="下一張明信片"
+                  >
+                    →
+                  </button>
+                </nav>
+              )}
               </div>
             </section>
           </div>
@@ -1701,12 +2390,52 @@ export default function Home() {
       )}
 
       {addOpen && !active && (
-        <div className="management-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !adding) setAddOpen(false); }}>
+        <div className="management-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closeAddDialog(); }}>
           <section className="management-modal" role="dialog" aria-modal="true" aria-labelledby="add-postcard-title" onKeyDown={trapDialogFocus}>
-            <button type="button" className="management-modal-close" onClick={() => setAddOpen(false)} aria-label="關閉新增明信片" disabled={adding}>×</button>
+            <button type="button" className="management-modal-close" onClick={closeAddDialog} aria-label="關閉新增明信片" disabled={adding}>×</button>
             <p className="eyebrow">NEW POSTCARD</p>
             <h2 id="add-postcard-title">新增明信片</h2>
-            <p className="management-modal-lede">可一次選擇多張圖片，沒有人工張數上限。每張原圖會先保存在本機，再依下方路徑獨立建檔；大量上傳可以先快速新增，之後再逐張使用「再研究」。</p>
+            <p className="management-modal-lede">{exactDuplicates.length
+              ? '系統只以完整檔案 bytes 判斷硬重複。以下圖片的 SHA-256 與既有原圖完全相同，因此尚未啟動 AI，也不會新增另一張卡。'
+              : '可一次選擇多張圖片，沒有人工張數上限。每張原圖會先保存在本機，再依下方路徑獨立建檔；大量上傳可以先快速新增，之後再逐張使用「再研究」。'}</p>
+            {exactDuplicates.length ? (
+              <section className="exact-duplicate-confirmation" aria-label="完全相同圖片確認">
+                <div className="exact-duplicate-heading">
+                  <span aria-hidden="true">!</span>
+                  <div>
+                    <strong>發現 {exactDuplicates.length} 張完全相同的圖片</strong>
+                    <p>若繼續，系統會對既有明信片執行「再研究」，不新增 postcard ID。若取消，不會呼叫 AI。</p>
+                  </div>
+                </div>
+                <ul className="exact-duplicate-list">
+                  {exactDuplicates.map((duplicate) => (
+                    <li key={`${duplicate.sha256}-${duplicate.input_label}`}>
+                      {duplicate.asset_path && (
+                        <img
+                          src={liveAssetUrl(duplicate.asset_path)}
+                          alt=""
+                          onError={(event) => recoverRuntimeAsset(event, duplicate.asset_path!)}
+                        />
+                      )}
+                      <span>
+                        <small>{duplicate.input_label}</small>
+                        <strong>{duplicate.poi_name}</strong>
+                        <time>{duplicate.found_date ? `發現日期 ${duplicate.found_date}` : '發現日期未確認'} · {duplicate.postcard_id}</time>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                {addNote.trim() && (
+                  <p className="exact-duplicate-note"><strong>將帶入再研究的備註：</strong>{addNote}</p>
+                )}
+                <div className="exact-duplicate-actions">
+                  <button type="button" className="secondary-action" onClick={cancelExactDuplicateResearch} disabled={adding}>取消，不重新研究</button>
+                  <button type="button" className="submit-add" onClick={() => void continueExactDuplicatesAsReresearch()} disabled={adding}>
+                    {adding ? '正在建立再研究工作…' : '繼續，改為再研究'}
+                  </button>
+                </div>
+              </section>
+            ) : (
             <form className="add-postcard-form" onSubmit={submitAdd}>
               <fieldset className="add-workflow-options">
                 <legend>新增方式</legend>
@@ -1735,7 +2464,7 @@ export default function Home() {
                   />
                   <span>
                     <strong>新增明信片並研究</strong>
-                    <small>每張圖片都建立完整背景研究工作，包含定位、故事、來源、評分、參考圖片與有限關聯。</small>
+                    <small>先辨識名稱等畫面資訊並建檔，再研究定位、故事、來源、評分、參考圖片與有限關聯；研究失敗仍可再研究。</small>
                   </span>
                 </label>
               </fieldset>
@@ -1777,7 +2506,7 @@ export default function Home() {
               </label>
               <label>
                 <span>給這批圖片的備註（選填）</span>
-                <textarea name="note" rows={3} placeholder="例如：同一趟旅行、同一位朋友，或希望之後特別注意的線索。" disabled={adding} />
+                <textarea name="note" rows={3} value={addNote} onChange={(event) => setAddNote(event.target.value)} placeholder="例如：同一趟旅行、同一位朋友，或希望之後特別注意的線索。" disabled={adding} />
               </label>
               <div className={`api-configuration-state ${capabilities.ai_configured ? 'configured' : ''}`}>
                 <span aria-hidden="true" />
@@ -1795,6 +2524,7 @@ export default function Home() {
                     : `新增 ${selectedInputCount} 張明信片並研究`}
               </button>
             </form>
+            )}
           </section>
         </div>
       )}

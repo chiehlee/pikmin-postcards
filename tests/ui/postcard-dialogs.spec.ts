@@ -25,30 +25,32 @@ test('homepage uses a functional Pikmin postcard title', async ({ page }) => {
   await expect(page).toHaveTitle('Pikmin 明信片收藏研究庫');
 });
 
-test('archive controls distinguish both dates and restore every dropdown default without a notification', async ({ page }) => {
+test('archive controls default to last-modified time and restore every dropdown without a notification', async ({ page }) => {
   await page.goto('/');
   const senderFilter = page.locator('.filters label').filter({ hasText: /^來源／寄件人/ }).locator('select');
   const countryFilter = page.locator('.filters label').filter({ hasText: /^國家／地區/ }).locator('select');
   const statusFilter = page.locator('.filters label').filter({ hasText: /^收藏判斷/ }).locator('select');
+  const readingFilter = page.locator('.filters label').filter({ hasText: /^閱讀狀態/ }).locator('select');
   const sortField = page.getByLabel('排序', { exact: true });
   const sortDirection = page.getByLabel('排序方向');
-  const restoreDefaults = page.getByRole('button', { name: '恢復預設：來源、國家、收藏判斷與排序' });
+  const restoreDefaults = page.getByRole('button', { name: '恢復預設：來源、國家、收藏判斷、閱讀狀態與排序' });
 
   await expect(sortField.locator('option')).toHaveText([
     '評分',
     '發現日期',
-    '加入系統時間',
+    '上次修改時間',
     '距離',
   ]);
-  await expect(sortField).toHaveValue('archived_on');
+  await expect(sortField).toHaveValue('modified_at');
   await expect(sortDirection).toHaveValue('desc');
   await expect(senderFilter).toHaveValue('all');
   await expect(countryFilter).toHaveValue('all');
   await expect(statusFilter).toHaveValue('all');
+  await expect(readingFilter).toHaveValue('all');
   await expect(restoreDefaults).toBeEnabled();
   await restoreDefaults.click();
   await expect(page.locator('.management-notice')).toHaveCount(0);
-  await expect(page.locator('.postcard-card time').first()).toContainText('加入系統');
+  await expect(page.locator('.postcard-card time').first()).toContainText('修改');
   await expect(page.locator('.postcard-card time').first()).toContainText(/\d{2}:\d{2}:\d{2}/);
 
   await sortField.selectOption('found_date');
@@ -59,22 +61,175 @@ test('archive controls distinguish both dates and restore every dropdown default
   expect(foundDates).toEqual([...foundDates].sort());
   await expect(page.locator('.postcard-card time').first()).toContainText('發現');
 
-  await sortField.selectOption('archived_on');
-  await expect(page.locator('.postcard-card time').first()).toContainText('加入系統');
+  await sortField.selectOption('modified_at');
+  await expect(page.locator('.postcard-card time').first()).toContainText('修改');
   await expect(page.locator('.postcard-card time').first()).toHaveAttribute('datetime', /T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/);
 
   await senderFilter.selectOption('self-found');
   await countryFilter.selectOption({ label: '日本' });
   await statusFilter.selectOption('candidate');
+  await readingFilter.selectOption('unread');
   await sortDirection.selectOption('asc');
   await restoreDefaults.click();
   await expect(senderFilter).toHaveValue('all');
   await expect(countryFilter).toHaveValue('all');
   await expect(statusFilter).toHaveValue('all');
-  await expect(sortField).toHaveValue('archived_on');
+  await expect(readingFilter).toHaveValue('all');
+  await expect(sortField).toHaveValue('modified_at');
   await expect(sortDirection).toHaveValue('desc');
   await expect(restoreDefaults).toBeEnabled();
   await expect(page.locator('.management-notice')).toHaveCount(0);
+});
+
+test('unread postcards use a distinct frame, become read when opened, and can be marked unread again', async ({ page }) => {
+  const payload = createArchiveFixture();
+  const postcard = payload.postcards[0];
+  postcard.reading = { is_read: false, read_at: null };
+  const updates: boolean[] = [];
+  await page.unroute('**/api/archive');
+  await page.route('**/api/archive', (route) => route.fulfill({ json: payload }));
+  await page.route('**/api/postcards/*', async (route) => {
+    if (route.request().method() !== 'PATCH') return route.fallback();
+    const body = route.request().postDataJSON() as { is_read: boolean };
+    updates.push(body.is_read);
+    postcard.reading = {
+      is_read: body.is_read,
+      read_at: body.is_read ? '2026-09-03T04:05:06Z' : null,
+    };
+    await route.fulfill({ json: { postcard } });
+  });
+
+  await page.goto('/');
+  await page.getByPlaceholder('名稱、地點、故事或標籤').fill(postcard.poi_name);
+  const card = page.locator('.postcard-card').filter({ hasText: postcard.poi_name });
+  await expect(card).toHaveAttribute('data-read-state', 'unread');
+  await expect(card.getByText('未讀', { exact: true })).toBeVisible();
+  const unreadFrame = await card.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { borderColor: style.borderColor, borderWidth: style.borderWidth, boxShadow: style.boxShadow };
+  });
+  expect(unreadFrame.borderColor).toContain('24, 114, 77');
+  expect(unreadFrame.borderWidth).toBe('3px');
+  expect(unreadFrame.boxShadow).toContain('68, 170, 111');
+
+  await card.getByRole('button', { name: `查看 ${postcard.poi_name}` }).click();
+  const dialog = page.locator('.detail-modal');
+  const readState = dialog.getByRole('region', { name: '閱讀狀態' });
+  await expect.poll(() => updates).toEqual([true]);
+  await expect(card).toHaveAttribute('data-read-state', 'read');
+  await expect(card.getByText('未讀', { exact: true })).toHaveCount(0);
+  await expect(readState.getByText('已讀', { exact: true })).toBeVisible();
+  await expect(readState.getByText('最近閱讀：', { exact: false })).toBeVisible();
+  expect(await dialog.evaluate((element) => {
+    const management = element.querySelector('.postcard-management');
+    const reading = element.querySelector('.postcard-read-state');
+    return Boolean(management && reading && management.compareDocumentPosition(reading) & Node.DOCUMENT_POSITION_FOLLOWING);
+  })).toBe(true);
+
+  await readState.getByRole('button', { name: '標示為未讀' }).click();
+  await expect.poll(() => updates).toEqual([true, false]);
+  await expect(readState.getByText('未讀', { exact: true })).toBeVisible();
+  await expect(readState.getByRole('button', { name: '標示為已讀' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(card).toHaveAttribute('data-read-state', 'unread');
+  await expect(card.getByText('未讀', { exact: true })).toBeVisible();
+
+  await card.getByRole('button', { name: `查看 ${postcard.poi_name}` }).click();
+  await expect.poll(() => updates).toEqual([true, false, true]);
+});
+
+test('reading filter combines with search and updates when an unread postcard is opened', async ({ page }) => {
+  const payload = createArchiveFixture();
+  const firstUnread = payload.postcards[0];
+  const secondUnread = payload.postcards[1];
+  firstUnread.reading = { is_read: false, read_at: null };
+  secondUnread.reading = { is_read: false, read_at: null };
+  await page.unroute('**/api/archive');
+  await page.route('**/api/archive', (route) => route.fulfill({ json: payload }));
+  await page.route('**/api/postcards/*', async (route) => {
+    if (route.request().method() !== 'PATCH') return route.fallback();
+    const body = route.request().postDataJSON() as { is_read: boolean };
+    firstUnread.reading = { is_read: body.is_read, read_at: body.is_read ? '2026-09-03T04:05:06Z' : null };
+    await route.fulfill({ json: { postcard: firstUnread } });
+  });
+
+  await page.goto('/');
+  const readingFilter = page.locator('.filters label').filter({ hasText: /^閱讀狀態/ }).locator('select');
+  const cards = page.locator('.postcard-card');
+  await page.getByLabel('選擇頁數').selectOption('2');
+  await readingFilter.selectOption('unread');
+  await expect(page.getByText('顯示 1–2，共 2 / 65 張')).toBeVisible();
+  await expect(cards).toHaveCount(2);
+  await expect(cards.first()).toHaveAttribute('data-read-state', 'unread');
+
+  await readingFilter.selectOption('read');
+  await expect(page.getByText('顯示 1–60，共 63 / 65 張')).toBeVisible();
+  await expect(cards).toHaveCount(60);
+
+  await page.getByPlaceholder('名稱、地點、故事或標籤').fill(firstUnread.poi_name);
+  await expect(cards).toHaveCount(0);
+  await readingFilter.selectOption('unread');
+  await expect(cards).toHaveCount(1);
+  await cards.first().getByRole('button', { name: `查看 ${firstUnread.poi_name}` }).click();
+  await expect(page.locator('.detail-modal')).toBeVisible();
+  await expect(cards).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await page.getByLabel('排序', { exact: true }).selectOption('found_date');
+  await page.getByRole('button', { name: '清除篩選' }).click();
+  await expect(readingFilter).toHaveValue('all');
+  await expect(page.getByPlaceholder('名稱、地點、故事或標籤')).toHaveValue('');
+  await expect(page.getByLabel('排序', { exact: true })).toHaveValue('found_date');
+  await expect(page.getByText('顯示 1–60，共 65 / 65 張')).toBeVisible();
+});
+
+test('a postcard name can be corrected without changing its preserved game location', async ({ page }) => {
+  const payload = createArchiveFixture();
+  const postcard = payload.postcards[0];
+  const previousName = postcard.poi_name;
+  const originalLocation = structuredClone(postcard.location);
+  let submitted: Record<string, unknown> | null = null;
+  await page.unroute('**/api/archive');
+  await page.route('**/api/archive', (route) => route.fulfill({ json: payload }));
+  await page.route('**/api/postcards/*', async (route) => {
+    if (route.request().method() !== 'PATCH') return route.fallback();
+    const body = route.request().postDataJSON() as Record<string, unknown>;
+    if (!Object.hasOwn(body, 'poi_name')) return route.fallback();
+    submitted = body;
+    postcard.poi_name = String(body.poi_name);
+    postcard.modified_at = '2030-01-02T03:04:05Z';
+    postcard.poi_name_history = [{
+      previous_name: previousName,
+      next_name: postcard.poi_name,
+      reason: 'manual-edit',
+      changed_at: postcard.modified_at,
+    }];
+    await route.fulfill({ json: { postcard } });
+  });
+
+  const dialog = await openPostcard(page, previousName);
+  const location = dialog.locator('.detail-location');
+  const researchedLocationBefore = await location.evaluate((element) => element.childNodes[0]?.textContent?.trim() ?? '');
+  const gameLocationBefore = await location.locator('small').innerText();
+  await dialog.getByRole('button', { name: '編輯名稱' }).click();
+  const form = dialog.getByRole('form', { name: '編輯明信片名稱' });
+  const input = form.getByLabel('明信片名稱');
+  await expect(form).toBeVisible();
+  await expect(input).toBeFocused();
+  await expect(input).toHaveValue(previousName);
+  expect(await input.evaluate((element) => {
+    const field = element as HTMLInputElement;
+    return [field.selectionStart, field.selectionEnd];
+  })).toEqual([0, previousName.length]);
+  await input.fill('圖');
+  await form.getByRole('button', { name: '保存名稱' }).click();
+
+  await expect(form).toBeHidden();
+  await expect(dialog.getByRole('heading', { level: 2 })).toHaveText('圖');
+  await expect(location).toContainText(researchedLocationBefore);
+  await expect(location.locator('small')).toHaveText(gameLocationBefore);
+  expect(postcard.location).toEqual(originalLocation);
+  expect(submitted).toEqual({ poi_name: '圖' });
+  await expect(page.getByRole('status')).toContainText(`已將「${previousName}」更正為「圖」`);
 });
 
 test('researched locations use the local script while preserving the game text', async ({ page }) => {
@@ -130,6 +285,25 @@ test('distance sorting uses a manual origin and every active postcard persisted 
     elements.map((element) => Number.parseFloat(element.textContent?.match(/[\d.]+/)?.[0] ?? 'NaN'))
   ));
   expect(descending).toEqual([...descending].sort((left, right) => right - left));
+});
+
+test('a researched postcard location can become the main archive distance origin', async ({ page }) => {
+  const dialog = await openPostcard(page);
+  await dialog.getByRole('button', { name: '以此為距離起點' }).click();
+
+  await expect(dialog).toBeHidden();
+  await expect(page.getByLabel('排序', { exact: true })).toHaveValue('distance');
+  await expect(page.getByLabel('排序方向')).toHaveValue('asc');
+  const distanceTools = page.locator('.distance-sort-tools');
+  await expect(distanceTools).toBeVisible();
+  await expect(distanceTools).toContainText(`已使用「${postcardName}」的研究座標作為距離起點`);
+  await expect(distanceTools).toContainText('目前基準：25.001000, 121.501000');
+  await expect(distanceTools.getByLabel('參考緯度')).toHaveValue('25.001');
+  await expect(distanceTools.getByLabel('參考經度')).toHaveValue('121.501');
+  await expect(page.locator('.search-box input')).toHaveValue('');
+  const firstCard = page.locator('.postcard-card').first();
+  await expect(firstCard).toHaveAttribute('data-postcard-id', 'pc-ui-001');
+  await expect(firstCard.locator('.distance')).toHaveText('距離 0.0 km');
 });
 
 test('long-form research uses an independently scrollable modal and restores focus', async ({ page }) => {
